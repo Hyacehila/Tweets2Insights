@@ -95,8 +95,8 @@ class DomainService:
             raise ValueError('unknown artifact')
         directory = self.repo.run_dir(event_id, dataset_id, run_id)
         if artifact_id == 'report':
-            job = self.jobs.submit(event_id, run_id, 'short_report', {'dataset_id': dataset_id, 'renderer': 'inventory-v1'})
-            if job.status != 'completed':
+            job = self.jobs.find(event_id, run_id, 'short_report', {'dataset_id': dataset_id, 'renderer': 'inventory-v1'})
+            if job is None or job.status != 'completed':
                 raise ValueError('report is not committed')
         return json.loads((directory / (artifact_id + '.json')).read_text(encoding='utf-8'))
 
@@ -106,6 +106,29 @@ class DomainService:
         if job.event_id != event_id:
             raise ValueError('job does not belong to event')
         return job.model_dump(mode='json')
+
+    def submit_inventory_job(self, event_id: str, dataset_id: str, run_id: str) -> dict:
+        """Queue an inventory report; a separate local worker performs the stages."""
+        self.repo.read(event_id, dataset_id)
+        job = self.jobs.submit(event_id, run_id, 'inventory_report',
+                               {'dataset_id': dataset_id, 'code_version': self.code_version, 'renderer': 'inventory-v2'})
+        return job.model_dump(mode='json')
+
+    def list_jobs(self, event_id: str, limit: int = 50) -> list[dict]:
+        """Reconnect to persisted jobs after refresh; newest first."""
+        return [job.model_dump(mode='json') for job in self.jobs.list_jobs(event_id, limit)]
+
+    def retry_job(self, event_id: str, job_id: str) -> dict:
+        """Retry a stopped inventory job as a linked new job, preserving committed stages."""
+        job = self.job_status(event_id, job_id)
+        if job['kind'] != 'inventory_report':
+            raise ValueError('retry supported only for inventory jobs')
+        return self.jobs.retry(job_id).model_dump(mode='json')
+
+    def read_job_artifact(self, event_id: str, job_id: str) -> dict:
+        """Read the atomically committed result of a completed domain job."""
+        self.job_status(event_id, job_id)
+        return self.jobs.result(job_id)
 
     def cancel_job(self, event_id: str, job_id: str) -> dict:
         """Request cancellation using optimistic concurrency; terminal jobs stay terminal."""
@@ -119,7 +142,8 @@ class DomainService:
 def create_server(root):
     service = DomainService(root)
     server = FastMCP('Opinion Domain Tool Service')
-    for name in ('register_dataset', 'describe_dataset', 'read_evidence', 'render_report', 'read_artifact', 'job_status', 'cancel_job'):
+    for name in ('register_dataset', 'describe_dataset', 'read_evidence', 'render_report', 'read_artifact', 'job_status', 'cancel_job',
+                 'submit_inventory_job', 'list_jobs', 'retry_job', 'read_job_artifact'):
         server.tool()(getattr(service, name))
     return server
 

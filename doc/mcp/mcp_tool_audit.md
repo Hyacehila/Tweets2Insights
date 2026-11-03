@@ -60,3 +60,5 @@
 PR-02：保持工具名不变，移除全局 blog_data 缓存；所有显式图表目录改用运行上下文。
 
 独立领域服务新增 7 个工具：register_dataset、describe_dataset、read_evidence、render_report、read_artifact、job_status、cancel_job。与旧 76 个工具分别发现，不合并统计。
+
+第二轮领域服务新增 submit_inventory_job/list_jobs/retry_job/read_job_artifact，共 11 项。旧同步接口保持兼容。

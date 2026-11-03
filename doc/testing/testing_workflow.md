@@ -178,3 +178,5 @@ git rm --cached <file>
 新增 opinion_contracts、legacy_annotation_migration、job_transitions、multi_event_isolation、
 agent_runtime_tool_contract 和 domain_stdio 测试。domain_stdio 使用真实本机子进程，无付费 API，
 归类为协议集成测试。完整真实用户链路仍须单独 live_api/ui_e2e 验收。
+
+持久作业验证：tests/integration/pipeline/test_persistent_worker.py 启动真实本机 Worker 子进程；dashboard/tests/test_opinion_workbench.py 使用 Streamlit AppTest 验证新会话重连与取消/重试，属于离线集成验证，不是浏览器 E2E。

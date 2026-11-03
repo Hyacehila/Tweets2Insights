@@ -34,10 +34,10 @@ def test_claim_lease_and_committed_batches_survive_restart(tmp_path):
     claimed = store.claim('worker1', lease_seconds=30)
     assert claimed.job_id == j.job_id
     assert store.claim('worker2') is None
-    store.commit_batch(j.job_id, 'worker1', 'batch1', {'asset': 'a'})
+    store.commit_batch(j.job_id, 'worker1', 'batch1', {'asset': 'a'}, lease_token=claimed.lease_token)
     assert JobStore(tmp_path / 'jobs.sqlite').batches(j.job_id) == {'batch1': {'asset': 'a'}}
     with pytest.raises(TransitionConflict):
-        store.commit_batch(j.job_id, 'worker2', 'batch2', {})
+        store.commit_batch(j.job_id, 'worker2', 'batch2', {}, lease_token=claimed.lease_token)
 
 
 def test_waiting_partial_and_failed_transitions(tmp_path):

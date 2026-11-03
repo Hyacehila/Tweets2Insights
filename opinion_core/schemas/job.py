@@ -17,3 +17,5 @@ class JobRef(Contract):
     stop_reason: str = ''
     worker: str | None = None
     lease_until: float | None = None
+    lease_token: str | None = None
+    retry_of: Identifier | None = None

@@ -39,8 +39,34 @@ MCP 内存传输测试覆盖发现、输入拒绝、阶段前提、统计、证�
 另用真实 Python 子进程 stdio 在 Windows 验证发现、上传、统计、证据、短报告和产物读取，未调用外部模型。
 Windows 旧运行锁的 PID 检测已改用隐藏 tasklist，不向进程发送 signal。
 
-尚未完成：上游 Agent Runtime 安装/浏览器/真实模型端到端验收、长任务调度 UI、刷新后运行选择、
-完整 ContentBundle、外部证据论坛和新标签标注。当前 Streamlit 页面保存会话内引用；重启后可经 MCP
-用已记录 event/dataset/run/job ID 读取持久资产。不要将本地协议测试称为真实 API 或浏览器 E2E。
+尚未完成：上游 Agent Runtime 安装/浏览器/真实模型端到端验收、完整 ContentBundle、外部证据论坛和新标签标注。
+工作台现在按事件读取持久任务，URL 保留所选任务，可在新会话重连。不要将本地协议测试或 Streamlit AppTest 称为真实 API 或浏览器 E2E。
 
 物理目录使用 SHA256(event_id)/runs/dataset_id/SHA256(run_id)，避免 Windows 大小写与保留名称冲突。RunManifest 记录领域源码 SHA256。
+
+
+## 持久任务执行与恢复
+
+推荐工作台使用 register_dataset → submit_inventory_job → list_jobs/job_status → read_job_artifact。
+submit_inventory_job 仅校验引用并入队，立即返回 JobRef，不在 Web 请求里生成报告。
+另开终端在同一仓库执行：
+
+```powershell
+uv run python -m opinion_gateway.worker --root .opinion-assets
+# 只处理一项可领取任务，适合 smoke / 外部调度
+uv run python -m opinion_gateway.worker --root .opinion-assets --once
+```
+
+Worker 当前只处理 inventory_report，不领取旧同步任务或尚未实现的标注/采集任务。
+它依次提交 statistics、evidence 检查点，再将短报告与 completed 状态在同一 SQLite 事务中发布。
+心跳续约；租约过期后可接管。每次领取产生唯一 lease_token，即使进程名称重复也不能提交旧租约结果。
+取消优先阻止新阶段提交；Worker 死亡后的 cancel_requested 在租约到期时收敛为 cancelled。
+retry_job 为停止任务建立一个幂等后继，保留原终态与已提交阶段。输入数据和代码版本不变时可复用。
+代码变更后旧版本任务会失败，需重新提交当前代码版本任务，不能将不同代码版本的阶段混合。
+
+工作台提供事件内任务列表、刷新、取消、重试、Markdown/运行证据下载。新会话不依赖原 session_state。
+旧 render_report 同步工具保留兼容；read_artifact 已改为纯查询，不再因读取不存在报告而创建作业。
+新增工具：submit_inventory_job、list_jobs、retry_job、read_job_artifact。服务现在暴露 11 个工具。
+
+验证：真实独立 Worker 子进程、租约接管/旧令牌拒绝、检查点恢复、取消/重试、读操作无副作用，
+以及 Streamlit AppTest 新会话重连与取消重试。无外部 API 或人工标注参与正常执行。
