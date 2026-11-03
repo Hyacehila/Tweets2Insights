@@ -26,4 +26,6 @@ migrate_file('data/old.json', 'data/migrated-v1.json', schema_version='event-v1'
 `legacy-unverified` 表示旧标签质量未验证；不能当作通过新标注质量门槛的数据。
 
 验证：契约/迁移、现有数据格式和 Stage1 节点测试。新增实际 Stage1 fixture 的 topics 列表回归。
-M0 质量/覆盖率/金标准规模仍待确认；没有真实标注成本或质量结论。后续阶段见[升级记录](../upgrade-status.md)。
+M0 质量/覆盖率/金标准规模已登记于[弱标注 Demo 协议](../testing/weak-label-demo-protocol.md)，人工验证仅用于 Demo。
+正式运行以自动校验后的模型弱标注进入分析，不要求逐批人工复核；当前仍无真实标注成本或质量结论。
+后续阶段见[升级记录](../upgrade-status.md)。

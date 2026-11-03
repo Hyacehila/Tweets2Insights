@@ -19,6 +19,7 @@
 - [Utilities](modules/utils.md) — Prompt wrapper, LLM retry wrapper, File IO.
 
 ## Testing & Quality Assurance
+- [Weak-label Demo Protocol](testing/weak-label-demo-protocol.md) — Demo 人工验证、质量门槛及正式运行自动弱标注边界。
 - [Testing Workflow](testing/testing_workflow.md) — Test-Driven Development workflow and execution environments.
 
 ## Model Context Protocol (MCP)
