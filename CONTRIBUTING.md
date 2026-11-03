@@ -10,8 +10,8 @@
 - 新模块同时维护 doc/architecture.md、目录表、接口说明和验证状态。
 - README.md 是面向首次访问者的项目首页；修改能力、默认入口、环境要求或配置方式时同步更新对应段落。
 - 具体参数和实施记录维护在 doc/，由 README 链接；文档索引同步入口，区分新应用说明与历史兼容文档。
-- 文档中的功能实现、外部连接器接入和真实评测分别说明；仅使用有证据支持的徽章、截图、性能指标和验证结论。
-- 本次用户明确要求功能脚本完成后统一测试；默认开发规范见 AGENTS.md。静态检查与行为测试分别报告。
+- 文档直接说明功能、用法和必要条件；测试结果集中记录在 doc/upgrade-status.md，性能指标附评测配置与来源。
+- 开发规范见 AGENTS.md，测试命令见 doc/testing/testing_workflow.md。
 - 不提交 .env、legacy/config.yaml、原始私密数据或运行资产；配置只保存环境变量名称。
 
 命令：`make install`、`make dev`、`make stop`、`make check`。

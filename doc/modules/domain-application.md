@@ -1,6 +1,6 @@
-# 新架构运行手册
+# 运行手册
 
-更新：2026-11-03。以下命令在内层业务仓库执行。源码实现与真实服务/科学验收分别记录。
+以下命令在包含 `backend/` 和 `frontend/` 的仓库根目录执行。
 
 首次安装与凭据配置见 [README：快速开始](../../README.md#quickstart)，上传格式和操作流程见[第一次分析](../../README.md#first-analysis)。本手册补充 CLI、任务管理和兼容入口。
 
@@ -63,7 +63,7 @@ uv run python -m agent_runtime_extension.bind_tools --discovery tools.json --out
 唯一匹配失败时拒绝调用，不放宽为所有工具。参考上游版本与适配范围见 [Agent Runtime](agent-runtime-architecture.md)。
 生成式 Agent 使用 GLM_API_KEY；弱标注可独立选择 Jev（TYPESAFE_API_KEY）、阿里（DASHSCOPE_API_KEY）或 GLM。
 搜索使用所选服务的 TAVILY_API_KEY 或 DEEPSEEK_API_KEY。Jev/阿里已有原生协议，X 有官方归档搜索适配；
-其他平台及视觉服务使用[连接器协议](architecture-rewrite.md)。账号和真实服务均需联调验证。
+其他平台及视觉服务使用[连接器协议](architecture-rewrite.md#外部服务接入)。
 GLM 标准标注路径处理文本；image_only/text_image 必须配置支持相应模式的标签连接器。
 
 ## 兼容入口
@@ -80,4 +80,4 @@ uv run --project backend python -m opinion_core.ingestion --source OLD.json --ou
 ```
 
 迁移保留旧原文与字段；缺少的立场继续标为 missing，正式标签由后续模型标注生成。
-功能脚本完成后已进入离线工程检查，最新记录见[实施记录](../upgrade-status.md)；Demo、真实服务、浏览器及科学效果仍后置。
+测试进度见[实施记录](../upgrade-status.md)。

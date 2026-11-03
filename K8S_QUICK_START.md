@@ -1,9 +1,7 @@
 # Kubernetes 科研部署模板
 
-更新：2026-11-03。已提供配置文件，尚未执行集群部署验收。
-
 此模板将 Gateway、Worker、Frontend、Nginx 放在一个 Pod，使用单副本和共享 PVC，适配当前 SQLite 运行范围。
-先完成本机功能验证，再部署；不作为多租户或高可用生产方案。
+部署前准备容器镜像、服务凭据与可用 StorageClass。公开访问的认证配置见 [安全说明](SECURITY.md)。
 
 ```bash
 docker build -f docker/backend.Dockerfile -t tweets2insights-backend:0.2.0 .

@@ -13,9 +13,6 @@ Tweets2Insights 将一次事件研究组织为可追溯的工作流：导入帖�
 
 项目采用 **Next.js 工作台 + FastAPI Gateway + LangGraph Agent Runtime + MCP 领域工具 + 独立 Worker**。Agent 负责规划和专业评阅；数据处理、数值计算与报告生成由领域模块执行，任务配置和产物按版本保存。
 
-> [!NOTE]
-> 当前开发位于 `refine` 分支，处于研究预览阶段。新架构源码已写入，并完成静态检查及后端安装包构建；完整应用、真实供应商、Demo 和数值实验仍待统一验证。详见[项目状态](#project-status)。
-
 <a id="features"></a>
 ## 核心能力
 
@@ -30,7 +27,7 @@ Tweets2Insights 将一次事件研究组织为可追溯的工作流：导入帖�
 
 **生产流程使用模型弱标注，标注后自动进入分析，不逐条安排人工复核。** 人工标注仅用于独立 Demo 的方案评测。自动校验、字段拒判、失败记录、预算和版本追溯仍保留；缺失或失败不会被填成“中性”。
 
-Jev 与阿里 decision 已按官方 System One 协议实现原生适配；实际账号、模型可用性和收费仍需真实联调。GLM 负责生成式 Agent 推理，与弱标注模型独立配置。视觉及其他平台保留[操作者连接器](doc/modules/architecture-rewrite.md#功能脚本与外部接入的区别)。功能接线、论坛角色和迁移语义见[完整工作流说明](doc/modules/full-workflow.md)。
+Jev 与阿里 decision 使用原生 System One 适配器。GLM 负责生成式 Agent 推理，与弱标注模型独立配置。视觉及其他平台通过[连接器](doc/modules/architecture-rewrite.md#外部服务接入)扩展。阶段流程、论坛角色和工具说明见[完整工作流](doc/modules/full-workflow.md)。
 
 <a id="quickstart"></a>
 ## 快速开始
@@ -102,7 +99,7 @@ uv run --project backend python scripts/dev.py start
 uv run --project backend python scripts/dev.py stop
 ```
 
-日志默认保存在 `.app-state/gateway.log`、`.app-state/worker.log` 和 `.app-state/frontend.log`。若页面未就绪，先查看对应日志；启动脚本打印进程启动信息不等于服务已通过健康检查。
+日志默认保存在 `.app-state/gateway.log`、`.app-state/worker.log` 和 `.app-state/frontend.log`。启动失败或页面无法访问时，查看对应服务的日志。
 
 <a id="first-analysis"></a>
 ## 第一次分析
@@ -122,7 +119,7 @@ uv run --project backend python scripts/dev.py stop
 <details>
 <summary>上传数据格式</summary>
 
-上传文件为 JSON 数组，元素遵循 [`PostRecord`](backend/src/domain/opinion_core/schemas/records.py)。以下是字段示例，不是 Demo 或评测数据：
+上传文件为 JSON 数组，元素遵循 [`PostRecord`](backend/src/domain/opinion_core/schemas/records.py)。字段示例：
 
 ```json
 [
@@ -209,7 +206,7 @@ Tweets2Insights/
 │   │   ├── sandbox/            # 受限线程文件区
 │   │   ├── config/             # 配置加载
 │   │   └── domain/             # 标注、证据、分析、预测、情景、报告
-│   └── tests/                  # 新后端测试位置，待补齐
+│   └── tests/                  # 后端单元与集成测试
 ├── frontend/src/
 │   ├── app/                    # 页面与布局
 │   ├── components/             # 工作台、任务及产物界面
@@ -223,7 +220,7 @@ Tweets2Insights/
 └── legacy/                     # 原 PocketFlow 兼容入口
 ```
 
-领域源码已迁入 `backend/src/domain`；根目录同名包保留导入转发。旧 Streamlit 专项视图和 PDF 导出位于 `intelligent_ui`。更多保留目录及逐项说明见 [2.7 项目目录结构总览](doc/project-structure.md)。
+领域源码位于 `backend/src/domain`；根目录同名包保留导入转发。旧 Streamlit 专项视图和 PDF 导出位于 `intelligent_ui`。完整目录见[项目目录](doc/project-structure.md)。
 
 <a id="configuration"></a>
 ## 配置与扩展
@@ -246,7 +243,7 @@ Tweets2Insights/
 docker compose -f docker/docker-compose-dev.yaml up --build
 ```
 
-默认入口为 `http://127.0.0.1:2026`。生产 Compose 与 Kubernetes 配置见[部署说明](doc/deployment.md)和 [K8s 快速开始](K8S_QUICK_START.md)。这些模板尚未部署验收；当前服务面向本机单操作者，访问控制与文件隔离范围见 [SECURITY.md](SECURITY.md)。
+默认入口为 `http://127.0.0.1:2026`。Compose 与 Kubernetes 配置见[部署说明](doc/deployment.md)和 [K8s 快速开始](K8S_QUICK_START.md)。服务面向本机单用户，访问控制与凭据管理见 [SECURITY.md](SECURITY.md)。
 
 <a id="project-status"></a>
 ## 项目状态与评测
@@ -255,19 +252,12 @@ docker compose -f docker/docker-compose-dev.yaml up --build
 
 | 范围 | 当前状态 |
 |---|---|
-| 新架构与领域模块 | 源码已写入，可复用实现已迁移 |
-| 构建准备 | 后端语法、关键导入、Ruff、配置解析、wheel 构建及前端 TypeScript 检查已完成 |
-| 离线工程检查 | 新后端与相关旧契约模块合计 70 项通过；Next.js 生产构建通过，不代表真实服务或科学效果已验证 |
-| 应用与供应商 | 完整工作流、浏览器交互及真实连接器联调待验证 |
-| 弱标注质量 | 独立 Demo 协议与评分脚本已提供，尚无真实评测结论 |
-| 预测与情景 | 实验实现，尚未完成数值验证、回测验收及效果评估 |
-| 部署 | Compose 与 K8s 模板已提供，尚未部署验证 |
+| 功能实现 | 复盘、论坛、报告、实验预测与情景脚本已接入工作台 |
+| 构建与检查 | 后端静态检查和 wheel 构建、Next.js 生产构建通过 |
+| 离线测试 | 使用合成数据与供应商替身，新后端及相关契约模块合计 70 项通过 |
+| 后续验证 | 真实服务联调、浏览器流程、弱标注 Demo、预测与情景实验、容器部署 |
 
-当前实施顺序为**先完成功能脚本，再统一开展行为测试与研究评测**。本轮已进入离线工程检查，检查使用合成记录和供应商替身，不是人工金标准 Demo；具体命令与结果见[实施记录](doc/upgrade-status.md)。历史测试通过数不代表本次新架构已验收。
-
-弱标注 Demo 将单独建立人工金标准，评估目标字段的 macro-F1、有效覆盖率及同标签模型基线差异。协议中的 600 条样本、F1/覆盖率阈值属于待执行的评测设计，不能作为已测得的成绩。见[弱标注 Demo 协议](doc/testing/weak-label-demo-protocol.md)与[实施记录](doc/upgrade-status.md)。
-
-新 Next.js 前端已接入论坛过程、分析源表、交互图表与章节报告；旧 Streamlit 的 PDF 导出等兼容入口仍保留。浏览器、真实服务、独立 Demo、科学实验及部署仍需分别验收。
+具体检查记录与后续任务见[实施记录](doc/upgrade-status.md)。弱标注 Demo 按独立人工金标准评估 macro-F1、有效覆盖率和同标签基线差异，样本划分与目标阈值见[评测协议](doc/testing/weak-label-demo-protocol.md)。
 
 <a id="documentation"></a>
 ## 文档导航
@@ -281,7 +271,7 @@ docker compose -f docker/docker-compose-dev.yaml up --build
 | 模型、环境变量与连接器 | [配置](doc/configuration.md) · [连接器协议](doc/modules/architecture-rewrite.md) |
 | 数据契约与弱标注 | [契约](doc/modules/opinion-contracts.md) · [自动标注](doc/modules/automatic-labeling.md) |
 | 前端与部署 | [前端说明](doc/frontend-guide.md) · [部署说明](doc/deployment.md) |
-| 研究评测与实施证据 | [Demo 协议](doc/testing/weak-label-demo-protocol.md) · [实施记录](doc/upgrade-status.md) |
+| 研究评测与开发进度 | [Demo 协议](doc/testing/weak-label-demo-protocol.md) · [实施记录](doc/upgrade-status.md) |
 
 ## 参与开发
 
@@ -301,4 +291,4 @@ npm --prefix frontend run check
 - [Tweets2Insights 原第二阶段](doc/modules/stage2_analysis.md)：论坛能力的直接设计来源，保留并改进工具选择、图表补全、补搜、反思与收敛机制；角色按任务启用。
 - [Open Deep Research](https://github.com/langchain-ai/open_deep_research)：参考其将快速开始、模型/搜索配置与评测分开说明的结构。
 
-以上为架构或文档组织参考，不表示继承其全部能力或评测结果。当前仓库尚未提供独立 `LICENSE` 文件，本页不声明特定开源许可证。
+许可证文件待补充。

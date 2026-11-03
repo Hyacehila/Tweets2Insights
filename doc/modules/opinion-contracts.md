@@ -12,8 +12,8 @@ PostRecord 保留原始 ID、时间、来源和媒体引用。缺失或无法解
 parent_ref 是同平台父帖的原始 ID；thread_ref 可保存平台原生讨论线程 ID。话题共现优先按 thread_ref 分组，
 否则沿已知父引用查找线程根；不能把单标签帖子解释为多话题共现。
 AnnotationRecord 每字段分别存 accepted/abstained/failed/missing；只有 accepted 带值。
-provider_confidence 单列模型自报置信度，不能自动当作 probability；自动标注入口不声称已完成置信度校准。
-原生 System One 可保存 probabilities、被选类别 probability 和 probability_margin；这些均是供应商输出/派生量，独立 Demo 才能评估校准质量。
+provider_confidence 保存模型自报置信度，与 probability 分列。
+原生 System One 可保存 probabilities、被选类别 probability 和 probability_margin；这些字段记录供应商输出及其派生量，校准质量通过独立 Demo 评估。
 立场只接受 support/oppose/neutral 且必须绑定 target_id；情感为 [-1,1] 显示编码。
 RunManifest 保存数据、代码、schema、模型、提示词版本、seed、预算与配置，拒绝含凭据名称的配置字段。
 
@@ -28,9 +28,9 @@ migrate_file('data/old.json', 'data/migrated-v1.json', schema_version='event-v1'
 多义/未映射主题拒判。情感 1–5 以 `(score-3)/2` 编码；不推导立场。
 旧发布者、情绪词未经新事件词库映射仍标缺失，待重标注。原字段完整归档，迁移清单记录
 源 SHA256、映射版本、时区、数量、归档字段、丢失字段和重标注数量。输出必须为新文件。
-`legacy-unverified` 表示旧标签质量未验证；不能当作通过新标注质量门槛的数据。
+`legacy-unverified` 标识迁移后的旧标签，其质量评估状态为未验证。
 
 验证：契约/迁移、现有数据格式和 Stage1 节点测试。新增实际 Stage1 fixture 的 topics 列表回归。
 M0 质量/覆盖率/金标准规模已登记于[弱标注 Demo 协议](../testing/weak-label-demo-protocol.md)，人工验证仅用于 Demo。
-正式运行以自动校验后的模型弱标注进入分析，不要求逐批人工复核；当前仍无真实标注成本或质量结论。
+正式运行使用自动校验后的模型弱标注进入分析。
 后续阶段见[升级记录](../upgrade-status.md)。

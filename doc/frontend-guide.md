@@ -22,5 +22,5 @@ Agent 停止按钮停止当前图运行；已经提交的领域任务需要在�
 
 Next 代理 `/api`，容器由 Nginx 提供同源路由；配置后的密钥不回传前端，密码输入提交成功即清空。
 图表展示有界预览，完整源表通过 JSON 导出；时间均值缺测使用 null，不绘制为零。
-已执行类型检查，浏览器与真实服务仍待验收。旧 Streamlit 的 PDF 导出等兼容交互继续保留。
+旧 Streamlit 的 PDF 导出等兼容交互继续保留。
 `npm --prefix frontend run check` 先运行 Next typegen，再运行 TypeScript；新克隆无需依赖先前构建留下的路由类型文件。

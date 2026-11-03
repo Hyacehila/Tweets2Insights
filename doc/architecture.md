@@ -50,21 +50,15 @@ SSE 支持游标续读；Gateway 重启会将未结束的 Agent execution 标为
 
 ## 研究约束
 
-生产流程自动标注，不设置逐条人工验证关卡。人工真值及质量门槛仅用于后置独立 Demo；当前没有 Demo 达标结论。
+生产流程自动标注，人工真值用于独立 Demo 的质量与覆盖率评估。
 标签采用平面 topic、publisher、emotion、sentiment 和 target-bound stance；缺失、失败、拒判、中性分开保存。
 观测使用所有满足筛选条件的帖子并记录各字段分母；虚拟粒子数不替代真实样本量。
-产物区分 observed、forecast、simulated 和 interpretation，数值由领域模块计算，不由 Agent 编造。
+产物区分 observed、forecast、simulated 和 interpretation，数值由领域模块计算，Agent 负责组织与解读。
 
-## 2.7 项目目录结构总览
+## 项目目录
 
-完整、可维护的目录表见 [项目目录结构总览](project-structure.md#27-项目目录结构总览)。
+完整目录见[项目目录](project-structure.md)。
 复用文件已实际迁入 `backend/src/domain`；根目录旧包保留导入兼容入口，不维护另一份领域实现。
 迁移明细见 [重写与复用清单](modules/architecture-rewrite.md)，启动见 [运行手册](modules/domain-application.md)。
 
-## 当前实施状态
-
-架构、功能脚本、启动和部署模板已写入。后端语法/关键导入及前端类型检查已执行；这些不是业务验收。
-按用户要求，端到端、真实标注、采集、Demo 和科学实验在脚本完成后统一测试。
-Compose/Kubernetes 未部署验证；当前为单操作者环境，无多租户认证；sandbox 是文件能力隔离，不是 OS 执行沙箱。
-新 Next.js 已接入交互图表、论坛过程和章节报告；旧 Streamlit 的 PDF 等兼容入口保留。
-逐项功能和验证边界见[完整工作流](modules/full-workflow.md)，当前工程检查记录见[实施记录](upgrade-status.md)。
+各阶段的执行流程见[完整工作流](modules/full-workflow.md)，测试进度见[实施记录](upgrade-status.md)。

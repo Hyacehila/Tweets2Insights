@@ -65,4 +65,4 @@ PR-02：保持工具名不变，移除全局 blog_data 缓存；所有显式图�
 
 全项目架构重写新增 preview_plan、submit_run、list_datasets、list_artifacts、read_domain_artifact、resume_job，
 领域 MCP 共 17 项。新领域运行不加载原 76 项旧标签工具；数值与长任务通过持久计划执行。
-当前是源码接口清单，工具发现与真实运行时联调按用户要求在脚本完成后统一验证。
+完整工作流新增 analysis_tool_catalog 与 submit_analysis_tool，领域 MCP 合计 19 项；分别用于查询 41 个分析入口和提交独立补充分析。

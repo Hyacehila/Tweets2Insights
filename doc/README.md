@@ -1,7 +1,6 @@
 # Tweets2Insights 文档索引
 
-更新：2026-11-03。项目介绍、核心能力和首次启动步骤见[项目 README](../README.md)。
-本索引按使用与开发任务组织；新默认应用为 Next.js + FastAPI + LangGraph + 独立领域 Worker。
+项目介绍、核心能力和首次启动步骤见[项目 README](../README.md)。
 
 ## 开始使用
 
@@ -16,12 +15,11 @@
 
 ## 理解架构与扩展
 
-- [完整工作流与论坛重构](modules/full-workflow.md)：阶段依赖、原第二阶段的继承、41 个工具、决策模型、隐空间模型和报告 Agent。
-
-- [系统架构](architecture.md)：应用分层、依赖方向与研究边界。
-- [2.7 项目目录结构总览](project-structure.md)：默认入口、领域源码与兼容目录。
+- [完整工作流](modules/full-workflow.md)：阶段依赖、论坛角色、41 个工具、决策模型、隐空间模型和报告 Agent。
+- [系统架构](architecture.md)：应用分层、依赖方向与研究约束。
+- [项目目录](project-structure.md)：应用入口、领域源码与兼容目录。
 - [Agent Runtime](modules/agent-runtime-architecture.md)：Leader、子 Agent、记忆、检查点、MCP 与 SSE。
-- [架构重写与迁移清单](modules/architecture-rewrite.md)：复用归属、连接器协议、数值假设与验证顺序。
+- [架构重写与迁移清单](modules/architecture-rewrite.md)：复用归属、连接器协议与数值假设。
 - [贡献指南](../CONTRIBUTING.md)：环境、模块依赖和文档同步要求。
 - [安全边界](../SECURITY.md)：本机部署、凭据、文件能力和访问控制范围。
 
@@ -29,19 +27,19 @@
 
 - [数据契约与迁移](modules/opinion-contracts.md)：事件、数据版本、标签及无损历史迁移。
 - [自动弱标注](modules/automatic-labeling.md)：搜索前置、冻结 Schema、字段状态和供应商接入。
-- [搜索供应商](modules/search-providers.md)：Tavily/DeepSeek 单选、证据字段与验收状态。
+- [搜索供应商](modules/search-providers.md)：Tavily/DeepSeek 配置、证据字段与调用方法。
 - [领域 MCP 接入](modules/domain-gateway.md)：领域服务的基础接口与早期接入记录；当前启动方式以运行手册为准。
 
 ## 验证与实施状态
 
 - [项目状态](../README.md#project-status)：源码、静态检查、真实服务与研究验证的当前概览。
-- [升级实施记录](upgrade-status.md)：变更证据、历史检查结果及待完成项。
+- [升级实施记录](upgrade-status.md)：版本变更、检查结果及后续任务。
 - [弱标注 Demo 协议](testing/weak-label-demo-protocol.md)：独立人工金标准、质量与覆盖率评测；不进入日常标注流程。
-- [测试工作流](testing/testing_workflow.md)：测试分层与当前先实现、后统一验证的顺序。
+- [测试工作流](testing/testing_workflow.md)：测试分层、执行命令与用例映射。
 
 ## 历史与兼容文档
 
-以下文档用于理解保留的 PocketFlow、旧 Dashboard 和工具实现，不作为新应用的默认启动指南：
+以下文档介绍保留的 PocketFlow、旧 Dashboard 和工具实现：
 
 - [旧项目说明](../legacy/README.md) · [历史架构](legacy-architecture.md)
 - [Stage 1 数据增强](modules/stage1_enhancement.md)

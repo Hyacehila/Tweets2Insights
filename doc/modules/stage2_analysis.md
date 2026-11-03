@@ -17,7 +17,7 @@ Stage2 将 Stage1 增强数据转换为可报告化分析产物，输出：
 
 当前已完成 **Track B 全量（B1~B9）**：双信源 + 动态论坛循环 + 实时补充 + 合并收敛 + 全链路 live API 验证。
 
-新增上下文能力（本轮）：
+上下文能力：
 
 - `analysis_context.time_range / time_range_text`：由增强数据时间字段（`publish_time`/`created_at`）提取。
 - `analysis_context.user_analysis_instruction`：来自 `pipeline.user_analysis_instruction`。
@@ -88,7 +88,7 @@ flowchart LR
   - `supplement_search`
   - `supplement_visual`
   - `sufficient`
-- `ForumHostNode` 本轮新增：
+- `ForumHostNode` 的职责：
   - 输出 `host_narrative`（支持结构化输入并标准化为【事件脉络】【观点综合】【深层分析】【引导问题】文本）
   - 累积 `forum.debate_logs`（跨轮讨论脉络）
 - `SupplementDataNode`：按主持人 directive 调用指定 MCP 工具子集

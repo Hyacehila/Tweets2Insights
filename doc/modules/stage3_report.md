@@ -144,7 +144,7 @@ stage3:
 - 旧结构：`insight_key -> [ {source,evidence,...}, ... ]`
 - 新结构：`insight_key -> {text, supporting_evidence:[...], confidence,...}`
 
-正文证据融合规则（本轮）：
+正文证据融合规则：
 
 - 每个实质性段落必须内嵌证据角标（如 `[E1]`）
 - 多证据并列必须写作 `[E1][E2]`（禁止 `[E1, E2]`）

@@ -1,7 +1,6 @@
 # 全项目架构重写与迁移清单
 
-更新：2026-11-03。用户调整实施顺序：先写完功能脚本，再统一测试；Demo 与真实标注评测后置。
-此前 454 项通过是重写前的快照，不能用于证明本次新架构已验收。
+本文记录模块职责、代码复用与外部服务接入方式。
 
 ## 主链与边界
 
@@ -9,7 +8,7 @@
 领域包已迁入 `backend/src/domain`；下表 `opinion_core`、`opinion_gateway`、`crawler_worker` 均指此处的真实源码。
 根目录同名包仅转发导入；前端为 `frontend/src`，旧 `intelligent_ui` 保留兼容。
 外部 Agent Runtime 通过 MCP 提交同一份 RunRequest，不能与领域 Worker 同时调度重试或补搜。
-LangGraph Leader 的自然语言规划脚本已经实现；领域计划编译仍为确定性函数。模型与完整工作流尚未联调验收。
+LangGraph Leader 将自然语言需求转换为 RunRequest，领域编译器据此确定阶段依赖。
 
 | 层 | 源码 | 职责 |
 |---|---|---|
@@ -27,7 +26,7 @@ LangGraph Leader 的自然语言规划脚本已经实现；领域计划编译仍
 | 内容与结构 | opinion_core/reporting/ | 内容 Agent、社科 Agent、布局 Agent；证据与数值绑定、引用校验及确定性渲染 |
 | 智能工作台 | frontend/src；intelligent_ui/ 兼容视图 | 默认会话、配置、任务与产物；旧专项图表与按需 PDF 保留 |
 
-## 真实复用与兼容归属
+## 代码复用与兼容入口
 
 | 原实现 | 新架构处理 |
 |---|---|
@@ -41,18 +40,16 @@ LangGraph Leader 的自然语言规划脚本已经实现；领域计划编译仍
 | config.yaml | 新主应用配置；旧配置保存在忽略文件 legacy/config.yaml；领域请求仍由 RunRequest 冻结 |
 | dashboard/app.py | 新工作台兼容启动器；旧多页界面不再作为默认导航 |
 
-旧文件仍可供对照与回退，不代表新主链继续消费旧字段。原始数据、旧增强数据及仓库外笔记不改写。
-
-## 功能脚本与外部接入的区别
+## 外部服务接入
 
 Jev 和阿里 decision 已依据官方 System One 文档实现原生适配，X 已依据官方归档搜索 API 实现分页适配。
-这表示源码接入，不代表真实账号和供应商已联调。其他社交平台及多模态继续使用连接器。
+其他社交平台及多模态通过连接器接入。
 操作者通过 `T2I_CONNECTORS_FILE` 指向本机配置，Agent 只能选择连接器 ID，不能提交命令或任意文件路径。
 连接器是 operator 安装的可执行程序，以 stdin/stdout JSON 通信；stderr 不写入任务产物。
-未配置平台连接器时采集明确失败，未登录时等待本机会话；不会生成假数据或自动换供应商。
+平台连接器缺失时返回配置错误，未登录时进入 waiting_for_auth，登录后可恢复任务。
 
 配置格式为 `{"crawl":{"platform-id":{"command":["absolute-executable","arguments"]}},"label":{},"media":{}}`。
-命令数组来自本机配置，禁止在 MCP RunRequest 中传入；示例配置故意不包含假的可执行端点。
+命令数组由操作者在本机配置；MCP RunRequest 通过连接器 ID 引用。
 
 - crawl：输入 operation=fetch_page、event、cursor、session_ref、remaining_posts/comments；输出 records（标准 PostRecord）、next_cursor。
 - label：输入 operation=label、mode、schema、posts；输出 records（post_id/fields）、usage、cost。接口字段与 WeakLabeler 相同。
@@ -62,37 +59,24 @@ Jev 和阿里 decision 已依据官方 System One 文档实现原生适配，X �
 
 调用账本记录预留、返回或不确定状态。设置金额上限时，每次调用必须有操作者提供的上界价格：
 `T2I_PRICING_FILE` 指向 provider-version → 单次上界费用的 JSON；未知价格时停止付费请求。
-金额预留按声明的上界工作，不证明声明价格与供应商实际账单一致；未知实际费用不会当作零。
+预算按配置的价格上界预留，实际费用根据供应商回执记录；缺少回执时标为未知。
 
 ## 数值实现的研究假设
 
 联合特征为 topic/emotion 的 one-hot（模拟中为概率单纯形坐标）与 stance/sentiment 的 [-1,1] 编码。
 当前默认模型先在训练数据上拟合 PCA，在隐空间联合向量上计算邻域，解码后得到观测摘要和预测分布。
-原观测坐标联合 HK 保留为对照，逐坐标版本仍只作基线；不是将类别 ID 当作有序数值。
+原观测坐标联合 HK 保留为对照，逐坐标版本作为基线。
 观测使用全部满足固定筛选及所需字段有效条件的帖子，不截取活跃账号 Top-N。
 真实 n_t 随窗口变化；固定 particles 仅为虚拟粒子数。EnKF 用一阶/二阶分布摘要，不逐帖匹配粒子。
 每次更新将类别块投影回单纯形，将连续编码限制在 [-1,1]；缺测窗口只预测，不填造观测。
 
-当前是独立实验实现，尚未核实与外部论文模型逐项等价；本机未发现可直接移植的既定论文代码。
-候选参数、类别几何与噪声形式都需后续研究验证。预测区间是集合离散范围，未承诺频率覆盖率。
+该实验模型的研究变量包括候选参数、类别几何和噪声形式。预测区间表示集合离散范围，覆盖率通过独立实验评估。
 滚动诊断包含 latent_hk_enkf、joint_hk_enkf、coordinate_hk_enkf、hk_without_assimilation、persistence 与 linear_distribution。
 每个起点只使用历史前缀重新拟合编码器和选择参数；比较人口统一为联合字段有效记录。
-当标签/检索缺乏当时可用性证据时，historical_availability_verified 保持 false，不宣称严格历史回测。
-情景是条件计算，不作现实干预因果估计。图像贡献由独立三路消融工具评估，不由视觉解释自动推出。
+标签或检索结果缺少历史可用性证据时，historical_availability_verified 保持 false。
+情景计算比较给定机制下的条件差异，现实因果效应需要单独验证。图像贡献通过独立三路消融工具评估。
 
-## 统一测试阶段
+## 运行与测试
 
-依照用户本次指示，先完成上述源码与文档，再执行语法、导入、单元/集成和整体回归。
-实际平台、真实模型、浏览器、人工 Demo 及数值科学验收分别记录，不能用固定响应测试代替。
-现有 Demo 评分脚本保留，正常运行不读取人工真值、也不设置人工审核状态。
-
-运行方法见[新架构运行手册](domain-application.md)。历史架构见[兼容架构存档](../legacy-architecture.md)。
-
-## 历史源码检查记录（首次领域迁移）
-
-对本轮 58 个新增/修改 Python 文件执行 AST 语法解析，JSON 配置解析成功；
-应用服务、运行时、Worker、CLI、工作台、采集和角色绑定模块导入成功。
-静态检查未发现新架构包导入 nodes/flow/pocketflow/legacy 的反向依赖，变更 Markdown 的本地引用均可解析。
-这些仅为源码与导入检查。本次架构重写后未运行行为回归、Demo、真实标注、采集、浏览器或数值实验。
-
-后续完整工作流补全与离线工程验证以[完整工作流](full-workflow.md)和[最新实施记录](../upgrade-status.md)为准。
+运行方法见[运行手册](domain-application.md)，阶段流程见[完整工作流](full-workflow.md)。
+检查结果与后续任务见[实施记录](../upgrade-status.md)，旧模块设计见[兼容架构存档](../legacy-architecture.md)。

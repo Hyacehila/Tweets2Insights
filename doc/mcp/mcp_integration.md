@@ -147,7 +147,7 @@ def sentiment_distribution() -> Dict[str, Any]:
 
 > **命名冲突处理**：部分 `analysis_tools` 函数名与 MCP 工具名冲突（如 `influence_analysis`），在导入时使用别名（`as influence_analysis_tool`）。
 
-### 2.5 返回契约（本轮修复）
+### 2.5 返回契约
 
 - 图表类工具统一返回：`{"charts": [...], "summary": "..."}`  
 - 不再返回大体量 `data` 明细，避免 MCP 序列化体积过大导致阻塞或截断。  

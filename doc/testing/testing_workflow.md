@@ -4,10 +4,8 @@
 > **关联源码**: `tests/` 目录  
 > **上级文档**: [系统设计总览](../architecture.md)
 
-本文档保留项目的常规 TDD 测试分层、执行方式与重构规则。
-2026-11-03 用户明确指定本次架构重写先完成全部功能脚本，再统一测试；本轮采用该实施顺序。
-目前只做源码、关键导入与前端类型检查，不运行 Demo、真实标注、业务或端到端测试。
-新架构入口位于 `backend/src` 和 `frontend/src`；`backend/tests` 是后续新增测试位置，既有根 `tests` 保留待回归。
+新应用测试位于 `backend/tests`；领域契约与历史模块测试位于 `tests`，旧 Dashboard 测试位于 `dashboard/tests`。
+本文列出测试分层、执行命令与重构规则，检查结果统一记录在[实施记录](../upgrade-status.md)。
 
 ## 1. 测试架构（分层 + 按域分组）
 
@@ -33,6 +31,16 @@ tests/
 
 ## 2. 执行命令
 
+新后端与前端检查：
+
+```bash
+uv run --project backend pytest backend/tests -q
+uv run --project backend python scripts/check_structure.py
+npm --prefix frontend run check
+```
+
+以下命令用于根目录领域契约与历史模块套件。
+
 ### 2.1 默认回归执行（推荐，跳过 live API）
 
 ```bash
@@ -51,10 +59,10 @@ uv run pytest tests/e2e/cli -v -m "live_api"
 uv run pytest tests/e2e/dashboard_ui -v -m "ui_e2e and live_api"
 ```
 
-### 2.3 真实运行验收（本地人工）
+### 2.3 旧 PocketFlow 流程检查
 
 ```bash
-uv run main.py
+uv run python -m legacy.main
 ```
 
 验收时需额外检查 `report/`：
@@ -96,7 +104,7 @@ powershell -ExecutionPolicy Bypass -File scripts/run_full_acceptance.ps1 -BaseTe
   - 全链路产物文件（增强数据、Stage2 分析输出、`report.md`、`report.html`、`trace.json`、`status.json`）
 - Windows 长跑场景建议使用 `%TEMP%` 下的基准临时目录（例如 `--basetemp=$env:TEMP\\analysisposts_pytest\\<case>`），避免仓库内受限目录 ACL 干扰。
 - 兼容性说明：`tests/conftest.py` 在 Windows 下对 `os.mkdir(mode=0o700)` 做兼容补丁，避免 Python 3.12 + 受限环境中 `tmp_path` 目录不可读导致的批量误报。
-- 全量验收脚本会将 `PLAYWRIGHT_BROWSERS_PATH` 指向本轮 `basetemp` 子目录，避免默认 `AppData` 目录锁导致 Chromium 安装失败。
+- 全量验收脚本会将 `PLAYWRIGHT_BROWSERS_PATH` 指向该次运行的 `basetemp` 子目录，避免默认 `AppData` 目录锁导致 Chromium 安装失败。
 
 ## 4. 迁移后的关键用例映射
 
@@ -134,9 +142,7 @@ powershell -ExecutionPolicy Bypass -File scripts/run_full_acceptance.ps1 -BaseTe
 
 ## 5. 重构中的测试流程（Red-Green-Refactor）
 
-2026-11-03 本次架构重写的用户指示覆盖下述默认顺序：先完成所有功能脚本，再统一测试。
-Demo、真实标注与科研指标验证后置。此前回归结果只适用于其对应提交，不能复用为新架构验收结论。
-源码阶段允许语法和依赖边界静态检查；行为回归/外部调用另行登记。
+架构重写按“功能脚本 → 离线检查 → 服务联调与研究评测”推进。后续日常重构采用以下流程。
 
 1. **先写测试/更新测试**：先定义期望行为。  
 2. **验证 RED**：`uv run pytest <target>` 必须先失败。  
@@ -180,15 +186,15 @@ Demo、真实标注与科研指标验证后置。此前回归结果只适用于�
 git rm --cached <file>
 ```
 
-## 领域升级测试（2026-11-03）
+## 领域测试覆盖
 
 新增 opinion_contracts、legacy_annotation_migration、job_transitions、multi_event_isolation、
-agent_runtime_tool_contract 和 domain_stdio 测试。domain_stdio 使用真实本机子进程，无付费 API，
-归类为协议集成测试。完整真实用户链路仍须单独 live_api/ui_e2e 验收。
+agent_runtime_tool_contract 和 domain_stdio 测试。domain_stdio 使用本机子进程验证 stdio 协议，
+真实服务与浏览器流程分别使用 live_api/ui_e2e 标记。
 
-持久作业验证：tests/integration/pipeline/test_persistent_worker.py 启动真实本机 Worker 子进程；dashboard/tests/test_opinion_workbench.py 使用 Streamlit AppTest 验证新会话重连与取消/重试，属于离线集成验证，不是浏览器 E2E。
+持久作业验证：tests/integration/pipeline/test_persistent_worker.py 启动真实本机 Worker 子进程；dashboard/tests/test_opinion_workbench.py 使用 Streamlit AppTest 验证新会话重连与取消/重试，属于离线集成测试。
 
 自动标注：test_event_preparation/test_weak_labeling/test_glm_label_provider 及 test_automatic_label_workflow
 使用固定搜索与模型响应验证失败门禁、预算、缓存和全链路落盘。test_demo_evaluation 用合成金标准验证
-评分数学及拒判分母；不能把这些测试结果当作真实模型的 600 条人工 Demo 分数。
+评分数学及拒判分母。独立模型评测使用[Demo 协议](weak-label-demo-protocol.md)。
 评分边界回归覆盖恰好下降 0.03、基线输出不完整；事件准备回归确认失败搜索不会继承旧模型用量。
