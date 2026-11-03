@@ -289,8 +289,8 @@ with st.form("config_form"):
         )
         search_provider = st.selectbox(
             "Stage2 search provider",
-            ["tavily"],
-            index=_safe_index(["tavily"], config["stage2"].get("search_provider", "tavily"), fallback=0),
+            ["tavily", "deepseek"],
+            index=_safe_index(["tavily", "deepseek"], config["stage2"].get("search_provider", "tavily"), fallback=0),
         )
         search_max_results = st.number_input(
             "Stage2 search max results",
@@ -305,10 +305,11 @@ with st.form("config_form"):
             value=int(config["stage2"].get("search_timeout_seconds", 20)),
         )
         search_api_key = st.text_input(
-            "Stage2 Tavily API Key",
-            value=config["stage2"].get("search_api_key", ""),
+            f"Stage2 {search_provider} API Key",
+            value=config["stage2"].get("search_api_key", "") if search_provider == config["stage2"].get("search_provider", "tavily") else "",
+            key=f"search_key_{search_provider}",
             type="password",
-            help="Saved to config.yaml in plaintext. If empty, runtime falls back to TAVILY_API_KEY env.",
+            help=f"Selected provider only. Empty uses {search_provider.upper()}_API_KEY. Saved locally in config.yaml.",
         )
         chart_missing_policy = st.selectbox(
             "Stage2 chart missing policy",

@@ -262,7 +262,7 @@ def validate_config(config: AppConfig) -> None:
         raise ValueError(f"Invalid stage2 chart_tool_policy: {config.stage2.chart_tool_policy}")
     if config.stage2.chart_missing_policy not in {"warn", "fail"}:
         raise ValueError(f"Invalid stage2 chart_missing_policy: {config.stage2.chart_missing_policy}")
-    if config.stage2.search_provider not in {"tavily"}:
+    if config.stage2.search_provider not in {"tavily", "deepseek"}:
         raise ValueError(f"Invalid stage2 search_provider: {config.stage2.search_provider}")
     if int(config.stage2.search_max_results) <= 0:
         raise ValueError("stage2.search_max_results must be >= 1")

@@ -42,3 +42,11 @@ commit_batch 验证所有者、租约、运行状态并按 batch_id 幂等提交
 定向测试 19 项通过，包含真实 Windows stdio 子进程。报告输入/阶段前提测试先失败再实现。
 全量测试暴露旧 Windows os.kill(pid,0) 探测导致中断，新增失败测试后修为 tasklist 精确 PID 读取。
 上游 Agent Runtime/浏览器/真实模型验收仍未执行，M1 不标为完成。见[运行手册](modules/domain-gateway.md)。
+
+## PR-04 搜索单选
+
+统一 provider 接口和两个实际 HTTP adapter，旧 web_search 返回兼容投影，保留完整证据与响应。
+配置和 Pipeline Console 支持二选一；不跨供应商回退，不新增禁用搜索模式。
+46 项定向测试通过。Tavily 单次真实 smoke 因认证失败未通过；DeepSeek 无环境凭据，未调用。
+PR-01 至 PR-03 的全量离线回归为 413 passed / 1 skipped / 4 deselected，4 个旧图表警告。
+后续全量结果以本文件最后一次记录为准。详见[搜索接口](modules/search-providers.md)。

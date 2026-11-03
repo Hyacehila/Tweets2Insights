@@ -270,7 +270,7 @@ os.replace(temp_file.name, output_path)  # 原子替换
 
 ## 9. 搜索封装 `web_search.py`
 
-用于 Stage2 QuerySearchFlow 的网络搜索能力，当前实现 provider 为 `tavily`。
+用于 Stage2 QuerySearchFlow 的网络搜索能力，支持用户单选 `tavily` 或 `deepseek`；完整说明见 [搜索供应商](search-providers.md)。
 
 ### 9.1 函数概览
 
@@ -283,7 +283,7 @@ os.replace(temp_file.name, output_path)  # 原子替换
 
 1. 显式参数 `api_key`  
 2. `config.yaml.stage2.search_api_key`（调用方传入）  
-3. 环境变量 `TAVILY_API_KEY`  
+3. 所选供应商环境变量 `TAVILY_API_KEY` 或 `DEEPSEEK_API_KEY`  
 
 若以上均为空，抛出 `EnvironmentError`。
 
