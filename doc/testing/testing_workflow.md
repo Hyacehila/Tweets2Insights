@@ -180,3 +180,7 @@ agent_runtime_tool_contract 和 domain_stdio 测试。domain_stdio 使用真实�
 归类为协议集成测试。完整真实用户链路仍须单独 live_api/ui_e2e 验收。
 
 持久作业验证：tests/integration/pipeline/test_persistent_worker.py 启动真实本机 Worker 子进程；dashboard/tests/test_opinion_workbench.py 使用 Streamlit AppTest 验证新会话重连与取消/重试，属于离线集成验证，不是浏览器 E2E。
+
+自动标注：test_event_preparation/test_weak_labeling/test_glm_label_provider 及 test_automatic_label_workflow
+使用固定搜索与模型响应验证失败门禁、预算、缓存和全链路落盘。test_demo_evaluation 用合成金标准验证
+评分数学及拒判分母；不能把这些测试结果当作真实模型的 600 条人工 Demo 分数。

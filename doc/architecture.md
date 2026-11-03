@@ -92,6 +92,14 @@ flowchart TD
     end
 ```
 
+## Domain upgrade execution (2026-11-03)
+
+- opinion_gateway.worker 从 SQLite 领取 inventory_report，使用唯一租约令牌和阶段检查点恢复执行；最终结果与完成状态在同一事务提交。
+- opinion_workbench 从持久任务列表恢复事件视图，不依赖旧会话内存；模型标注尚未接入该页。
+- opinion_gateway.label_workflow 提供显式自动弱标注 CLI：所选搜索 → 冻结 schema → 批量模型标注 → 字段校验/拒判 → 版本缓存与覆盖统计。
+- opinion_core.evaluation.demo 是独立 Demo 评分入口，不被生产标注流程调用，不创建人工审核环节。
+- 默认 PocketFlow 入口与旧工具仍兼容运行。新领域标签不包含 belief/publisher_decision，旧消费者的整体迁移仍未完成。
+
 ## Utility Functions
 
 > Notes for AI:

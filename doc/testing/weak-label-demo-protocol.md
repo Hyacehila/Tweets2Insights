@@ -62,3 +62,24 @@ Demo 尚未完成时可继续实现与调试工程，但不能把预登记阈值
 本协议明确了外层实施计划中 M0、M2b、M5 的“人工金标准／质量门槛”适用范围：
 人工验证属于 Demo 方案验收，不属于正式数据处理流程。此前“规模／门槛待确认”的记录由本协议更新。
 下一步是实现自动弱标注链路与独立 Demo 评测入口，Demo 人工标注不作为日常任务的前置输入。
+
+## 已实现的评分入口
+
+`opinion_core.evaluation.demo.evaluate_demo` 与同名模块 CLI 已实现首版单标签评分，包括主情绪单选。
+固定类别集合计算 macro-F1，零分母记 0；accepted 子集为空时质量值为 null。
+输出逐字段 accepted 子集 F1、全测试集 F1、覆盖率、每类覆盖、混淆矩阵、状态计数、基线差值、共同 accepted 子集比较。
+样本规模不为 200/400 时可以输出诊断指标，但整体 passed 必为 false。空金标准、重复 ID、分组跨集合、
+非法标签及立场 target_id 不匹配直接拒绝，不自动修正真值。
+
+输入格式：gold.json 为记录列表，每条含 post_id、group_id、target_id、split（calibration/test）、
+labels（topic/publisher/emotion/sentiment/stance 五字段）；candidate.json 与 baseline.json 为独立测试集
+AnnotationRecord 列表，或包含 annotations 的标注结果文件。vocabulary.json 为各字段固定类别列表。
+分组必须事先纳入事件/时间、重复帖及图文版本信息；程序只能检查提供的 group_id，不能凭字段自动证明已排除所有近重复。
+
+```powershell
+uv run python -m opinion_core.evaluation.demo --gold gold.json --candidate candidate.json --baseline baseline.json --vocabulary vocabulary.json --output demo-evaluation.json
+```
+
+输出包含输入 SHA256 与协议版本；返回码 0 表示全部条件通过，2 表示未通过。
+该命令不调用 API，不生成或冒充人工真值，不是生产任务的依赖。当前只有合成测试验证评分程序，
+尚无真实 600 条人工金标准或 Jev/其他决策模型的 Demo 评测结果。
