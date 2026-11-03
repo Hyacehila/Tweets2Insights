@@ -7,6 +7,16 @@ from datetime import datetime, timedelta, timezone
 from utils.run_state import is_running, lock_path, set_running
 
 
+def test_windows_pid_probe_does_not_signal_process(monkeypatch):
+    from utils import run_state
+    monkeypatch.setattr(run_state.sys, 'platform', 'win32')
+    def unsafe_signal(*args):
+        raise AssertionError('os.kill(pid, 0) is not a safe Windows existence probe')
+    monkeypatch.setattr(run_state.os, 'kill', unsafe_signal)
+    monkeypatch.setattr(run_state.subprocess, 'check_output', lambda *a, **k: '"python.exe","12345","Console","1","123 K"')
+    assert run_state._pid_alive(12345)
+
+
 def test_run_state_lock(monkeypatch, tmp_path):
     monkeypatch.chdir(tmp_path)
 

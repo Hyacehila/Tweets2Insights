@@ -6,6 +6,7 @@
 ## Architecture
 - [Upgrade status](upgrade-status.md) — 实施证据与未完成项。
 - [Opinion contracts](modules/opinion-contracts.md) — 版本契约与无损历史迁移。
+- [Domain gateway](modules/domain-gateway.md) — 上传、统计、证据、报告的 MCP 接入与运行限制。
 - [System Architecture](architecture.md) — Core system architecture, Agent flows, shared state schema, and node definitions.
 
 ## Modules & Processing Detail

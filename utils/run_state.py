@@ -83,14 +83,6 @@ def _pid_alive(pid: int) -> bool:
         return False
     if sys.platform == "win32":
         try:
-            os.kill(pid, 0)
-            return True
-        except PermissionError:
-            # PID exists but belongs to another user/session.
-            return True
-        except OSError:
-            pass
-        try:
             CREATE_NO_WINDOW = 0x08000000
             output = subprocess.check_output(
                 ["tasklist", "/fi", f"PID eq {pid}", "/fo", "csv", "/nh"],
@@ -100,7 +92,8 @@ def _pid_alive(pid: int) -> bool:
                 stderr=subprocess.DEVNULL,
                 creationflags=CREATE_NO_WINDOW,
             )
-            return str(pid) in output
+            import csv
+            return any(len(row) > 1 and row[1] == str(pid) for row in csv.reader(output.splitlines()))
         except Exception:
             return False
     else:

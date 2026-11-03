@@ -24,6 +24,7 @@ report/images/
 .pytest_cache/
 .pytest_tmp/
 .pytest_tmp_local/
+.opinion-assets/
 
 # Development process docs
 /dev_progress.md

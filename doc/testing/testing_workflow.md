@@ -1,6 +1,6 @@
 # 测试工作流指南
 
-> **Last Updated**: 2026-02-22  
+> **Last Updated**: 2026-11-03  
 > **关联源码**: `tests/` 目录  
 > **上级文档**: [系统设计总览](../architecture.md)
 
@@ -172,3 +172,9 @@ powershell -ExecutionPolicy Bypass -File scripts/run_full_acceptance.ps1 -BaseTe
 ```bash
 git rm --cached <file>
 ```
+
+## 领域升级测试（2026-11-03）
+
+新增 opinion_contracts、legacy_annotation_migration、job_transitions、multi_event_isolation、
+agent_runtime_tool_contract 和 domain_stdio 测试。domain_stdio 使用真实本机子进程，无付费 API，
+归类为协议集成测试。完整真实用户链路仍须单独 live_api/ui_e2e 验收。
