@@ -33,3 +33,5 @@ report/images/
 
 # Playwright Browsers
 .playwright-browsers/
+
+.pytest_tmp_stdio/

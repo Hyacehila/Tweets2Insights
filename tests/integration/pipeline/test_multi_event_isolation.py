@@ -43,3 +43,13 @@ def test_legacy_loader_has_no_stale_global_cache(tmp_path, monkeypatch):
     assert get_blog_data()[0]['content'] == 'one'
     path.write_text('[{"content":"two"}]')
     assert get_blog_data()[0]['content'] == 'two'
+
+
+def test_event_and_run_case_are_distinct_on_windows(tmp_path):
+    repo = DatasetRepository(tmp_path)
+    one = repo.register('Event', [{'content': 'x'}])
+    with pytest.raises(FileNotFoundError):
+        repo.read('event', one['dataset_id'])
+    first = repo.run_dir('Event', one['dataset_id'], 'Run')
+    second = repo.run_dir('Event', one['dataset_id'], 'run')
+    assert first.resolve() != second.resolve()

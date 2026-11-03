@@ -36,9 +36,11 @@ MCP 不接收任意文件路径；本地操作者在启动时设置资产根目�
 ## 验证与限制
 
 MCP 内存传输测试覆盖发现、输入拒绝、阶段前提、统计、证据、报告和跨事件作业访问。
-另用真实 Python 子进程 stdio 在 Windows 验证工具发现与上传，未调用外部模型。
+另用真实 Python 子进程 stdio 在 Windows 验证发现、上传、统计、证据、短报告和产物读取，未调用外部模型。
 Windows 旧运行锁的 PID 检测已改用隐藏 tasklist，不向进程发送 signal。
 
 尚未完成：上游 Agent Runtime 安装/浏览器/真实模型端到端验收、长任务调度 UI、刷新后运行选择、
 完整 ContentBundle、外部证据论坛和新标签标注。当前 Streamlit 页面保存会话内引用；重启后可经 MCP
 用已记录 event/dataset/run/job ID 读取持久资产。不要将本地协议测试称为真实 API 或浏览器 E2E。
+
+物理目录使用 SHA256(event_id)/runs/dataset_id/SHA256(run_id)，避免 Windows 大小写与保留名称冲突。RunManifest 记录领域源码 SHA256。

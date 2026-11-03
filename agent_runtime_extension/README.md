@@ -16,6 +16,6 @@ Use at most 6 turns and 120 seconds per role; no nested delegation. Bind the dis
 to `subagents.custom_agents` tools, with model=inherit, max_turns=6, timeout_seconds=120.
 Do not guess runtime prefixes or grant all tools when discovery fails.
 
-This milestone tests the local domain MCP protocol on Windows. It does not install or validate
+This milestone tests the local domain MCP upload-to-report protocol on Windows. It does not install or validate
 the upstream Leader Agent, browser subprocess, model calls or full Intelligent UI runtime.
 See [runbook](../doc/modules/domain-gateway.md) for runnable local integration and limits.

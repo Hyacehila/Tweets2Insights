@@ -1,6 +1,6 @@
 # 阶段 3：报告生成子系统
 
-> **文档状态**: 2026-02-22 更新  
+> **文档状态**: 2026-11-03 更新
 > **关联源码**: `nodes/stage3/*`, `flow.py`, `config.py`  
 > **上级文档**: [系统设计总览](../architecture.md)
 
@@ -183,3 +183,9 @@ shared["stage3_results"]["output_files"] = {
 - 将 `3` 追加到 `shared["pipeline_state"]["completed_stages"]`
 - 更新 `shared["pipeline_state"]["current_stage"] = 3`
 - 返回 `"default"`，在线性主链中继续进入 `TerminalNode`
+
+## 领域工具复用（2026-11-03）
+
+纯函数 _render_inlines/_render_block/render_blocks_to_markdown 迁到 opinion_core/reporting/ir_markdown.py；
+旧 nodes.stage3.ir_renderer 保留导入兼容与节点类。领域服务无需为渲染文本导入完整 nodes/NLP/NumPy。
+函数逻辑保持原样，旧渲染测试与真实 stdio 短报告同时回归。

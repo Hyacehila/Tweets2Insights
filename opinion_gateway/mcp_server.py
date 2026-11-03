@@ -1,5 +1,6 @@
 """Explicit asset-ID domain tools. Run with uv run python -m opinion_gateway.mcp_server."""
 import argparse
+import hashlib
 import json
 import uuid
 from collections import Counter
@@ -15,6 +16,14 @@ class DomainService:
     def __init__(self, root):
         self.repo = DatasetRepository(root)
         self.jobs = JobStore(self.repo.root / 'jobs.sqlite')
+        source_root = Path(__file__).resolve().parents[1]
+        sources = sorted((source_root / 'opinion_core').rglob('*.py')) + sorted((source_root / 'opinion_gateway').rglob('*.py'))
+        sources += [source_root / 'nodes/stage3/ir_renderer.py']
+        digest = hashlib.sha256()
+        for source in sources:
+            digest.update(str(source.relative_to(source_root)).replace('\\', '/').encode())
+            digest.update(source.read_bytes())
+        self.code_version = 'sha256:' + digest.hexdigest()
 
     def register_dataset(self, event_id: str, records: list[dict]) -> dict:
         """Validate uploaded standard records; never starts collection or annotation."""
@@ -58,7 +67,7 @@ class DomainService:
             raise ValueError('report job already running or stopped')
         job = self.jobs.transition(job.job_id, 'running', expected_revision=job.revision)
         try:
-            from nodes.stage3.ir_renderer import render_blocks_to_markdown
+            from opinion_core.reporting.ir_markdown import render_blocks_to_markdown
             evidence = self.read_evidence(event_id, dataset_id, run_id, limit=5)
             blocks = [{'type': 'paragraph', 'text': f"记录总数：{stats['count']}；可解析发布时间：{stats['published_count']}。[S:statistics]"},
                       {'type': 'paragraph', 'text': '本报告仅描述上传资料。尚未执行先导检索、标签质量验收或立场推断。'}]
@@ -68,7 +77,7 @@ class DomainService:
             markdown = '# 上传资料概览\n\n' + render_blocks_to_markdown(blocks)
             atomic_json(directory / 'report.json', {'markdown': markdown, 'statistics': stats, 'evidence': evidence})
             manifest = RunManifest(run_id=run_id, event_id=event_id, dataset_id=dataset_id,
-                                   data_version=dataset_id.removeprefix('ds-'), code_version='inventory-v1')
+                                   data_version=dataset_id.removeprefix('ds-'), code_version=self.code_version)
             atomic_json(directory / 'manifest.json', manifest.model_dump(mode='json'))
             job = self.jobs.transition(job.job_id, 'completed', expected_revision=job.revision)
             return {**job.model_dump(), 'artifact_id': 'report'}
@@ -76,6 +85,8 @@ class DomainService:
             current = self.jobs.get(job.job_id)
             if current.status == 'running':
                 self.jobs.transition(job.job_id, 'failed', expected_revision=current.revision, error_type='render_error')
+            elif current.status == 'cancel_requested':
+                self.jobs.transition(job.job_id, 'cancelled', expected_revision=current.revision, stop_reason='user_cancelled')
             raise
 
     def read_artifact(self, event_id: str, dataset_id: str, run_id: str, artifact_id: str) -> dict:

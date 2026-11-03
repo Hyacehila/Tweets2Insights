@@ -23,6 +23,8 @@ def test_discovery_and_upload_to_report_contract(tmp_path):
             assert report['status'] == 'completed'
             artifact = (await client.call_tool('read_artifact', {**args, 'artifact_id': 'report'})).data
             assert '[P:p1]' in artifact['markdown']
+            manifest = (await client.call_tool('read_artifact', {**args, 'artifact_id': 'manifest'})).data
+            assert manifest['code_version'].startswith('sha256:')
             status = (await client.call_tool('job_status', {'event_id': 'rain', 'job_id': report['job_id']})).data
             assert status['status'] == 'completed'
             with pytest.raises(Exception):
@@ -36,3 +38,21 @@ def test_untrusted_paths_and_input_validation(tmp_path):
         service.register_dataset('x', [{'content': 'missing identifiers'}])
     with pytest.raises(ValueError):
         service.register_dataset('../x', [])
+
+
+def test_cancel_during_render_cannot_publish_report(tmp_path, monkeypatch):
+    service = DomainService(tmp_path)
+    d = service.register_dataset('e', [{'post_id': 'p', 'raw_id': 'p', 'platform': 'test', 'content': 'x'}])
+    args = dict(event_id='e', dataset_id=d['dataset_id'], run_id='r')
+    service.describe_dataset(**args)
+    def interrupted_render(blocks):
+        job = service.jobs.submit('e', 'r', 'short_report', {'dataset_id': d['dataset_id'], 'renderer': 'inventory-v1'})
+        service.cancel_job('e', job.job_id)
+        return 'stale report'
+    monkeypatch.setattr('opinion_core.reporting.ir_markdown.render_blocks_to_markdown', interrupted_render)
+    with pytest.raises(ValueError):
+        service.render_report(**args)
+    job = service.jobs.submit('e', 'r', 'short_report', {'dataset_id': d['dataset_id'], 'renderer': 'inventory-v1'})
+    assert job.status == 'cancelled'
+    with pytest.raises(ValueError):
+        service.read_artifact(**args, artifact_id='report')

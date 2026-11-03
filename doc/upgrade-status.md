@@ -22,7 +22,7 @@ belief network/publisher_decision 的全链路移除属于 M2b，不能仅通过
 
 ## PR-02 运行隔离
 
-DatasetRepository 在服务根目录内使用 event/datasets/ds-SHA256.json，运行目录为 event/runs/dataset/run。
+DatasetRepository 在服务根目录内使用 SHA256(event)/datasets/ds-SHA256.json，运行目录为 SHA256(event)/runs/dataset/SHA256(run)。
 数据按内容版本隔离，无共享可变缓存；每次读取核验指纹。文件写入用同目录临时文件和原子替换。
 路径拒绝越界 ID 和指向根外的链接。run_context 注入所有旧 MCP 显式输出路径；调用者须显式绑定，
 旧 PocketFlow 环境变量模式仍要求独立子进程，不能在同进程并发切换。
@@ -50,3 +50,27 @@ commit_batch 验证所有者、租约、运行状态并按 batch_id 幂等提交
 46 项定向测试通过。Tavily 单次真实 smoke 因认证失败未通过；DeepSeek 无环境凭据，未调用。
 PR-01 至 PR-03 的全量离线回归为 413 passed / 1 skipped / 4 deselected，4 个旧图表警告。
 后续全量结果以本文件最后一次记录为准。详见[搜索接口](modules/search-providers.md)。
+
+## 第一轮边界修复
+
+新增回归发现并修复 Windows 文件系统大小写串事件问题：目录键改为原始 ID 的 SHA256，逻辑 ID 保留原值。
+新增取消发生在渲染期间的回归：取消请求最终落为 cancelled，未完成报告拒绝发布。
+RunManifest.code_version 改为 opinion_core/opinion_gateway 与渲染源码指纹，不使用功能名称冒充代码版本。
+真实 stdio 短报告初次超时，定位到旧 nodes 包引入 NumPy；将既有纯 IR 渲染函数抽至
+opinion_core/reporting/ir_markdown.py，由新旧入口共用。完整 stdio 链路和定向回归共 10 项通过。
+
+## 最终验证快照（2026-11-03）
+
+`uv run pytest tests dashboard/tests -v`：425 passed、1 skipped、5 deselected、4 warnings（21.38 秒）。
+完整日志保留在本地 `.opinion-assets/validation/offline.txt`（运行资产，不入 Git）。
+默认跳过 live_api/ui_e2e；真实 stdio 上传→统计→证据→短报告集成已通过。
+Tavily live 单查询返回 authentication；DeepSeek 未配置凭据。没有真实浏览器或上游 Agent Runtime 验收结论。
+4 个警告来自既有图表刻度/相同坐标范围，未影响断言。
+
+## 下一批实施与前置条件
+
+1. M0：确认人工金标准规模和质量/覆盖率门槛，再冻结评测协议；当前数值建议未获确认，不作为通过依据。
+2. M1：运行时工具前缀绑定、上游固定版本环境验证、持久任务刷新/恢复 UI 和实际 Worker 接入仍待完成。
+3. M2a：修复本机 Tavily 凭据并配置 DeepSeek 环境密钥后，各执行一次小规模真实 smoke；无需重新跑付费大链路。
+4. M2b：成功先导搜索→冻结词库/target→字段级标注与拒判，再迁移所有旧字段消费者和标签 UI。
+5. M3–M7 尚未开始正式实现或科学验收。当前基础提交不表示整个升级或第一层产品已完成。

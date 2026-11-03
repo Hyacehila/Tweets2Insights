@@ -12,6 +12,11 @@ def safe_id(value):
     return value
 
 
+def storage_id(value):
+    """Preserve case distinctions and avoid Windows reserved filenames."""
+    return hashlib.sha256(safe_id(value).encode('utf-8')).hexdigest()
+
+
 def atomic_json(path, value):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -44,11 +49,11 @@ class DatasetRepository:
         encoded = json.dumps(records, sort_keys=True, ensure_ascii=False, allow_nan=False).encode()
         version = hashlib.sha256(encoded).hexdigest()
         dataset_id = 'ds-' + version
-        atomic_json(self.path(event_id, 'datasets', dataset_id + '.json'), records)
+        atomic_json(self.path(storage_id(event_id), 'datasets', dataset_id + '.json'), records)
         return {'event_id': event_id, 'dataset_id': dataset_id, 'data_version': version, 'count': len(records)}
 
     def read(self, event_id, dataset_id):
-        records = json.loads(self.path(event_id, 'datasets', safe_id(dataset_id) + '.json').read_text(encoding='utf-8'))
+        records = json.loads(self.path(storage_id(event_id), 'datasets', safe_id(dataset_id) + '.json').read_text(encoding='utf-8'))
         digest = hashlib.sha256(json.dumps(records, sort_keys=True, ensure_ascii=False, allow_nan=False).encode()).hexdigest()
         if dataset_id != 'ds-' + digest:
             raise ValueError('dataset fingerprint mismatch')
@@ -56,6 +61,6 @@ class DatasetRepository:
 
     def run_dir(self, event_id, dataset_id, run_id):
         self.read(event_id, dataset_id)
-        target = self.path(event_id, 'runs', dataset_id, run_id)
+        target = self.path(storage_id(event_id), 'runs', dataset_id, storage_id(run_id))
         target.mkdir(parents=True, exist_ok=True)
         return target
