@@ -1,6 +1,6 @@
 # MCP Tool Audit
 
-- Last Updated: 2026-02-22
+- Last Updated: 2026-11-03
 
 - Total tool_registry entries: 42
 - MCP exposed tools (unique): 76
@@ -56,3 +56,5 @@
 | topic_network_chart | topic_network_chart | True | 主题演化分析 |
 | topic_ranking_chart | topic_ranking_chart | True | 主题演化分析 |
 | topic_time_evolution | topic_time_evolution | True | 主题演化分析 |
+
+PR-02：保持工具名不变，移除全局 blog_data 缓存；所有显式图表目录改用运行上下文。

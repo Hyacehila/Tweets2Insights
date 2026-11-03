@@ -1,8 +1,8 @@
 # MCP 协议集成文档
 
-> **文档状态**: 2026-02-22 更新  
+> **文档状态**: 2026-11-03 更新  
 > **关联源码**: `utils/mcp_server.py`, `utils/mcp_client/mcp_client.py`  
-> **上级文档**: [系统设计总览](design.md)
+> **上级文档**: [系统设计总览](../architecture.md)
 
 ---
 
@@ -52,23 +52,11 @@ flowchart LR
 
 ### 2.2 数据加载策略
 
-```python
-blog_data = None  # 全局缓存
-
-def get_blog_data():
-    global blog_data
-    if blog_data is not None:
-        return blog_data
-    
-    # 从 ENHANCED_DATA_PATH 环境变量获取数据路径
-    env_path = os.getenv("ENHANCED_DATA_PATH")
-    blog_data = load_enhanced_blog_data(env_path)
-    return blog_data
-```
-
-- **懒加载**：首次调用时从文件加载数据，后续复用全局缓存
-- **路径配置**：通过 `ENHANCED_DATA_PATH` 环境变量传入，由客户端在启动子进程前设置
-- **容错**：加载失败时返回空列表，不阻塞服务器启动
+新领域调用使用 `run_context(root, event_id, dataset_id, run_id)` 绑定仓储和产物路径，
+通过 ContextVar 隔离线程/异步任务。读取按数据 SHA256 校验且返回新对象，无全局数据缓存。
+旧 MCP 子进程仍接受启动时固定的 ENHANCED_DATA_PATH，每次读最新文件；不支持在同一进程中
+通过修改环境变量并发切换事件。缺失配置直接报错，避免把加载失败当空数据。
+所有显式图表 output_dir 均通过 get_images_dir() 注入；旧入口仍保留兼容目录。
 
 ### 2.3 工具注册方式
 

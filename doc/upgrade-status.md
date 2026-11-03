@@ -19,3 +19,18 @@ PR-01 版本化契约与迁移 → PR-02 数据/运行隔离与持久作业 → 
 
 见[契约与迁移](modules/opinion-contracts.md)。新业务在 opinion_core；旧节点仍消费历史字段，
 belief network/publisher_decision 的全链路移除属于 M2b，不能仅通过新契约省略字段就视为已完成。
+
+## PR-02 运行隔离
+
+DatasetRepository 在服务根目录内使用 event/datasets/ds-SHA256.json，运行目录为 event/runs/dataset/run。
+数据按内容版本隔离，无共享可变缓存；每次读取核验指纹。文件写入用同目录临时文件和原子替换。
+路径拒绝越界 ID 和指向根外的链接。run_context 注入所有旧 MCP 显式输出路径；调用者须显式绑定，
+旧 PocketFlow 环境变量模式仍要求独立子进程，不能在同进程并发切换。
+
+JobStore 持久保存参数、幂等键、状态、修订号、租约和批次结果。状态变更必须传当前 revision；
+终态不能复活，取消已接受后完成不能覆盖。Worker 可领取排队/租约过期任务，heartbeat 续约，
+commit_batch 验证所有者、租约、运行状态并按 batch_id 幂等提交。API 费用不确定性仍需标注 Worker 接入时记录。
+当前仅提供作业基础设施，未接付费标注/采集 Worker；不能宣称崩溃后外部请求恰好执行一次。
+
+定向测试：13 项通过，包括不同事件并发目录、跨事件读取拒绝、数据版本、取消/完成竞争、
+重启读回、批次归属，以及旧 PathManager/status/MCP 暴露回归。

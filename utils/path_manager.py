@@ -6,6 +6,26 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from typing import Optional
+from contextlib import contextmanager
+from contextvars import ContextVar
+
+_run_context = ContextVar('opinion_run_context', default=None)
+
+
+def current_run_context():
+    return _run_context.get()
+
+
+@contextmanager
+def run_context(root, event_id, dataset_id, run_id):
+    from opinion_gateway.dataset_repository import DatasetRepository
+    repo = DatasetRepository(root)
+    directory = repo.run_dir(event_id, dataset_id, run_id)
+    token = _run_context.set((repo, event_id, dataset_id, directory))
+    try:
+        yield directory
+    finally:
+        _run_context.reset(token)
 
 
 class PathManager:
@@ -34,6 +54,9 @@ def ensure_dir(path: str) -> str:
 
 
 def get_report_dir(path: Optional[str] = None) -> str:
+    context = current_run_context()
+    if context:
+        return ensure_dir(str(context[3]))
     if path:
         candidate = Path(path)
         if not candidate.is_absolute():
@@ -47,6 +70,9 @@ def get_report_dir(path: Optional[str] = None) -> str:
 
 
 def get_images_dir(path: Optional[str] = None) -> str:
+    context = current_run_context()
+    if context:
+        return ensure_dir(str(context[3] / 'images'))
     if path:
         candidate = Path(path)
         if not candidate.is_absolute():

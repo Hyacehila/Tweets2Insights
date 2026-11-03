@@ -1,8 +1,8 @@
 # 工具函数文档
 
-> **文档状态**: 2026-02-22 更新  
+> **文档状态**: 2026-11-03 更新  
 > **关联源码**: `utils/call_llm.py`, `utils/llm_retry.py`, `utils/data_loader.py`, `utils/console_safe.py`, `utils/path_manager.py`, `utils/status_events.py`, `utils/status_store.py`, `utils/trace_manager.py`, `utils/web_search.py`, `utils/data_sources/*`, `utils/nlp/*`  
-> **上级文档**: [系统设计总览](design.md)
+> **上级文档**: [系统设计总览](../architecture.md)
 
 ---
 
@@ -302,3 +302,7 @@ os.replace(temp_file.name, output_path)  # 原子替换
 ```
 
 调用失败时不抛异常到上层，返回 `error` 字段并给出空 `results`，便于在流程中统一处理失败分支。
+
+## 运行上下文与持久作业（2026-11-03）
+
+run_context 将 report/images 和旧锁文件定位到 event/dataset/run 目录；默认入口不绑定上下文时保留兼容行为。新作业的状态事实源为 opinion_gateway.jobs.JobStore 的 SQLite 表，旧锁只服务旧流程。详见 [升级记录](../upgrade-status.md)。
