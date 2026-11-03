@@ -1,0 +1,61 @@
+flowchart TB
+    UI["研究工作台 · Next.js<br/>上传数据 / 关键词与时间范围<br/>选择复盘、预测、情景及论坛角色"]
+
+    subgraph ORCHESTRATION["应用与 Agent 编排"]
+        direction LR
+        API["FastAPI Gateway<br/>会话 · 上传 · 任务 · 产物"]
+        LEADER["Leader Agent · LangGraph<br/>解析目标 · 生成运行请求"]
+        SERVICE["MCP 领域服务<br/>编译阶段依赖 · 持久任务"]
+        WORKER["DomainWorker<br/>按所选阶段顺序执行<br/>检查点 · 取消 · 恢复"]
+        API --> LEADER --> SERVICE --> WORKER
+    end
+    UI --> ORCHESTRATION
+
+    subgraph PREP["共享数据准备"]
+        direction LR
+        DATA["数据接入<br/>上传 / 已有数据<br/>关键词与时间范围采集"]
+        SAMPLE["高阅读量池<br/>随机抽样"]
+        SCHEMA["Schema Agent<br/>样本 + 检索证据<br/>冻结标签与立场命题"]
+        LABEL["全部输入自动弱标注<br/>Jev / 阿里 decision<br/>GLM / 自定义连接器"]
+        OBS["固定窗口观测<br/>分布摘要 · 源表 · 覆盖率<br/>Tavily / DeepSeek 背景证据"]
+        DATA --> SAMPLE --> SCHEMA -->|标签定义| LABEL --> OBS
+        DATA -->|全部输入| LABEL
+    end
+    ORCHESTRATION --> PREP
+
+    subgraph STUDY["按任务选择的研究阶段"]
+        direction LR
+        ANALYSIS["事件复盘<br/>DataAgent 选择并执行 41 个工具<br/>可选角色论坛 + ForumHost<br/>补数据 / 补图 / 外部搜索补证"]
+        FORECAST["实验预测模型<br/>PCA 训练 → 隐空间联合 HK → EnKF 同化<br/>解码标签分布与集合区间<br/>可选滚动回测与六类模型对照"]
+        SCENARIO["调控情景与建议<br/>同一起点与随机流下配对模拟<br/>效果 / 成本 / Pareto 比较<br/>RecommendationAgent 形成条件建议"]
+        ANALYSIS ~~~ FORECAST
+        FORECAST -->|模型状态与基线| SCENARIO
+    end
+    PREP --> STUDY
+
+    subgraph REPORT["报告协作与呈现"]
+        direction LR
+        CONTENT["ContentAgent<br/>汇总结果与证据<br/>筛选内容 · 提炼要点"]
+        THEORY["SocialScienceAgent<br/>结合人文社科理论<br/>解释分析结果"]
+        LAYOUT["ReportUIAgent<br/>组织章节、图表与引用"]
+        OUTPUT["事件研究报告<br/>交互图表 · 论坛过程 · 来源证据<br/>Markdown / HTML / JSON / ZIP"]
+        CONTENT --> THEORY --> LAYOUT -->|校验与渲染| OUTPUT
+    end
+    STUDY -->|分析结果 · 预测分布 · 措施比较| REPORT
+
+    classDef entry fill:#e8f0ff,stroke:#4975c6,color:#17335b,stroke-width:1.5px
+    classDef prep fill:#e9f7f4,stroke:#309782,color:#124d42,stroke-width:1.4px
+    classDef analysis fill:#eaf2ff,stroke:#507ec6,color:#18385f,stroke-width:1.4px
+    classDef model fill:#f1edff,stroke:#8b71c6,color:#483477,stroke-width:1.4px
+    classDef scenario fill:#fff4df,stroke:#bd9035,color:#705018,stroke-width:1.4px
+    classDef report fill:#eef5fa,stroke:#668ca5,color:#25485e,stroke-width:1.4px
+    class UI,API,LEADER,SERVICE,WORKER entry
+    class DATA,SAMPLE,SCHEMA,LABEL,OBS prep
+    class ANALYSIS analysis
+    class FORECAST model
+    class SCENARIO scenario
+    class CONTENT,THEORY,LAYOUT,OUTPUT report
+    style ORCHESTRATION fill:#f6f9ff,stroke:#c5d5ef
+    style PREP fill:#f6fbfa,stroke:#c5e0d9
+    style STUDY fill:#fafbfe,stroke:#d5deed
+    style REPORT fill:#f5f9fc,stroke:#cbdce8

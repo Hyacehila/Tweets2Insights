@@ -6,7 +6,7 @@ CollectTools → DecisionTools → ExecuteTools → ProcessResult → EnsureChar
 
 ## 功能概览
 
-1. 前端选择数据/关键词输入与复盘、训练预测、情景建议；Leader 编译依赖并依次提交阶段。
+1. 前端选择数据/关键词输入与复盘、训练预测、情景建议；Leader 生成运行请求，领域服务编译依赖，Worker 按阶段执行。
 2. 随机抽取高阅读量候选记录，由 Schema Agent 结合搜索选择标签；抽样不截断后续分析数据。
 3. Typesafe Jev、阿里 decision、GLM 与自定义连接器；用户在本机配置 API 凭据。
 4. 41 个保留分析工具迁移到新契约；独立工具目录、参数验证、结果/图表/来源资产。
@@ -19,38 +19,15 @@ CollectTools → DecisionTools → ExecuteTools → ProcessResult → EnsureChar
 
 ## 业务流程
 
-```mermaid
-flowchart TD
-  U[前端输入数据或关键词并选择阶段] --> L[Leader 校验请求 / 编译依赖]
-  L --> J[唯一领域 Worker]
-  J --> D[注册数据 / 隔离采集]
-  D --> S[高阅读量池随机抽样]
-  S --> K[Schema Agent：样本与检索证据选择标签]
-  K --> A[自动弱标注全部输入]
-  A --> O[固定窗口观测与字段有效性]
-  O --> T[DataAgent：选择并执行工具]
-  T --> F[按需专业角色讨论]
-  F --> H[ForumHost：共识 / 分歧 / 缺口]
-  H -->|补数据或补图| T
-  H -->|补搜| E[所选外部搜索 API]
-  E --> F
-  O --> P[PCA 与 HK 参数训练 / 摘要同化]
-  P --> Q[解码预测分布]
-  P --> C[配对措施模拟 / 成本效果比较]
-  C --> R[建议 Agent]
-  H --> B[内容整理 Agent]
-  Q --> B
-  R --> B
-  B --> X[社科解释 Agent]
-  X --> V[页面布局 Agent / 程序校验]
-  V --> UI[交互报告 / 源表 / 导出]
-```
+![事件研究系统架构](../diagrams/system-architecture.svg)
 
 复盘未选中时，不执行工具规划及论坛；预测、情景或滚动诊断需要共同的模型状态。
 情景即使单独选择，也会计算配对基线预测。计划编译器自动补齐公共前置阶段和最终报告。
 原始数据和每个阶段的资产不覆盖；所有主任务通过同一 JobStore 的租约、心跳、阶段检查点恢复。
 
 ## 与原第二阶段的对应
+
+![Agent Forum 反馈循环](../diagrams/agent-forum.svg)
 
 | 原第二阶段职责 | 新实现 | 优化点 |
 |---|---|---|
@@ -103,6 +80,8 @@ flowchart TD
 Jev/阿里只承担结构化决策；Schema、论坛、内容、社科和布局使用独立 `agent_model`。
 
 ## 实验预测与调控建议
+
+![PCA、联合 HK、同化与配对情景](../diagrams/forecast-scenarios.svg)
 
 1. 原始联合向量为 topic/emotion 单纯形坐标加 stance/sentiment 编码。
 2. PCA 在 `training_cutoff` 以内的联合有效样本上拟合，保存均值、主轴、维数、解释方差和截止点。

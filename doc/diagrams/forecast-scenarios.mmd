@@ -1,0 +1,35 @@
+flowchart TB
+    INPUT["固定时间窗口的有效标签<br/>topic / emotion / stance / sentiment"]
+    VECTOR["联合特征编码<br/>类别单纯形 + 连续坐标"]
+    PCA["训练段拟合 PCA<br/>保存均值、主轴与训练截止点"]
+    HK["隐空间联合 HK<br/>置信邻域与状态演化"]
+    ENKF["EnKF 摘要同化<br/>解码状态 → 一阶 / 二阶观测摘要"]
+    STATE["同化后的模型状态"]
+    INPUT --> VECTOR --> PCA --> HK --> ENKF --> STATE
+    OBS["真实观测摘要<br/>使用窗口内全部适用帖子"] --> ENKF
+    INPUT --> OBS
+    ENKF -.->|下一观测窗口| HK
+
+    FORECAST["基线预测<br/>推进隐状态 · 解码 · 投影到标签空间"]
+    SIM["配对情景模拟<br/>状态偏移 / 置信邻域 / 松弛率<br/>共享起点与随机流"]
+    COMPARE["措施比较<br/>分布差异 · 立场方差 · 负面情绪 · 资源成本"]
+    ADVICE["RecommendationAgent<br/>效果与成本权衡 · 适用条件"]
+    STATE --> FORECAST
+    STATE --> SIM
+    FORECAST -->|基线分布| COMPARE
+    SIM -->|情景分布| COMPARE --> ADVICE
+    BACKTEST["可选滚动回测<br/>每个起点重拟合历史前缀<br/>六类模型 / 基线对照"]
+    VECTOR -.-> BACKTEST
+    RESULT["报告输入<br/>预测分布 · 集合区间 · 模型对照 · 情景建议"]
+    FORECAST --> RESULT
+    BACKTEST --> RESULT
+    ADVICE --> RESULT
+
+    classDef data fill:#e9f7f4,stroke:#309782,color:#124d42,stroke-width:1.4px
+    classDef model fill:#f1edff,stroke:#8b71c6,color:#483477,stroke-width:1.4px
+    classDef scenario fill:#fff4df,stroke:#bd9035,color:#705018,stroke-width:1.4px
+    classDef result fill:#eaf2ff,stroke:#507ec6,color:#18385f,stroke-width:1.4px
+    class INPUT,VECTOR,OBS data
+    class PCA,HK,ENKF,STATE,FORECAST,BACKTEST model
+    class SIM,COMPARE,ADVICE scenario
+    class RESULT result

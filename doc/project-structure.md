@@ -90,7 +90,8 @@ Tweets2Insights/
 │   └── k8s/app.yaml                 # 单副本、共享卷、Secret 引用模板
 │
 ├── scripts/                         # 本地启动/停止、静态检查及兼容启动器
-├── doc/                             # 架构、目录、配置、部署和实施记录
+├── doc/                             # 架构、目录、配置与部署说明
+│   └── diagrams/                    # 系统、论坛、预测情景图及 Mermaid 源文件
 ├── tests/                           # 领域契约与历史模块测试
 ├── configs/                         # 领域请求等示例
 ├── main.py                          # 兼容领域 CLI

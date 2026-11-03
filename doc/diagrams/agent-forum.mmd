@@ -1,0 +1,35 @@
+flowchart TB
+    INPUT["分析目标、固定标签与观测摘要"]
+    PLAN["DataAgent<br/>读取工具目录 · 选择工具与参数"]
+    TOOLS["分析工具箱 · 41 个入口<br/>情绪 / 话题 / 地区 / 互动 / NLP"]
+    EVIDENCE["共享证据<br/>计算结果 · 图表源表 · 网络来源 · 媒体证据"]
+    INPUT --> PLAN --> TOOLS --> EVIDENCE
+    WEB["Tavily / DeepSeek<br/>查询与日期筛选"] --> EVIDENCE
+    MEDIA["可选媒体连接器<br/>OCR 与图像解读"] --> EVIDENCE
+
+    subgraph ROLES["按任务启用的专业角色"]
+        direction LR
+        DATA["data<br/>分布与样本"]
+        SEARCH["search<br/>来源与补搜"]
+        VISUAL["visual<br/>图表与覆盖"]
+        INSIGHT["insight<br/>解释与关联"]
+        METHOD["methodology<br/>口径与方法"]
+        DATA ~~~ SEARCH ~~~ VISUAL ~~~ INSIGHT ~~~ METHOD
+    end
+    EVIDENCE --> ROLES
+    ROLES --> HOST["ForumHost<br/>汇总意见 · 记录共识与分歧<br/>确定证据缺口与下一步行动"]
+    HOST --> ACTION{"主持决策"}
+    ACTION -->|supplement_data / supplement_visual| TOOLS
+    ACTION -->|supplement_search| WEB
+    ACTION -->|证据充分 / 无新增证据 / 达到上限| RESULT["论坛结果<br/>观点与引用 · 轮次记录 · 停止原因"]
+    RESULT --> CONTENT["ContentAgent · 报告内容整理"]
+
+    classDef process fill:#eaf2ff,stroke:#507ec6,color:#18385f,stroke-width:1.4px
+    classDef evidence fill:#e9f7f4,stroke:#309782,color:#124d42,stroke-width:1.4px
+    classDef host fill:#f1edff,stroke:#8b71c6,color:#483477,stroke-width:1.4px
+    classDef output fill:#fff4df,stroke:#bd9035,color:#705018,stroke-width:1.4px
+    class INPUT,PLAN,TOOLS,DATA,SEARCH,VISUAL,INSIGHT,METHOD process
+    class EVIDENCE,WEB,MEDIA evidence
+    class HOST,ACTION host
+    class RESULT,CONTENT output
+    style ROLES fill:#f5f8ff,stroke:#c7d6ed

@@ -1,32 +1,20 @@
 # Tweets2Insights 项目架构
 
-更新：2026-11-03。默认应用采用 Next.js + FastAPI + LangGraph；领域任务由独立 Worker 执行。
+应用采用 Next.js + FastAPI + LangGraph；领域任务由独立 Worker 执行。
 DeerFlow 提供运行时分层参考，业务阶段独立设计；论坛以本项目原第二阶段为直接基础，角色和补证路径由任务决定。参考范围见 [Agent Runtime 说明](modules/agent-runtime-architecture.md)。
 
-## 分层与依赖方向
+## 系统总览
 
-```mermaid
-flowchart TD
-  UI[Next.js 工作台] --> API[FastAPI Gateway / 6 组路由]
-  API --> RUN[LangGraph Leader / 会话运行管理]
-  RUN --> CTX[中间件 / 记忆 / SQLite 检查点]
-  RUN --> SUB[受限专业子 Agent]
-  RUN --> TOOLS[工具入口 / MCP Client]
-  TOOLS --> DOMAIN[Domain Tool Service]
-  CLI[兼容 CLI] --> DOMAIN
-  DOMAIN --> JOB[冻结请求 / 持久作业 / 版本资产]
-  JOB --> WORKER[独立 Domain Worker]
-  WORKER --> INPUT[已有数据 / 独立采集进程]
-  INPUT --> SAMPLE[高阅读量池随机样本 / Schema Agent]
-  SAMPLE --> LABEL[Jev / 阿里 decision / GLM 自动弱标注]
-  LABEL --> OBS[分布观测 / 来源表]
-  OBS --> EVIDENCE[工具选择与执行 / 按需角色论坛 / 补证反馈]
-  OBS --> MODEL[PCA 训练 / 隐空间联合 HK / 同化 / 解码 / 情景]
-  EVIDENCE --> CONTENT[内容 Agent / 社科 Agent / UI Agent / 引用校验]
-  MODEL --> CONTENT
-  CONTENT --> ARTIFACT[报告 / 图表 / 可追溯产物]
-  ARTIFACT --> API
-```
+![Tweets2Insights 系统架构](diagrams/system-architecture.svg)
+
+前端提交数据或关键词，并选择复盘、预测、情景与论坛角色。Leader Agent 生成或校验运行请求，
+领域服务编译依赖，由 DomainWorker 按计划顺序执行。复盘使用工具与论坛循环；预测和情景共用训练后的模型状态；
+结果汇入内容整理、社科解释和页面组织三个 Agent，生成报告。
+
+高阅读量抽样用于确定标签；标注接收全部输入，观测再按时间、平台、帖子类型与字段有效性筛选。
+选择情景阶段时，计划自动加入模型训练、同化和基线预测。
+
+## 分层与依赖方向
 
 | 层 | 实际位置 | 职责 |
 |---|---|---|
@@ -40,6 +28,20 @@ flowchart TD
 
 Gateway 可以调用 Runtime；Runtime 不导入 Gateway。领域核心不依赖 Next.js、HTTP 或 LangGraph。
 应用包使用 `src.*` 命名空间，避免 `src/mcp` 与第三方 `mcp` 包、`src/config` 与旧 `config.py` 冲突。
+
+## Agent 协作
+
+| 位置 | 角色 | 输入与输出 |
+|---|---|---|
+| 规划 | Leader Agent；可选 Insight / Query 评阅 | 用户需求与数据引用 → RunRequest 与阶段计划 |
+| 标签准备 | Schema Agent | 高阅读量样本、词库与检索证据 → 固定类别与立场命题 |
+| 复盘分析 | DataAgent | 研究目标、工具目录与标签 → 分析结果、图表及源表 |
+| 论坛 | data / search / visual / insight / methodology；ForumHost | 共享证据 → 专业意见、补充调用、共识与分歧 |
+| 情景建议 | RecommendationAgent | 措施假设与配对模拟结果 → 效果、成本权衡与适用条件 |
+| 报告 | ContentAgent → SocialScienceAgent → ReportUIAgent | 分析、预测和情景结果 → 内容、理论解读与页面布局 |
+
+论坛按配置选择专业角色，每轮依次评阅共享证据，再由 ForumHost 决定补数据、补图、补搜或结束。
+详细图示见[论坛反馈循环](modules/full-workflow.md#与原第二阶段的对应)和[实验预测与情景](modules/full-workflow.md#实验预测与调控建议)。
 
 ## 会话与领域任务
 
@@ -61,4 +63,4 @@ SSE 支持游标续读；Gateway 重启会将未结束的 Agent execution 标为
 复用文件已实际迁入 `backend/src/domain`；根目录旧包保留导入兼容入口，不维护另一份领域实现。
 迁移明细见 [重写与复用清单](modules/architecture-rewrite.md)，启动见 [运行手册](modules/domain-application.md)。
 
-各阶段的执行流程见[完整工作流](modules/full-workflow.md)，测试进度见[实施记录](upgrade-status.md)。
+各阶段的执行流程见[完整工作流](modules/full-workflow.md)。

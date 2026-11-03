@@ -16,7 +16,7 @@
 ## 理解架构与扩展
 
 - [完整工作流](modules/full-workflow.md)：阶段依赖、论坛角色、41 个工具、决策模型、隐空间模型和报告 Agent。
-- [系统架构](architecture.md)：应用分层、依赖方向与研究约束。
+- [系统架构](architecture.md)：架构总览图、应用分层、Agent 协作与数据流。
 - [项目目录](project-structure.md)：应用入口、领域源码与兼容目录。
 - [Agent Runtime](modules/agent-runtime-architecture.md)：Leader、子 Agent、记忆、检查点、MCP 与 SSE。
 - [架构重写与迁移清单](modules/architecture-rewrite.md)：复用归属、连接器协议与数值假设。

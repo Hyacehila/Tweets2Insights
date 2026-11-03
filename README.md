@@ -162,28 +162,16 @@ uv run --project backend python -m src.tools.worker
 <a id="architecture"></a>
 ## 系统架构
 
-```mermaid
-flowchart TD
-    UI["Next.js 研究工作台"] --> API["FastAPI Gateway"]
-    API --> LEAD["LangGraph Leader：规划与受限专业评阅"]
-    LEAD --- STATE["会话记忆 / SQLite 检查点 / SSE 事件"]
-    LEAD --> MCP["MCP 领域工具"]
-    MCP --> JOB["冻结请求 / 持久任务 / 独立 Worker"]
-    JOB --> INPUT["已有数据或按需采集"]
-    INPUT --> LABEL["事件 Schema / 自动弱标注"]
-    LABEL --> OBS["分布观测与图表"]
-    OBS --> EVIDENCE["证据检索与论坛"]
-    OBS --> MODEL["可选：同化 / 预测 / 回测 / 情景"]
-    EVIDENCE --> REPORT["内容与结构 / 引用校验 / 报告产物"]
-    MODEL --> REPORT
-```
+![Tweets2Insights 系统架构](doc/diagrams/system-architecture.svg)
 
-- **Agent Runtime** 管理上下文、模型调用和工具访问；领域 Worker 是业务阶段的唯一调度者。
-- **会话与业务状态分开保存**：`.app-state` 保存会话和检查点，`.opinion-assets` 保存事件数据、任务与版本产物。
-- **研究结果保留来源与语义**：报告区分观测、预测、模拟和解释；联合 HK 在多维状态上计算邻域，逐坐标模型作为对照。
-- **真实样本与虚拟粒子分开计算**：统计使用符合筛选条件的帖子及各字段有效分母；粒子数量属于数值模型配置。
+用户在前端选择输入、时间范围和研究阶段。Leader Agent 生成运行请求，领域服务编译阶段依赖，由 DomainWorker 顺序执行。
 
-完整设计见[系统架构](doc/architecture.md)与[Agent Runtime 说明](doc/modules/agent-runtime-architecture.md)。DeerFlow 的分层设计是架构参考，具体适配版本和差异已在文档中列明。
+- **共享准备**：接入数据，高阅读量随机样本辅助 Schema Agent 选词；决策模型标注全部输入，再构建固定窗口观测。
+- **事件复盘**：DataAgent 选择分析工具，论坛按需启用专业角色，由 ForumHost 协调补数据、补图和外部搜索。
+- **预测与情景**：PCA、联合 HK 与 EnKF 构成实验预测模型；措施模拟使用配对基线，比较效果和成本并形成条件建议。
+- **报告生成**：ContentAgent 整理内容，SocialScienceAgent 结合理论解读，ReportUIAgent 组织交互报告页面。
+
+[系统分层](doc/architecture.md) · [论坛协作](doc/modules/full-workflow.md#与原第二阶段的对应) · [预测与情景](doc/modules/full-workflow.md#实验预测与调控建议)
 
 ### 项目目录
 
