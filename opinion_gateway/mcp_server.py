@@ -18,6 +18,7 @@ class DomainService:
         self.jobs = JobStore(self.repo.root / 'jobs.sqlite')
         source_root = Path(__file__).resolve().parents[1]
         sources = sorted((source_root / 'opinion_core').rglob('*.py')) + sorted((source_root / 'opinion_gateway').rglob('*.py'))
+        sources += sorted((source_root / 'agent_runtime_extension').rglob('*.py')) + sorted((source_root / 'crawler_worker').rglob('*.py'))
         sources += [source_root / 'nodes/stage3/ir_renderer.py']
         digest = hashlib.sha256()
         for source in sources:
@@ -140,10 +141,12 @@ class DomainService:
 
 
 def create_server(root):
-    service = DomainService(root)
+    from .application import ApplicationService
+    service = ApplicationService(root)
     server = FastMCP('Opinion Domain Tool Service')
     for name in ('register_dataset', 'describe_dataset', 'read_evidence', 'render_report', 'read_artifact', 'job_status', 'cancel_job',
-                 'submit_inventory_job', 'list_jobs', 'retry_job', 'read_job_artifact'):
+                 'submit_inventory_job', 'list_jobs', 'retry_job', 'read_job_artifact', 'preview_plan', 'submit_run',
+                 'list_datasets','list_artifacts','read_domain_artifact','resume_job'):
         server.tool()(getattr(service, name))
     return server
 

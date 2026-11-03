@@ -123,6 +123,11 @@ class JobStore:
             self._get(db, job_id)
             return {key: json.loads(value) for key, value in db.execute('SELECT batch,payload FROM batches WHERE job=?', (job_id,))}
 
+    def discard_batches(self, claimed, batch_ids):
+        with self._db() as db:
+            self._owned(db,claimed.job_id,claimed.worker,claimed.lease_token)
+            db.executemany('DELETE FROM batches WHERE job=? AND batch=?',[(claimed.job_id,key) for key in batch_ids])
+
     def parameters(self, job_id):
         with self._db() as db:
             self._get(db, job_id)
@@ -154,13 +159,15 @@ class JobStore:
             job.stage, job.revision = stage, job.revision + 1
             self._save(db, job)
 
-    def finish(self, claimed, result):
+    def finish(self, claimed, result, status='completed'):
         """Publish result and completed state in the same SQLite transaction."""
+        if status not in {'completed', 'partial'}:
+            raise ValueError('invalid publication status')
         payload = json.dumps(result, ensure_ascii=False, allow_nan=False)
         with self._db() as db:
             job = self._owned(db, claimed.job_id, claimed.worker, claimed.lease_token)
             db.execute('INSERT INTO job_results VALUES (?,?)', (job.job_id, payload))
-            job.status, job.stage, job.revision = 'completed', 'completed', job.revision + 1
+            job.status, job.stage, job.revision = status, status, job.revision + 1
             self._save(db, job)
             return job
 
@@ -178,12 +185,32 @@ class JobStore:
     def result(self, job_id):
         with self._db() as db:
             job = self._get(db, job_id)
-            if job.status != 'completed':
+            if job.status not in {'completed', 'partial'}:
                 raise ValueError('job result is not committed')
             row = db.execute('SELECT payload FROM job_results WHERE job=?', (job_id,)).fetchone()
             if row is None:
                 raise ValueError('job has no domain result')
             return json.loads(row[0])
+
+    def wait_for_auth(self, claimed):
+        with self._db() as db:
+            job = self._owned(db, claimed.job_id, claimed.worker, claimed.lease_token)
+            job.status, job.error_type = 'waiting_for_auth', 'authentication_required'
+            job.worker = job.lease_token = job.lease_until = None
+            job.revision += 1
+            self._save(db,job)
+            return job
+
+    def resume(self, job_id):
+        with self._db() as db:
+            job = self._get(db,job_id)
+            if job.status != 'waiting_for_auth':
+                raise TransitionConflict('only waiting_for_auth can resume')
+            job.status,job.error_type,job.stop_reason = 'queued','',''
+            job.worker = job.lease_token = job.lease_until = None
+            job.revision += 1
+            self._save(db,job)
+            return job
 
     def retry(self, job_id):
         """Create one idempotent successor; preserve original terminal status and checkpoints."""

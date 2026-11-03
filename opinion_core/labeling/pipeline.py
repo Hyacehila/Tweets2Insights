@@ -80,7 +80,7 @@ class WeakLabeler:
         # Provider confidence is not claimed to be a calibrated probability.
         return FieldAnnotation(status='accepted', value=value, provider_confidence=confidence, reason='provider_confidence_passed_uncalibrated')
 
-    def label(self, posts, schema, *, budget: LabelBudget):
+    def label(self, posts, schema, *, budget: LabelBudget, check_cancel=lambda: None):
         schema = EventSchema.model_validate(schema)
         posts = [PostRecord.model_validate(post) for post in posts]
         if len(schema.targets) != 1 or len({post.post_id for post in posts}) != len(posts):
@@ -98,6 +98,7 @@ class WeakLabeler:
                 else:
                     pending.append(post)
         for start in range(0, len(pending), self.batch_size):
+            check_cancel()
             batch = pending[start:start+self.batch_size]
             if not budget.reserve():
                 for post in batch:

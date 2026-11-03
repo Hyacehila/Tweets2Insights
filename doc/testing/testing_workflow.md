@@ -131,6 +131,10 @@ powershell -ExecutionPolicy Bypass -File scripts/run_full_acceptance.ps1 -BaseTe
 
 ## 5. 重构中的测试流程（Red-Green-Refactor）
 
+2026-11-03 本次架构重写的用户指示覆盖下述默认顺序：先完成所有功能脚本，再统一测试。
+Demo、真实标注与科研指标验证后置。此前回归结果只适用于其对应提交，不能复用为新架构验收结论。
+源码阶段允许语法和依赖边界静态检查；行为回归/外部调用另行登记。
+
 1. **先写测试/更新测试**：先定义期望行为。  
 2. **验证 RED**：`uv run pytest <target>` 必须先失败。  
 3. **实现最小改动**：仅补足使测试通过的代码。  

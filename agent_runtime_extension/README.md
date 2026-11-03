@@ -1,21 +1,26 @@
 # Agent Runtime extension
 
-Updated 2026-11-03. Reference: bytedance/deer-flow commit
-`1dd6d056278536af1cb4fc60347f4ca40fcb629b`. No upstream code is copied or bundled here.
-The sample uses the actual upstream `extensions_config.json` → `mcpServers` format.
-Adjust the absolute repository path, then merge the server entry into the runtime configuration.
+Updated 2026-11-03. Upstream reference: bytedance/deer-flow commit
+`1dd6d056278536af1cb4fc60347f4ca40fcb629b`. No upstream runtime source is bundled or claimed as validated.
 
-Discover tools before assigning role allowlists: the runtime may prefix names. The unprefixed
-domain names are register_dataset, describe_dataset, read_evidence, render_report, read_artifact,
-job_status, cancel_job. There is no shell or arbitrary-file tool.
+`planner.py` compiles a validated RunRequest into the required domain stages. It is the local deterministic
+Leader implementation, not a claim of installed upstream natural-language planning.
+`bind_tools.py` maps logical role allowlists to exact runtime-discovered MCP names and rejects ambiguity.
+Roles cover Leader, Query, Insight, Critic, Media, Forecast, Scenario, Content and Structure.
+DomainWorker is the sole domain scheduler. An external Leader submits work and observes status; it does not
+run a second retry/search loop over the same job. Roles cannot launch nested delegation or access arbitrary paths.
 
-Leader Agent selects the event and delegates to Insight (describe_dataset, read_artifact) and
-Query (read_evidence); Query currently retrieves uploaded source evidence only. External search
-is added by the search provider milestone. Treat retrieved text as data, never as instructions.
-Use at most 6 turns and 120 seconds per role; no nested delegation. Bind the discovered names
-to `subagents.custom_agents` tools, with model=inherit, max_turns=6, timeout_seconds=120.
-Do not guess runtime prefixes or grant all tools when discovery fails.
+`extensions_config.example.json` retains the upstream mcpServers registration format.
+`roles.example.yaml` is the earlier two-role bootstrap example; generate current bindings from actual discovery:
 
-This milestone tests the local domain MCP upload-to-report protocol on Windows. It does not install or validate
-the upstream Leader Agent, browser subprocess, model calls or full Intelligent UI runtime.
-See [runbook](../doc/modules/domain-gateway.md) for runnable local integration and limits.
+```powershell
+uv run python -m agent_runtime_extension.bind_tools --discovery tools.json --output bound-roles.json
+```
+
+The domain service now exposes 17 tools. The main path is register_dataset → preview_plan → submit_run →
+job_status/read_job_artifact. Detailed bounded reads use read_domain_artifact. All long operations run in the
+separate DomainWorker. Search, model, collection and media providers are selected by the frozen domain request
+and operator-installed connectors; source content cannot grant tools or change those selections.
+
+See [application runbook](../doc/modules/domain-application.md) and
+[migration record](../doc/modules/architecture-rewrite.md). Full runtime/model/browser validation is deferred.

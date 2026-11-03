@@ -62,3 +62,7 @@ PR-02：保持工具名不变，移除全局 blog_data 缓存；所有显式图�
 独立领域服务新增 7 个工具：register_dataset、describe_dataset、read_evidence、render_report、read_artifact、job_status、cancel_job。与旧 76 个工具分别发现，不合并统计。
 
 第二轮领域服务新增 submit_inventory_job/list_jobs/retry_job/read_job_artifact，共 11 项。旧同步接口保持兼容。
+
+全项目架构重写新增 preview_plan、submit_run、list_datasets、list_artifacts、read_domain_artifact、resume_job，
+领域 MCP 共 17 项。新领域运行不加载原 76 项旧标签工具；数值与长任务通过持久计划执行。
+当前是源码接口清单，工具发现与真实运行时联调按用户要求在脚本完成后统一验证。

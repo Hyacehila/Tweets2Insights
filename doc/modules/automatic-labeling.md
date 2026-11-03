@@ -1,6 +1,6 @@
 # 自动弱标注实现与运行方法
 
-更新：2026-11-03。范围为新领域链路的显式实验入口；旧 PocketFlow 默认入口尚未切换。
+更新：2026-11-03。保留独立标注 CLI；默认入口现已切换到新领域运行架构，完整链路使用 DomainWorker。
 
 ## 已落实行为
 
@@ -54,7 +54,7 @@ manifest 保存事件、数据引用、源码 SHA256、词库指纹、模型/提
 - CLI 已串通实际搜索/模型适配器，但本轮集成测试用固定响应，没有真实模型准确率、费用或节费结论。
 - 当前 schema builder 调用上限以准备键累计，标签调用上限以 event/dataset/run 累计；金额预算预留、统一收费账本仍待实现。
 - LabelBudget 的内存版本供库调用共享；CLI 使用持久预算。没有保证供应商端恰好调用一次，超时按不确定调用记录。
-- 新标注链路尚未接入持久 Label Worker 与工作台；库存概览 Worker 只处理 inventory_report。
+- 新标注链路已写入 DomainWorker 与新工作台，尚待统一行为测试；旧 InventoryWorker 仍只处理 inventory_report。
 - 旧 belief network/publisher_decision 工具与消费者尚未全量移除；只在新标注输出中不再生成这些字段。
 - 发布时间晚于 as_of 的来源会过滤，缺失日期会单列；检索发生在当前时间，historical_availability_verified=false，不能用于宣称无泄漏历史回测。
 - 当前仅处理文本，媒体引用随记录保留但没有发送图片内容；多模态贡献仍待后续实现与消融验证。

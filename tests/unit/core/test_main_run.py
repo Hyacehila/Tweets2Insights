@@ -7,7 +7,7 @@ import asyncio
 
 import pytest
 
-import main as main_module
+import legacy.main as main_module
 
 
 class _BrokenFlow:

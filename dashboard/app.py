@@ -1,19 +1,4 @@
-"""
-Streamlit entry for AnalysisPosts dashboard.
-"""
+"""Compatibility launcher for the new Intelligent UI."""
+from intelligent_ui.app import main
 import streamlit as st
-
-
-st.set_page_config(page_title="AnalysisPosts Dashboard", layout="wide")
-st.title("AnalysisPosts Dashboard")
-st.write("Use the sidebar to navigate: Pipeline Console, Progress, Results, Report Preview.")
-
-st.markdown(
-    """
-This dashboard provides:
-- Pipeline console (configure + run)
-- Progress monitor (status.json)
-- Results viewer (charts/data)
-- Report preview
-"""
-)
+st.navigation([st.Page(main,title='智能工作台',default=True)]).run()

@@ -2,6 +2,9 @@
 
 更新：2026-11-03。当前交付为 M1 的上传资料概览子链路，不是完整产品验收。
 
+本页记录兼容概览服务。全项目新主入口与 17 个 MCP 工具见[新架构运行手册](domain-application.md)，
+新 Worker/工作台代码的验收状态以[迁移清单](architecture-rewrite.md)为准。
+
 ## 运行
 
 在仓库根目录执行 `uv run python -m opinion_gateway.mcp_server --root .opinion-assets` 启动 stdio MCP。

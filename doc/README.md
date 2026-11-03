@@ -4,6 +4,8 @@
 > **Structure version**: v1.2 (Consolidated)
 
 ## Architecture
+- [Architecture Rewrite](modules/architecture-rewrite.md) — 全项目模块、复用清单、连接器与统一测试顺序。
+- [Domain Application](modules/domain-application.md) — 新 CLI、Worker、工作台与 MCP 运行方法。
 - [Upgrade status](upgrade-status.md) — 实施证据与未完成项。
 - [Opinion contracts](modules/opinion-contracts.md) — 版本契约与无损历史迁移。
 - [Domain gateway](modules/domain-gateway.md) — 上传、统计、证据、报告的 MCP 接入与运行限制。
