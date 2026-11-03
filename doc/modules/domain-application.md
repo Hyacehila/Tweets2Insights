@@ -51,7 +51,8 @@ retry 为失败/取消/部分完成建立后继；resume 仅恢复 waiting_for_a
 
 ## MCP 和供应商
 
-领域 MCP 保留 17 个工具；主路径为 register_dataset → preview_plan → submit_run → job_status/read_job_artifact。
+领域 MCP 提供 19 个工具；主路径为 register_dataset → preview_plan → submit_run → job_status/read_job_artifact。
+新增 analysis_tool_catalog 返回 41 个领域分析入口；submit_analysis_tool 基于已完成任务的冻结标签提交独立补充分析。
 分页读取工具 read_domain_artifact 限制返回记录并隐藏虚拟粒子数组。
 默认 Runtime 自动读取根 extensions_config.json 并发现工具；外部工具绑定仍可使用兼容命令：
 
@@ -60,8 +61,9 @@ uv run python -m agent_runtime_extension.bind_tools --discovery tools.json --out
 ```
 
 唯一匹配失败时拒绝调用，不放宽为所有工具。参考上游版本与适配范围见 [Agent Runtime](agent-runtime-architecture.md)。
-领域弱标注使用 GLM_API_KEY，搜索使用所选服务的 TAVILY_API_KEY 或 DEEPSEEK_API_KEY。
-采集、决策模型及视觉服务采用[连接器协议](architecture-rewrite.md)；需要操作者配置真实实现。
+生成式 Agent 使用 GLM_API_KEY；弱标注可独立选择 Jev（TYPESAFE_API_KEY）、阿里（DASHSCOPE_API_KEY）或 GLM。
+搜索使用所选服务的 TAVILY_API_KEY 或 DEEPSEEK_API_KEY。Jev/阿里已有原生协议，X 有官方归档搜索适配；
+其他平台及视觉服务使用[连接器协议](architecture-rewrite.md)。账号和真实服务均需联调验证。
 GLM 标准标注路径处理文本；image_only/text_image 必须配置支持相应模式的标签连接器。
 
 ## 兼容入口
@@ -78,4 +80,4 @@ uv run --project backend python -m opinion_core.ingestion --source OLD.json --ou
 ```
 
 迁移保留旧原文与字段；缺少的立场继续标为 missing，正式标签由后续模型标注生成。
-当前按用户指定顺序仅完成源码及静态检查，Demo、真实标注、完整应用与数值研究测试均后置。
+功能脚本完成后已进入离线工程检查，最新记录见[实施记录](../upgrade-status.md)；Demo、真实服务、浏览器及科学效果仍后置。

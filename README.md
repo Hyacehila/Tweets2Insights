@@ -9,7 +9,7 @@
 
 [核心能力](#features) · [快速开始](#quickstart) · [第一次分析](#first-analysis) · [系统架构](#architecture) · [文档](#documentation) · [项目状态](#project-status)
 
-Tweets2Insights 将一次事件研究组织为可追溯的工作流：导入帖子和评论，围绕事件生成标签定义，调用模型完成弱标注，再计算随时间变化的分布、整理外部证据并生成报告。研究者也可以配置联合 HK 与集合卡尔曼滤波（EnKF）模型，开展预测、回测和配对条件情景分析。
+Tweets2Insights 将一次事件研究组织为可追溯的工作流：导入帖子和评论，或按关键词与时间范围采集；前端选择复盘、训练预测和调控情景，由 Leader 编译阶段依赖。高阅读量随机样本用于选定标签，模型对全部输入自动弱标注，论坛按证据缺口调用分析工具、补充搜索和解释图表，最后形成交互报告。预测采用可训练 PCA 隐空间、联合 HK 和集合卡尔曼滤波（EnKF），解码回标签分布；当前为实验模型。
 
 项目采用 **Next.js 工作台 + FastAPI Gateway + LangGraph Agent Runtime + MCP 领域工具 + 独立 Worker**。Agent 负责规划和专业评阅；数据处理、数值计算与报告生成由领域模块执行，任务配置和产物按版本保存。
 
@@ -21,16 +21,16 @@ Tweets2Insights 将一次事件研究组织为可追溯的工作流：导入帖�
 
 | 能力 | 项目中的实现 |
 |---|---|
-| **事件驱动的数据接入** | 上传标准 JSON、选择已有数据版本，或通过连接器按关键词采集；已有数据路径不会启动采集。 |
-| **自动弱标注** | 先检索事件背景，再冻结标签 Schema；输出主题、发布者类别、情绪、情感极性及针对明确命题的立场。 |
-| **分布与证据分析** | 按时间窗口统计有效样本、字段覆盖率和标签分布，关联帖子、搜索结果与证据卡。 |
-| **预测与条件情景** | 提供联合 HK–EnKF、对照模型、滚动回测及配对情景脚本；模型效果等待实验验证。 |
-| **可追溯报告** | 内容先绑定证据和数值，再生成结构与报告；支持 Markdown、HTML、JSON、ZIP，以及图表源数据。 |
+| **事件驱动的数据接入** | 上传标准 JSON、选择已有数据；内置 X 官方归档搜索，其他平台由本机连接器扩展。 |
+| **自动弱标注** | 高阅读量随机抽样 → Schema Agent → Jev / 阿里 decision / GLM；完整类别概率、自动拒判、覆盖率与版本缓存。 |
+| **分布与证据分析** | 41 个保留工具入口覆盖情绪、话题、地区、互动和 NLP；继承本项目第二阶段选工具、补数据、补搜索、补图的反馈机制。 |
+| **预测与条件情景** | 训练截止点内拟合 PCA 和 HK 参数；隐空间同化、解码预测、六种模型/基线滚动诊断；相同起点与随机流下比较措施及资源成本。 |
+| **可追溯报告** | 内容整理 Agent → 社科解释 Agent → 页面组织 Agent；交互图表、证据和来源表，支持 Markdown、HTML、JSON、ZIP。 |
 | **持续运行的工作台** | 会话、图检查点、SSE 事件流、持久任务、取消、重试及产物查看；采集登录等待状态可恢复。 |
 
 **生产流程使用模型弱标注，标注后自动进入分析，不逐条安排人工复核。** 人工标注仅用于独立 Demo 的方案评测。自动校验、字段拒判、失败记录、预算和版本追溯仍保留；缺失或失败不会被填成“中性”。
 
-采集、Jev 等候选决策模型和视觉服务通过[操作者配置的连接器](doc/modules/architecture-rewrite.md#功能脚本与外部接入的区别)接入。当前仓库提供协议与执行路径，具体平台适配和真实服务验证需分别完成。
+Jev 与阿里 decision 已按官方 System One 协议实现原生适配；实际账号、模型可用性和收费仍需真实联调。GLM 负责生成式 Agent 推理，与弱标注模型独立配置。视觉及其他平台保留[操作者连接器](doc/modules/architecture-rewrite.md#功能脚本与外部接入的区别)。功能接线、论坛角色和迁移语义见[完整工作流说明](doc/modules/full-workflow.md)。
 
 <a id="quickstart"></a>
 ## 快速开始
@@ -81,7 +81,7 @@ TAVILY_API_KEY=your-tavily-api-key
 
 若选择 DeepSeek Search，则填写 `DEEPSEEK_API_KEY`，并在工作台或运行请求中选择 `deepseek`。每次运行只使用一个搜索供应商。模型名称在 [`config.yaml`](config.yaml) 中设置，默认 Agent 模型为 `glm-4.5-air`；单次领域标注模型由运行请求的 `labels.model` 指定。
 
-`.env` 不进入版本库。采集或多模态任务还需要配置对应连接器，见[配置说明](doc/configuration.md)。
+也可在工作台“模型与数据 API 配置”保存本机凭据；密钥只写入忽略文件 `.provider-secrets.json`，读取接口只返回是否已配置。Jev 使用 `TYPESAFE_API_KEY`；阿里使用 `DASHSCOPE_API_KEY` 和业务空间 `ALIYUN_DECISION_ENDPOINT`；X 使用 `X_BEARER_TOKEN`。环境变量和界面配置二选一即可，详见[配置说明](doc/configuration.md)。
 
 ### 3. 启动工作台
 
@@ -108,8 +108,8 @@ uv run --project backend python scripts/dev.py stop
 ## 第一次分析
 
 1. **新建事件会话**：使用 `rain` 等事件 ID。同一事件的多个会话共享该事件的数据和领域任务。
-2. **上传标准 JSON**：选择数据版本，填写事件关键词与唯一搜索供应商。运行配置中的分析窗口应覆盖数据的发布时间。
-3. **生成计划**：描述分析目标，或使用结构化配置。自然语言规划会调用模型；结构化计划预览只校验和编译请求。
+2. **选择输入与阶段**：上传标准 JSON 或选择关键词采集；设置时间范围、复盘/预测/情景、论坛角色、模型及调用预算。
+3. **生成计划**：点击“将阶段与参数写入运行配置”，检查 JSON，再生成计划。也可清空配置后自然语言规划。生成式模型和决策模型分别设置。
 4. **提交执行**：Worker 按阶段完成搜索、标注和分析，任务面板显示状态及停止原因。
 5. **查看产物**：选择任务中的分析或报告产物，查看有界数据和报告预览，并下载结果。
 
@@ -236,7 +236,7 @@ Tweets2Insights/
 | [`RunRequest`](backend/src/domain/opinion_core/schemas/workflow.py) | 每次任务的数据、时间窗口、唯一搜索供应商、标注、数值模型和预算 |
 | [`skills/public`](skills/public) / `skills/custom` | 内置与本机自定义技能；自定义技能需在扩展配置中启用 |
 
-当前 Agent 模型工厂使用 GLM SDK；搜索提供 Tavily 和 DeepSeek 两种适配。其他标注模型、社交平台采集与视觉能力通过连接器扩展。单次领域任务的调用/金额预算与 Agent 会话调用上限独立计算，详见[配置说明](doc/configuration.md)。
+当前 Agent 模型工厂使用 GLM SDK；弱标注可选择 GLM、Jev、阿里 decision 或自定义连接器；搜索提供 Tavily/DeepSeek。采集内置 X 官方接口，并保留其他平台扩展。单次领域任务的模型/搜索预算、采集分页上限和 Agent 会话调用上限分别记录，详见[配置说明](doc/configuration.md)。
 
 ### Docker 与 Kubernetes
 
@@ -257,16 +257,17 @@ docker compose -f docker/docker-compose-dev.yaml up --build
 |---|---|
 | 新架构与领域模块 | 源码已写入，可复用实现已迁移 |
 | 构建准备 | 后端语法、关键导入、Ruff、配置解析、wheel 构建及前端 TypeScript 检查已完成 |
+| 离线工程检查 | 新后端与相关旧契约模块合计 70 项通过；Next.js 生产构建通过，不代表真实服务或科学效果已验证 |
 | 应用与供应商 | 完整工作流、浏览器交互及真实连接器联调待验证 |
 | 弱标注质量 | 独立 Demo 协议与评分脚本已提供，尚无真实评测结论 |
 | 预测与情景 | 实验实现，尚未完成数值验证、回测验收及效果评估 |
 | 部署 | Compose 与 K8s 模板已提供，尚未部署验证 |
 
-当前实施顺序为**先完成功能脚本，再统一开展行为测试与研究评测**。历史测试通过数不代表本次新架构已验收；`backend/tests` 当前只包含后置验证说明。
+当前实施顺序为**先完成功能脚本，再统一开展行为测试与研究评测**。本轮已进入离线工程检查，检查使用合成记录和供应商替身，不是人工金标准 Demo；具体命令与结果见[实施记录](doc/upgrade-status.md)。历史测试通过数不代表本次新架构已验收。
 
 弱标注 Demo 将单独建立人工金标准，评估目标字段的 macro-F1、有效覆盖率及同标签模型基线差异。协议中的 600 条样本、F1/覆盖率阈值属于待执行的评测设计，不能作为已测得的成绩。见[弱标注 Demo 协议](doc/testing/weak-label-demo-protocol.md)与[实施记录](doc/upgrade-status.md)。
 
-新 Next.js 前端尚未覆盖旧 Streamlit 的全部专项图表和 PDF 交互；这些兼容入口仍保留。后续依次完成应用与连接器联调、独立 Demo、数值实验及部署验证，并在实施记录中更新证据。
+新 Next.js 前端已接入论坛过程、分析源表、交互图表与章节报告；旧 Streamlit 的 PDF 导出等兼容入口仍保留。浏览器、真实服务、独立 Demo、科学实验及部署仍需分别验收。
 
 <a id="documentation"></a>
 ## 文档导航
@@ -297,6 +298,7 @@ npm --prefix frontend run check
 
 - [DeerFlow](https://github.com/bytedance/deer-flow)：Agent Runtime 分层的架构参考，其 README 的快速开始与配置导航也用于本页组织参考。
 - [BettaFish](https://github.com/666ghj/BettaFish)：参考其舆情分析项目的能力说明、流程介绍和目录呈现方式。
+- [Tweets2Insights 原第二阶段](doc/modules/stage2_analysis.md)：论坛能力的直接设计来源，保留并改进工具选择、图表补全、补搜、反思与收敛机制；角色按任务启用。
 - [Open Deep Research](https://github.com/langchain-ai/open_deep_research)：参考其将快速开始、模型/搜索配置与评测分开说明的结构。
 
 以上为架构或文档组织参考，不表示继承其全部能力或评测结果。当前仓库尚未提供独立 `LICENSE` 文件，本页不声明特定开源许可证。

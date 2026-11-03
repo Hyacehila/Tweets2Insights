@@ -17,7 +17,7 @@ class DomainWorker:
 
     def run_once(self):
         store=self.service.jobs
-        job=store.claim(self.identity,self.lease_seconds,kinds=['analysis_run'])
+        job=store.claim(self.identity,self.lease_seconds,kinds=['analysis_run','analysis_tool'])
         if job is None:
             return None
         stopped=threading.Event()
@@ -39,6 +39,15 @@ class DomainWorker:
                 raise ValueError('worker source changed; create a new run')
             request=self.service.assets.read(job.event_id,job.run_id,params['request_ref'],'request')
             execution=Execution(self.service,request,check)
+            if job.kind=='analysis_tool':
+                for key in ('input','schema','labels'):
+                    ref=params['source_artifacts'][key]
+                    execution.values[key]=self.service.assets.read(job.event_id,job.run_id,ref['artifact_id'],key)
+                value=execution.toolbox.execute(params['tool'],params['parameters'])
+                check()
+                ref=self.service.assets.put(job.event_id,job.run_id,'analysis-tool',value)
+                store.finish(job,{'event_id':job.event_id,'run_id':job.run_id,'artifacts':{'analysis-tool':ref},'usage':execution.ledger.summary()})
+                return store.get(job.job_id)
             checkpoints=store.batches(job.job_id)
             reuse=True
             partial=[]

@@ -1,6 +1,7 @@
 """Operator entry point. Paths are accepted here, never by agent-facing tools."""
 import argparse
 import json
+import re
 from pathlib import Path
 from .application import ApplicationService
 
@@ -43,7 +44,7 @@ def main(argv=None):
         if result.get('images'):
             images=target/'images'; images.mkdir(exist_ok=True)
             for name,svg in result['images'].items():
-                if name not in {'sentiment.svg','stance.svg'}: raise ValueError('invalid chart name')
+                if not re.fullmatch(r'(sentiment|stance|t-[a-f0-9]{64}|forecast-(stance|sentiment|topic|emotion|mass-stance|mass-sentiment)|scenario-(stance|variance))\.svg',name): raise ValueError('invalid chart name')
                 (images/name).write_text(svg,encoding='utf-8')
         (target/'artifact.json').write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8')
         result={'output':str(target.resolve())}

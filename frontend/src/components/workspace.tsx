@@ -6,6 +6,7 @@ import { api, post } from "@/lib/api";
 import type { Thread, Dataset } from "@/lib/types";
 import { useThreadStream } from "@/hooks/use-thread-stream";
 import { JobPanel } from "./job-panel";
+import { WorkflowBuilder, ProviderSettings } from "./workflow-builder";
 
 export function Workspace({ threadId }: { threadId?: string }) {
   const router = useRouter();
@@ -20,6 +21,7 @@ export function Workspace({ threadId }: { threadId?: string }) {
   const [provider, setProvider] = useState("tavily");
   const [keywords, setKeywords] = useState("");
   const [requestText, setRequestText] = useState("");
+  const [requestDirty,setRequestDirty]=useState(false);
   const [execution, setExecution] = useState("");
   const { updates, connected } = useThreadStream(threadId);
   const latest = updates.at(-1);
@@ -27,6 +29,7 @@ export function Workspace({ threadId }: { threadId?: string }) {
   useEffect(() => {
     setThread(undefined); setDatasets([]); setDataset(""); setMessage(""); setBusy(false);
     setRequestText(""); setError(""); setExecution("");
+    setRequestDirty(false);
     if (!threadId) return;
     let live = true;
     api<Thread>(`/threads/${threadId}`).then((value) => {
@@ -57,6 +60,7 @@ export function Workspace({ threadId }: { threadId?: string }) {
     if (!threadId) return;
     try {
       setError(""); setBusy(true);
+      if(requestDirty) throw new Error("阶段或输入已更改，请先点击‘将阶段与参数写入运行配置’，再提交。");
       const request = requestText.trim() ? JSON.parse(requestText) : null;
       const result = await post<{ execution_id: string }>(`/threads/${threadId}/runs`, { message: message || (execute ? "执行所选运行配置" : "生成事件研究计划"), request, execute });
       setExecution(result.execution_id);
@@ -69,11 +73,6 @@ export function Workspace({ threadId }: { threadId?: string }) {
       const result = await post<Dataset>(`/threads/${threadId}/datasets`, { records });
       setDataset(result.dataset_id); setDatasets(await api(`/threads/${threadId}/datasets`));
     } catch (e) { setError((e as Error).message); }
-  }
-  function draft() {
-    if (!thread || !dataset || !keywords.trim()) { setError("请选择数据版本并填写事件关键词。"); return; }
-    const end = new Date(); const start = new Date(end.getTime() - 7 * 86400000);
-    setRequestText(JSON.stringify({ event: { event_id: thread.event_id, input_mode: "existing", dataset_ref: dataset, keywords: keywords.split(/[,，]/).map((s) => s.trim()).filter(Boolean), as_of: end.toISOString(), search_provider: provider, objectives: ["retrospective"] }, run_id: `run-${Date.now()}`, observations: { start: start.toISOString(), end: end.toISOString(), window_seconds: 86400 }, max_total_calls: 120 }, null, 2));
   }
   return <div className="shell">
     <aside className="sidebar"><Link href="/workspace" className="brand"><span className="brand-mark">T</span><div>Tweets2Insights<small>RESEARCH WORKSPACE</small></div></Link>
@@ -89,10 +88,13 @@ export function Workspace({ threadId }: { threadId?: string }) {
         </div><div className="composer"><textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="例如：基于上传数据，复盘公众情绪与立场变化。使用 Tavily 搜索，分析最近七天。" rows={4} /><div className="actions"><button disabled={busy} onClick={() => send(false)}>生成计划</button><button disabled={busy} className="primary" onClick={() => send(true)}>提交执行</button>{busy && execution && <button onClick={() => post(`/threads/${threadId}/runs/${execution}/cancel`, {}).catch((e: Error) => setError(e.message))}>停止 Agent</button>}</div></div>
         <JobPanel threadId={threadId} />
       </section><aside className="context-panel"><h2>事件与输入</h2><p className="caption">上传或选择已有数据时，不启动采集。</p><label className="upload">上传标准 JSON<input type="file" accept=".json" onChange={(e) => upload(e.target.files?.[0])} /></label>
-        <label>数据版本<select value={dataset} onChange={(e) => setDataset(e.target.value)}><option value="">选择数据</option>{datasets.map((d) => <option key={d.dataset_id} value={d.dataset_id}>{d.dataset_id.slice(0, 18)}… · {d.count} 条</option>)}</select></label>
-        <label>唯一搜索引擎<select value={provider} onChange={(e) => setProvider(e.target.value)}><option value="tavily">Tavily</option><option value="deepseek">DeepSeek Search</option></select></label>
-        <label>事件关键词<input value={keywords} onChange={(e) => setKeywords(e.target.value)} placeholder="多个关键词以逗号分隔" /></label><button onClick={draft}>生成结构化配置</button>
-        <details open><summary>运行配置 · 可编辑</summary><textarea className="request-editor" value={requestText} onChange={(e) => setRequestText(e.target.value)} spellCheck={false} rows={18} placeholder="可在此加入采集、预测或情景参数；也可留空，由 Leader 生成。" /><button onClick={() => setRequestText("")}>清空配置，重新由 Agent 规划</button></details>
+        <label>数据版本<select value={dataset} onChange={(e) => {setDataset(e.target.value);setRequestDirty(true);}}><option value="">选择数据</option>{datasets.map((d) => <option key={d.dataset_id} value={d.dataset_id}>{d.dataset_id.slice(0, 18)}… · {d.count} 条</option>)}</select></label>
+        <label>唯一搜索引擎<select value={provider} onChange={(e) => {setProvider(e.target.value);setRequestDirty(true);}}><option value="tavily">Tavily</option><option value="deepseek">DeepSeek Search</option></select></label>
+        <label>事件关键词<input value={keywords} onChange={(e) => {setKeywords(e.target.value);setRequestDirty(true);}} placeholder="多个关键词以逗号分隔" /></label>
+        {thread&&<WorkflowBuilder key={threadId} eventId={thread.event_id} dataset={dataset} keywords={keywords} searchProvider={provider} onDirty={()=>setRequestDirty(true)} onBuild={text=>{setRequestText(text);setRequestDirty(false);}}/>}
+        {requestDirty&&<p className="caption">表单更改尚未写入运行配置。</p>}
+        <ProviderSettings/>
+        <details open><summary>运行配置 · 可编辑</summary><textarea className="request-editor" value={requestText} onChange={(e) => {setRequestText(e.target.value);setRequestDirty(false);}} spellCheck={false} rows={18} placeholder="可在此加入采集、预测或情景参数；也可留空，由 Leader 生成。" /><button onClick={() => {setRequestText("");setRequestDirty(false);}}>清空配置，重新由 Agent 规划</button></details>
         <p className="caption">预测与情景属于实验性模型结果。程序不会将未知字段填为中性，也不会把预设质量阈值写成已验证成绩。</p>
       </aside></div>}
     </main>

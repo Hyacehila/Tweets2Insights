@@ -9,6 +9,7 @@ class PostRecord(Contract):
     raw_id: str
     kind: Literal['post', 'comment'] = 'post'
     parent_ref: str | None = None
+    thread_ref: str | None = None
     content: str
     published_at: UTCDateTime | None = None
     collected_at: UTCDateTime | None = None
@@ -18,6 +19,11 @@ class PostRecord(Contract):
     author_ref: str | None = None
     media_refs: list[str] = Field(default_factory=list)
     raw_asset_ref: str | None = None
+    region: str | None = None
+    read_count: int | None = Field(default=None, ge=0)
+    like_count: int | None = Field(default=None, ge=0)
+    comment_count: int | None = Field(default=None, ge=0)
+    repost_count: int | None = Field(default=None, ge=0)
 
     @model_validator(mode='after')
     def time_consistency(self):
@@ -32,6 +38,8 @@ class FieldAnnotation(Contract):
     reason: str | None = None
     probability: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
     provider_confidence: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
+    probabilities: dict[str, float] | None = None
+    probability_margin: float | None = Field(default=None, ge=0, le=1)
 
     @model_validator(mode='after')
     def value_consistency(self):

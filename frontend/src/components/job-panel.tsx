@@ -11,6 +11,9 @@ export function JobPanel({ threadId }: { threadId: string }) {
   const [result, setResult] = useState<DomainResult>({});
   const [artifact, setArtifact] = useState<ArtifactRef>();
   const [error, setError] = useState("");
+  const [tools,setTools]=useState<{name:string;description:string}[]>([]);
+  const [tool,setTool]=useState("sentiment_time_series"),[parameters,setParameters]=useState("{}");
+  useEffect(()=>{api<{name:string;description:string}[]>("/analysis-tools").then(setTools).catch(()=>{});},[]);
   useEffect(() => {
     setJobs([]); setSelected(""); setResult({}); setArtifact(undefined); setError("");
     let live = true;
@@ -29,6 +32,10 @@ export function JobPanel({ threadId }: { threadId: string }) {
     try { await post(`/threads/${threadId}/jobs/${job.job_id}/${name}`, {}); setJobs(await api(`/threads/${threadId}/jobs`)); }
     catch (e) { setError((e as Error).message); }
   }
+  async function supplement(){
+    try{await post(`/threads/${threadId}/jobs/${selected}/analysis-tools/${tool}`,JSON.parse(parameters));setJobs(await api(`/threads/${threadId}/jobs`));setError("");}
+    catch(e){setError((e as Error).message);}
+  }
   return <section className="job-panel">
     <div className="section-heading"><h2>运行与产物</h2><span>{jobs.length} 个任务</span></div>
     {error && <p className="error">{error}</p>}
@@ -43,7 +50,7 @@ export function JobPanel({ threadId }: { threadId: string }) {
         {["completed", "partial"].includes(job.status) && <button onClick={() => setSelected(job.job_id)}>查看产物</button>}
       </div>
     </article>)}
-    {result.artifacts && <><div className="artifact-tabs">{Object.entries(result.artifacts).map(([key, ref]) => <button key={key} onClick={() => setArtifact(ref)}>{key}</button>)}</div>
+    {result.artifacts && <>{result.artifacts.labels&&<details><summary>基于本次冻结标签补充分析</summary><label>工具<select value={tool} onChange={e=>setTool(e.target.value)}>{tools.map(t=><option key={t.name} value={t.name}>{t.description}</option>)}</select></label><label>参数 JSON<textarea value={parameters} onChange={e=>setParameters(e.target.value)}/></label><button onClick={supplement}>提交补充分析</button></details>}<div className="artifact-tabs">{Object.entries(result.artifacts).map(([key, ref]) => <button key={key} onClick={() => setArtifact(ref)}>{key}</button>)}</div>
       {artifact && <ArtifactViewer threadId={threadId} reference={artifact} />}</>}
   </section>;
 }

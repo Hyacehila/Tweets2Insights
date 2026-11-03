@@ -1,15 +1,19 @@
 # 领域契约与历史迁移
 
-更新：2026-11-03。PR-01；默认 PocketFlow 入口不变。
+更新：2026-11-03。契约源码位于 backend/src/domain/opinion_core/schemas；默认主链为新工作台与领域 Worker，PocketFlow 仅保留兼容。
 
 `opinion_core/schemas/` 使用 Pydantic 严格拒绝未知字段，`contract_version=1`。
 EventSpec 固定输入模式和搜索供应商；上传/已有数据必须有 dataset_ref，关键词采集需要 keywords。
 时间必须带时区并归一化 UTC，窗口为 `[start,end)` 且 end 不超过 as_of。
-EventSchema 的类别只有 ID 与定义，无层级；证据引用不能为空。完整冻结注册和先导搜索门禁将在标注服务实现。
+EventSchema 的类别只有 ID 与定义，无层级；证据引用不能为空。准备服务已实现搜索前置、采样上下文和冻结缓存。
 
 PostRecord 保留原始 ID、时间、来源和媒体引用。缺失或无法解释的发布时间为 null；采集时间不能替代发布时间。
+可选 region、read_count、like_count、comment_count、repost_count 保留地区和互动事实；缺失为 null，不能自动填零。
+parent_ref 是同平台父帖的原始 ID；thread_ref 可保存平台原生讨论线程 ID。话题共现优先按 thread_ref 分组，
+否则沿已知父引用查找线程根；不能把单标签帖子解释为多话题共现。
 AnnotationRecord 每字段分别存 accepted/abstained/failed/missing；只有 accepted 带值。
 provider_confidence 单列模型自报置信度，不能自动当作 probability；自动标注入口不声称已完成置信度校准。
+原生 System One 可保存 probabilities、被选类别 probability 和 probability_margin；这些均是供应商输出/派生量，独立 Demo 才能评估校准质量。
 立场只接受 support/oppose/neutral 且必须绑定 target_id；情感为 [-1,1] 显示编码。
 RunManifest 保存数据、代码、schema、模型、提示词版本、seed、预算与配置，拒绝含凭据名称的配置字段。
 

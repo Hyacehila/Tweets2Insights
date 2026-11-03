@@ -2744,6 +2744,7 @@ dependencies = [
     { name = "pyyaml" },
     { name = "requests" },
     { name = "scikit-learn" },
+    { name = "scipy" },
     { name = "uvicorn", extra = ["standard"] },
     { name = "zai-sdk" },
 ]
@@ -2771,6 +2772,7 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6,<7" },
     { name = "requests", specifier = ">=2.32,<3" },
     { name = "scikit-learn", specifier = ">=1.5,<2" },
+    { name = "scipy", specifier = ">=1.15,<2" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.30,<1" },
     { name = "zai-sdk", specifier = ">=0.0.4.2" },
 ]

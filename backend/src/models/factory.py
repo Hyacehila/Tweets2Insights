@@ -1,5 +1,5 @@
 import asyncio
-import os
+from opinion_gateway.credentials import get
 from opinion_core.labeling.glm_provider import GLMJsonProvider
 
 
@@ -8,7 +8,7 @@ class ModelFactory:
         self.settings = settings
 
     async def request(self, instruction, payload):
-        key = os.environ.get(self.settings.model_api_key_env)
+        key = get(self.settings.model_api_key_env)
         if not key:
             raise EnvironmentError("configured Agent model credential is missing")
 

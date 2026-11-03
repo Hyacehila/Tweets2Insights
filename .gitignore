@@ -47,3 +47,5 @@ node_modules/
 .next/
 *.tsbuildinfo
 backend/.venv/
+.provider-secrets.json
+.credential-*

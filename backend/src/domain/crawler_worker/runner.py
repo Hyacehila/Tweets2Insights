@@ -4,6 +4,7 @@ from opinion_core.schemas.records import PostRecord
 from opinion_core.schemas.workflow import CrawlSpec
 from opinion_core.schemas.event import EventSpec
 from opinion_gateway.connectors import invoke_connector, WaitingForAuthentication, ConnectorUnavailable
+from .x_api import fetch_page
 
 
 def collect(event, spec, *, check_cancel=lambda:None, checkpoint=None, save_checkpoint=lambda state:None):
@@ -37,10 +38,14 @@ def collect(event, spec, *, check_cancel=lambda:None, checkpoint=None, save_chec
                 try:
                     requests += 1
                     save()
-                    response = invoke_connector('crawl',platform,{'operation':'fetch_page',
+                    payload={'operation':'fetch_page',
+                        'include_posts':spec.max_posts>0,'include_comments':spec.max_comments>0,
                         'event':event.model_dump(mode='json'),'cursor':cursor,'session_ref':spec.session_ref,
                         'remaining_posts':spec.max_posts-totals['post'],
-                        'remaining_comments':spec.max_comments-totals['comment']})
+                        'remaining_comments':spec.max_comments-totals['comment']}
+                    response = fetch_page(payload) if platform=='x' else invoke_connector('crawl',platform,payload)
+                    if response.get('partial'):
+                        status='partial'
                     break
                 except (WaitingForAuthentication,ConnectorUnavailable):
                     raise

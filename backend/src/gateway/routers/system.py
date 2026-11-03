@@ -1,4 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request, HTTPException
+from pydantic import BaseModel, Field, SecretStr, ConfigDict
+from urllib.parse import urlsplit
+from opinion_gateway import credentials
+from opinion_core.analytics.toolbox import catalog
 from ..dependencies import settings, runtime
 
 router = APIRouter(tags=["system"])
@@ -30,3 +34,44 @@ def skills(manager=Depends(runtime)):
 @router.get("/api/tools")
 async def tools(manager=Depends(runtime)):
     return await manager.mcp.discover()
+
+
+@router.get("/api/analysis-tools")
+def analysis_tools():
+    return catalog()
+
+
+@router.get("/api/providers")
+def providers():
+    return credentials.status()
+
+
+class CredentialInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    provider: str
+    api_key: SecretStr
+    endpoint: str | None = Field(default=None, max_length=500)
+
+
+@router.post("/api/providers")
+def configure_provider(
+    body: CredentialInput, request: Request, value=Depends(settings)
+):
+    origin = request.headers.get("origin")
+    if request.client and request.client.host not in {"127.0.0.1", "::1", "testclient"}:
+        raise HTTPException(
+            403, "credential changes are available on the local workstation only"
+        )
+    if origin and origin != value.frontend_origin:
+        expected, actual = urlsplit(value.frontend_origin), urlsplit(origin)
+        loopback = {"localhost", "127.0.0.1", "::1"}
+        if not (
+            actual.hostname in loopback
+            and expected.hostname in loopback
+            and actual.scheme == expected.scheme
+            and actual.port == expected.port
+        ):
+            raise HTTPException(403, "untrusted origin")
+    return credentials.save(
+        body.provider, body.api_key.get_secret_value(), body.endpoint
+    )

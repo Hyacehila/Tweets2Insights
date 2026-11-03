@@ -8,6 +8,7 @@
 | `config.example.yaml` | 不含密钥的主应用模板 |
 | `extensions_config.json` | 启用的本地 stdio MCP 服务、传递的变量名称、项目技能 |
 | `.env` | 本机 API Key、连接器与价格文件位置；不提交 |
+| `.provider-secrets.json` | 前端配置接口写入的本机凭据，gitignored；优先于环境变量，读取 API 不返回密钥 |
 | `T2I_PROJECT_ROOT` | 应用根目录覆盖；默认由后端源码位置定位 |
 | `T2I_CONFIG_FILE` | 指定主配置路径 |
 | `T2I_STATE_ROOT` / `T2I_ASSET_ROOT` | 覆盖会话状态目录/领域资产目录 |
@@ -15,8 +16,24 @@
 | `RunRequest` | 冻结某次运行的数据、唯一搜索供应商、标注、观测、预测、情景和预算 |
 
 `.env` 使用 dotenv 加载，已有进程环境优先。Agent 使用 `models.default.api_key_env` 指定的变量，
-领域弱标注当前使用 `GLM_API_KEY`；搜索密钥为 `TAVILY_API_KEY` 或 `DEEPSEEK_API_KEY`。
+领域推理使用 `RunRequest.agent_model`；弱标注模型为 `labels.provider/model`，相互独立。搜索密钥为 `TAVILY_API_KEY` 或 `DEEPSEEK_API_KEY`。
 不要将密钥写入聊天、线程记忆、RunRequest 或版本库。
+
+| 标注服务 | 模型示例 | 凭据 | 端点 / 批次 |
+|---|---|---|---|
+| `jev` | `jev-latest` | `TYPESAFE_API_KEY` | 固定 `https://api.typesafe.ai/v1/systemone`；batch_size=1，每帖五个 choice 问题 |
+| `aliyun_decision` | `decision-model-preview` | `DASHSCOPE_API_KEY` | `ALIYUN_DECISION_ENDPOINT` 为业务空间域名，见下文；batch_size=1 |
+| `glm` | `glm-4.5-air` | `GLM_API_KEY` | 既有 GLM JSON 协议 |
+| `connector` | 由操作者设置 | 由本机连接器解析 | `labels.connector` 选择已安装 ID |
+
+阿里端点为 `https://{WorkspaceId}.cn-beijing.maas.aliyuncs.com/compatible-mode/v1/systemone`，
+或同路径的新加坡 `ap-southeast-1` 域名。配置接口仅接受官方 HTTPS 域名，禁止重定向。
+依据：[TypeSafe](https://docs.typesafe.ai/api/system-one)、[阿里云](https://help.aliyun.com/zh/model-studio/decision-model-api)。
+X 归档采集需要 `X_BEARER_TOKEN` 和账号对应的接口权限；其他平台仍需配置连接器。
+
+`GET /api/providers` 只显示配置状态；`POST /api/providers` 只允许本机客户端及配置的前端 Origin。
+凭据文件是本机明文文件，由操作系统账户权限保护，不是远程密钥保险库；容器部署应使用环境变量/Secret。
+Worker 每次创建服务适配器时重新读取本机配置，无须把密钥写入任务产物。
 
 `domain` 配置区表达固定部署策略：独立 Worker、生产人工复核关闭、质量状态待验证；
 它不控制研究质量结论，修改配置不能使 Demo 自动达标，也不能改变领域契约。

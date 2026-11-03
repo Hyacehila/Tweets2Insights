@@ -13,6 +13,7 @@ Tweets2Insights/
 ├── extensions_config.json           # ★ MCP 服务和技能启用配置
 ├── .env                             # ★ 本机密钥与连接器变量，gitignored
 ├── .env.example                     # 空密钥环境模板
+├── .provider-secrets.json           # UI 保存的本机凭据，gitignored
 ├── README.md                        # 默认启动方法和项目说明
 ├── CONTRIBUTING.md                  # 分层约束与开发指南
 ├── SECURITY.md                      # 当前安全边界
@@ -47,16 +48,21 @@ Tweets2Insights/
 │   │       │   ├── schemas/         # 事件、标签、请求、任务、产物契约
 │   │       │   ├── ingestion/       # 历史数据无损迁移
 │   │       │   ├── labeling/        # 事件 Schema、自动弱标注、词表
+│   │       │   │   ├── sampling.py  # 高阅读量池随机抽样，仅用于标签发现
+│   │       │   │   └── system_one.py # Jev / 阿里 decision 原生协议
 │   │       │   ├── evidence/        # 搜索适配、证据卡、论坛、多模态接口
 │   │       │   ├── analytics/       # 分布观测、图表、复用 NLP
+│   │       │   │   └── toolbox.py   # 41 个工具入口、参数、来源表及图表
 │   │       │   ├── dynamics/        # 联合 HK、同化、预测与回测
+│   │       │   │   └── latent.py    # PCA 编解码与训练内滚动参数选择
 │   │       │   ├── scenarios/       # 配对条件情景
 │   │       │   ├── reporting/       # 内容、结构、引用校验与渲染
+│   │       │   │   └── agents.py    # 内容整理 / 社科解释 / 页面布局
 │   │       │   ├── evaluation/      # Demo 与消融脚本，后置评测
 │   │       │   └── orchestration.py # 确定性领域计划编译
 │   │       ├── opinion_gateway/     # MCP 服务、应用服务、资产、预算、Job/Worker
-│   │       └── crawler_worker/      # 独立采集执行器和连接器协议
-│   └── tests/                       # 新后端测试位置；统一验证阶段补齐
+│   │       └── crawler_worker/      # 独立采集执行器、X 官方 API、连接器协议
+│   └── tests/                       # 离线工程契约与 Worker 集成检查
 │
 ├── frontend/                        # ★ Next.js + React + TypeScript
 │   ├── package.json
@@ -66,6 +72,10 @@ Tweets2Insights/
 │   └── src/
 │       ├── app/                     # App Router、布局、工作区和聊天页
 │       ├── components/              # 工作台、任务面板、产物查看器
+│       │   ├── workflow-builder.tsx # 输入、阶段、角色、模型及本机凭据
+│       │   ├── forum-view.tsx       # 讨论、补充行动、分歧与停止原因
+│       │   ├── analysis-chart.tsx   # 交互图表、序列筛选和来源表
+│       │   └── report-view.tsx      # 章节化报告与证据引用
 │       ├── hooks/                   # SSE 事件流与游标续读
 │       └── lib/                     # API 客户端和共享类型
 │
@@ -101,8 +111,8 @@ Tweets2Insights/
 └── .opinion-assets/                  # 运行生成：数据、领域作业与版本资产
 ```
 
-`backend/tests` 目前只有后置验证说明，不能据此认定新增了完整测试集。
-`sandbox` 仅限制文件访问能力；子 Agent 只做有调用上限的专业评阅，不获得任意 shell 或嵌套调度权限。
+`backend/tests` 使用合成记录和供应商替身验证工程契约；不等同于人工金标准 Demo、科学实验或浏览器验收。
+`sandbox` 仅限制文件访问能力；规划层子 Agent 做有限评阅，领域论坛可调用白名单分析工具与所选搜索服务，均不获得任意 shell。
 Docker/K8s 为待验证部署模板；开发 Compose 只为后端挂载热重载代码，前端仍使用构建镜像。
 
 参见 [分层架构](architecture.md)、[Agent Runtime](modules/agent-runtime-architecture.md) 和 [复用清单](modules/architecture-rewrite.md)。

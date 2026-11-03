@@ -19,7 +19,16 @@ Gateway 重启会将未结束的 Agent execution 标为 interrupted；模型在�
 
 graph 为 context → leader → subagents → dispatch。结构化请求直接校验；自然语言请求通过真实 GLM 模型工厂
 编译为 RunRequest。缺参数时返回 needs_input。默认专业评阅角色为 Insight/Query，有调用数量上限；
-任务的数值、采集、标注、内容与结构仍由领域 Worker 执行，专业角色不能另建调度循环。
+这是规划层评阅。业务论坛由同一领域 Worker 内的 `evidence/forum.py` 驱动，不能另开第二个任务调度器。
+
+## 业务论坛：改进原第二阶段
+
+保留 CollectTools → DecisionTools → ExecuteTools → ProcessResult → 图表覆盖检查与 ForumHost 反馈的职责。
+`analytics/toolbox.py` 将 41 个保留工具接到统一记录契约；`select_tools` 选择互补分析，失败时使用明确记录的基础工具组合。
+启用角色为 data、search、visual、insight、methodology 中的任务配置子集，主持人协调 supplement_data/search/visual。
+每轮的意见、证据、共识、分歧、缺口、调用和停止原因持久化；无效决策不能推断为充分。
+工具调用按数据指纹、工具版本和参数去重；补图也必须有源表。总轮数、工具数及模型/搜索账本共同限制执行。
+详见[完整工作流](full-workflow.md)。
 
 ## 已写入的横向模块
 
@@ -28,13 +37,13 @@ graph 为 context → leader → subagents → dispatch。结构化请求直接�
 - checkpointer：AsyncSqliteSaver，持久化图状态。
 - sandbox：受限线程文件区，不提供任意 shell，不冒充 OS 级执行沙箱。
 - mcp：加载 extensions_config.json，发现并精确匹配真实工具名，禁止模糊授权。
-- models：统一 GLM SDK 模型入口，API Key 由环境变量引用。
+- models：生成式 Agent 使用 GLM；决策标注模型独立配置为 GLM/Jev/阿里/连接器，密钥来自本机配置或环境。
 - skills：加载已启用的 public/custom SKILL.md；当前提供 3 个项目技能，不声称自带上游 20+ 技能。
 - subagents：角色注册和受限评阅执行；不开放嵌套委派。
 
 ## REST 与前端
 
-6 组路由：threads、runs、events、datasets、artifacts、system。
+6 组路由：threads、runs、events、datasets、artifacts、system；system 增加工具目录与写入式本机凭据配置。
 客户端仅提交会话输入和配置；event_id 从线程记录解析。上传、任务、产物读取都走同一事件范围。
 前端使用 App Router，聊天地址 `/workspace/chats/[threadId]`，通过 EventSource 接收阶段事件。
 Next 开发代理 `/api`；容器由 Nginx 分流 `/api` 与前端页面。此 SSE 是本项目协议，未宣称兼容 LangGraph SDK。

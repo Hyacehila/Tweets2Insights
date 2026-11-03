@@ -46,6 +46,8 @@ class ContentBundle(Contract):
         for block in self.blocks:
             if not set(block.evidence_refs) <= evidence or not set(block.numeric_refs) <= set(self.metrics):
                 raise ValueError('unresolved content reference')
+            if not set(block.artifact_refs) <= set(self.source_versions.values()):
+                raise ValueError('unresolved artifact reference')
         return self
 
 

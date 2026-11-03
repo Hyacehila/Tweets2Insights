@@ -1,12 +1,32 @@
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import Response
-import io, json, zipfile
+import io, json, zipfile, re
 from opinion_gateway.assets import ArtifactStore
 from ..dependencies import runtime, store, settings
 
 router = APIRouter(
     prefix="/api/threads/{thread_id}", tags=["domain jobs and artifacts"]
 )
+
+
+@router.post("/jobs/{job_id}/analysis-tools/{tool}")
+async def analytical_tool(
+    thread_id: str,
+    job_id: str,
+    tool: str,
+    parameters: dict,
+    db=Depends(store),
+    manager=Depends(runtime),
+):
+    return await manager.mcp.call(
+        "submit_analysis_tool",
+        {
+            "event_id": db.get(thread_id)["event_id"],
+            "source_job_id": job_id,
+            "tool": tool,
+            "parameters": parameters,
+        },
+    )
 
 
 @router.get("/jobs")
@@ -102,7 +122,10 @@ async def export(
                 if key in data:
                     archive.writestr(name, data[key])
             for name, value in data.get("images", {}).items():
-                if name not in {"sentiment.svg", "stance.svg"}:
+                if not re.fullmatch(
+                    r"(sentiment|stance|t-[a-f0-9]{64}|forecast-(stance|sentiment|topic|emotion|mass-stance|mass-sentiment)|scenario-(stance|variance))\.svg",
+                    name,
+                ):
                     raise ValueError("unknown chart name")
                 archive.writestr("images/" + name, value)
             archive.writestr(

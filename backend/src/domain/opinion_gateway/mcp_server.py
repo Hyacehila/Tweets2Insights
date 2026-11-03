@@ -2,7 +2,6 @@
 import argparse
 import hashlib
 import json
-import uuid
 from collections import Counter
 from pathlib import Path
 from fastmcp import FastMCP
@@ -146,7 +145,7 @@ def create_server(root):
     server = FastMCP('Opinion Domain Tool Service')
     for name in ('register_dataset', 'describe_dataset', 'read_evidence', 'render_report', 'read_artifact', 'job_status', 'cancel_job',
                  'submit_inventory_job', 'list_jobs', 'retry_job', 'read_job_artifact', 'preview_plan', 'submit_run',
-                 'list_datasets','list_artifacts','read_domain_artifact','resume_job'):
+                 'list_datasets','list_artifacts','read_domain_artifact','resume_job', 'analysis_tool_catalog','submit_analysis_tool'):
         server.tool()(getattr(service, name))
     return server
 

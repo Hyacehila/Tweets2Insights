@@ -1,7 +1,7 @@
 # Tweets2Insights 项目架构
 
 更新：2026-11-03。默认应用采用 Next.js + FastAPI + LangGraph；领域任务由独立 Worker 执行。
-目录按照用户提供的 DeerFlow 风格组织，参考版本和适配范围见 [Agent Runtime 说明](modules/agent-runtime-architecture.md)。
+DeerFlow 提供运行时分层参考，业务阶段独立设计；论坛以本项目原第二阶段为直接基础，角色和补证路径由任务决定。参考范围见 [Agent Runtime 说明](modules/agent-runtime-architecture.md)。
 
 ## 分层与依赖方向
 
@@ -17,11 +17,12 @@ flowchart TD
   DOMAIN --> JOB[冻结请求 / 持久作业 / 版本资产]
   JOB --> WORKER[独立 Domain Worker]
   WORKER --> INPUT[已有数据 / 独立采集进程]
-  INPUT --> LABEL[事件 Schema / 自动弱标注]
+  INPUT --> SAMPLE[高阅读量池随机样本 / Schema Agent]
+  SAMPLE --> LABEL[Jev / 阿里 decision / GLM 自动弱标注]
   LABEL --> OBS[分布观测 / 来源表]
-  OBS --> EVIDENCE[取证与证据论坛]
-  OBS --> MODEL[联合 HK / 同化 / 预测 / 情景]
-  EVIDENCE --> CONTENT[内容与结构 / 引用校验]
+  OBS --> EVIDENCE[工具选择与执行 / 按需角色论坛 / 补证反馈]
+  OBS --> MODEL[PCA 训练 / 隐空间联合 HK / 同化 / 解码 / 情景]
+  EVIDENCE --> CONTENT[内容 Agent / 社科 Agent / UI Agent / 引用校验]
   MODEL --> CONTENT
   CONTENT --> ARTIFACT[报告 / 图表 / 可追溯产物]
   ARTIFACT --> API
@@ -65,4 +66,5 @@ SSE 支持游标续读；Gateway 重启会将未结束的 Agent execution 标为
 架构、功能脚本、启动和部署模板已写入。后端语法/关键导入及前端类型检查已执行；这些不是业务验收。
 按用户要求，端到端、真实标注、采集、Demo 和科学实验在脚本完成后统一测试。
 Compose/Kubernetes 未部署验证；当前为单操作者环境，无多租户认证；sandbox 是文件能力隔离，不是 OS 执行沙箱。
-旧 Streamlit 专项图表与 PDF 导出入口保留，新 Next.js 界面尚未覆盖全部旧可视化交互。
+新 Next.js 已接入交互图表、论坛过程和章节报告；旧 Streamlit 的 PDF 等兼容入口保留。
+逐项功能和验证边界见[完整工作流](modules/full-workflow.md)，当前工程检查记录见[实施记录](upgrade-status.md)。

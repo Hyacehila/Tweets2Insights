@@ -2,7 +2,46 @@
 
 更新：2026-11-03。代码基线 c29743a，开发分支 refine。
 
-## 项目 README 与文档入口重写
+## 最新：完整阶段工作流与原第二阶段论坛改进
+
+在 README 提交 8d3564a 基础上，实现本轮用户确认的完整业务路径。DeerFlow 仅作为运行时分层参考，
+论坛沿用本项目原 Stage 2 的选工具、执行、补图、补搜和主持反馈能力，按任务启用角色。
+
+- 前端选择输入路径及复盘/训练预测/情景/滚动诊断；Leader 编译前置依赖，唯一 Worker 依次执行。
+- 高阅读量随机抽样用于 Schema 选词；观测时间范围外的数据不进入样本，正式统计不被抽样截断。
+- 原生 Jev/阿里 System One 适配、概率与差距拒判、独立生成式 Agent 模型；本机写入式凭据配置。
+- 41 个分析入口完成新契约接线；结果含源表、覆盖、参数、指纹。补充工具可作为独立作业提交。
+- 可配置 data/search/visual/insight/methodology + ForumHost；类型化补调用、去重、预算、分歧和停止原因。
+- 内容整理、社科解释、页面布局三个 Agent；交互报告、论坛过程、预测分布和配对情景图表。
+- PCA 训练、隐空间联合 HK、解码摘要同化、训练内滚动参数选择、六种模型/基线诊断。
+- 三类措施机制、共享随机流配对、资源成本与方差 Pareto 对照、条件建议；模型标为 experimental。
+- X 官方归档搜索已写入；其他平台和多模态仍通过操作者连接器接入。真实服务未调用。
+
+脚本接线完成后执行离线工程检查：
+
+| 检查 | 结果及含义 |
+|---|---|
+| 新后端套件 + 4 个既有契约/标注单元模块 | 共 70 项通过，其中新套件 53 项；合成记录和供应商替身，覆盖 41 个工具、阶段选择、模型边界、论坛补调用、真实 MCP 目录及 Worker 资产链 |
+| `uv run --project backend python scripts/check_structure.py` | 112 个后端 Python 源码与 JSON/YAML 可解析，依赖方向检查通过 |
+| `uv run --project backend ruff check backend/src backend/tests --select E9,F` | 清理无用绑定后通过；不改变原 Demo 校验逻辑 |
+| `npm --prefix frontend run build` | Next.js 生产构建、类型检查、路由生成通过 |
+| `uv build --project backend --wheel --out-dir backend/dist` | 后端 wheel 构建通过 |
+| 文档本地链接检查 | 109 个相对链接可解析 |
+
+离线检查命令：
+
+```powershell
+uv run --project backend pytest backend/tests tests/unit/core/test_glm_label_provider.py tests/unit/core/test_weak_labeling.py tests/unit/core/test_event_preparation.py tests/unit/core/test_opinion_contracts.py -q
+```
+
+首轮实体共现用例没有提供该规则抽取器支持的 `#话题#`，修正夹具并明确工具仅识别标签/提及；
+未修改工具来伪造实体。第三方 Authlib 弃用提示仍存在，未影响离线检查。
+上述结果不代表真实 API、浏览器交互、人工 Demo、预测收益、区间覆盖或 Docker/K8s 已验收。
+未运行旧全仓真实服务套件；下方早期记录为历史快照，不与当前结果混用。
+
+设计、源码对应、兼容语义与待验收范围见[完整工作流](modules/full-workflow.md)。
+
+## 历史：项目 README 与文档入口重写
 
 在架构提交 e073bd2 之后，独立重写根 README，作为面向首次访问者的项目首页。
 参考 DeerFlow、BettaFish、Open Deep Research 的 README 组织方式，重新安排项目定位、核心能力、
@@ -11,7 +50,7 @@
 同步中文文档索引、贡献指南、运行及部署入口，补充跨平台环境文件初始化与标准上传格式示例。
 本轮仅改文档，检查本地链接、页内锚点、代码块及示例语法；不执行业务、Demo 或真实模型测试。
 
-## 当前架构：DeerFlow 风格前后端分层
+## 历史：DeerFlow 风格前后端分层
 
 在领域重写提交 7bb678f 之后，按用户给出的目录布局实现 backend/frontend/skills/docker：
 
@@ -28,7 +67,7 @@ backend/tests 当前仅为后置验证位置；不引用下方历史通过数证
 Next.js 已提供主流程界面；旧 Streamlit 专项图表/PDF 仍为兼容功能，尚未全部迁成新组件。
 详见 [2.7 目录总览](project-structure.md)、[运行时架构](modules/agent-runtime-architecture.md)。
 
-## 当前优先级：全项目架构重写
+## 历史：全项目架构重写顺序
 
 用户最新指示：先完成整个项目架构及各功能脚本，保留并迁移可复用代码，之后再统一测试。
 本记录下方 454 项通过的结果发生在此次重写之前，不作为重写后的验收证据。

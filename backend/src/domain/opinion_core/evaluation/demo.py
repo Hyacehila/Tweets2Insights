@@ -65,7 +65,7 @@ def _metrics(rows, predictions, field, classes):
 def evaluate_demo(gold, candidate, baseline, labels_by_field):
     if not gold or set(labels_by_field) != set(FIELDS):
         raise ValueError('nonempty gold and all five field vocabularies required')
-    ids = _index(gold)
+    _index(gold)
     candidate, baseline = _index(candidate), _index(baseline)
     counts = {'calibration':0, 'test':0}
     groups = {}

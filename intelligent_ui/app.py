@@ -78,6 +78,7 @@ def entry(service,event):
             request['model']={'training_cutoff':end.isoformat(),'horizon':int(horizon)}
         if shift:
             request['scenarios']=[{'scenario_id':'stance-shift','shift':shift,'assumptions':[assumptions]}]
+            request['event']['objectives'].append('scenario')
         if preview:
             st.json(service.preview_plan(request))
         else:

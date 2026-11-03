@@ -37,7 +37,7 @@ class EventPreparation:
             db.execute('INSERT OR REPLACE INTO preparations VALUES (?,?)', (key, canonical(result)))
             return result
 
-    def prepare(self, event, library, *, max_total_calls=4, search_api_key=None):
+    def prepare(self, event, library, *, max_total_calls=4, search_api_key=None, sample=None):
         event = EventSpec.model_validate(event)
         if not event.keywords or not ' '.join(event.keywords).strip():
             raise ValueError('schema preparation requires event keywords')
@@ -50,7 +50,7 @@ class EventPreparation:
             if len(ids) < minimum or len(set(ids)) != len(ids):
                 raise ValueError('fixed vocabulary needs enough unique labels')
         spec = event.model_dump(mode='json', exclude={'dataset_ref', 'input_mode'})
-        key = hashlib.sha256(canonical([spec, library, self.builder_version]).encode()).hexdigest()
+        key = hashlib.sha256(canonical([spec, library, self.builder_version, sample]).encode()).hexdigest()
         token = uuid.uuid4().hex
         def claim(old):
             if old and (old['status'] == 'frozen' or old.get('lease_until', 0) > time.time()):
@@ -94,7 +94,7 @@ class EventPreparation:
                 else:
                     unknown += 1
                 retained.append(card)
-            evidence = {**evidence, 'results': retained, 'unknown_publication_dates': unknown, 'event_context': spec}
+            evidence = {**evidence, 'results': retained, 'unknown_publication_dates': unknown, 'event_context': spec, 'sample': sample}
             if not retained:
                 raise ValueError('no_evidence_before_cutoff')
             error_type = 'schema_invalid'
