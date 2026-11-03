@@ -1,7 +1,13 @@
 # Design Doc: AnalysisPosts v1.0 (Phase 1–3)
 
 > Please DON'T remove notes for AI
-> Last Updated: 2026-02-22
+> Last Updated: 2026-11-03
+
+## Upgrade boundary
+
+新增 `opinion_core/schemas` 和 `opinion_core/ingestion` 作为领域契约与显式历史迁移层。
+默认三阶段入口保持兼容。新契约、迁移限制及实施状态见 [升级记录](upgrade-status.md)
+和 [领域契约](modules/opinion-contracts.md)。未来主控组件命名为 Leader Agent / Agent Runtime。
 
 ## Requirements
 

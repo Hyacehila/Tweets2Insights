@@ -1,9 +1,11 @@
 # Documentation Index
 
-> **Last Updated**: 2026-02-22
+> **Last Updated**: 2026-11-03
 > **Structure version**: v1.2 (Consolidated)
 
 ## Architecture
+- [Upgrade status](upgrade-status.md) — 实施证据与未完成项。
+- [Opinion contracts](modules/opinion-contracts.md) — 版本契约与无损历史迁移。
 - [System Architecture](architecture.md) — Core system architecture, Agent flows, shared state schema, and node definitions.
 
 ## Modules & Processing Detail
