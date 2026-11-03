@@ -1,40 +1,302 @@
 # Tweets2Insights
 
-更新：2026-11-03。按 DeerFlow 的分层方式构建事件研究工作台：Next.js 前端、FastAPI Gateway、
-LangGraph Leader、MCP 领域工具及独立 Worker。已有标注、分析、预测、情景和报告代码迁入 `backend/src/domain`。
+**面向事件的舆情分析与研究工作台：从社交文本出发，连接自动弱标注、分布分析、证据追溯与条件推演。**
 
-## 本机启动
+[![Python](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white)](backend/pyproject.toml)
+[![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933?logo=node.js&logoColor=white)](frontend/package.json)
+[![Stack](https://img.shields.io/badge/Stack-LangGraph%20%7C%20FastAPI%20%7C%20Next.js-0F766E)](doc/architecture.md)
+[![Status](https://img.shields.io/badge/Status-Research%20Preview-D97706)](#project-status)
 
-在当前业务仓库运行；需要 UV、Python 3.12+ 和 Node.js 22+。
+[核心能力](#features) · [快速开始](#quickstart) · [第一次分析](#first-analysis) · [系统架构](#architecture) · [文档](#documentation) · [项目状态](#project-status)
+
+Tweets2Insights 将一次事件研究组织为可追溯的工作流：导入帖子和评论，围绕事件生成标签定义，调用模型完成弱标注，再计算随时间变化的分布、整理外部证据并生成报告。研究者也可以配置联合 HK 与集合卡尔曼滤波（EnKF）模型，开展预测、回测和配对条件情景分析。
+
+项目采用 **Next.js 工作台 + FastAPI Gateway + LangGraph Agent Runtime + MCP 领域工具 + 独立 Worker**。Agent 负责规划和专业评阅；数据处理、数值计算与报告生成由领域模块执行，任务配置和产物按版本保存。
+
+> [!NOTE]
+> 当前开发位于 `refine` 分支，处于研究预览阶段。新架构源码已写入，并完成静态检查及后端安装包构建；完整应用、真实供应商、Demo 和数值实验仍待统一验证。详见[项目状态](#project-status)。
+
+<a id="features"></a>
+## 核心能力
+
+| 能力 | 项目中的实现 |
+|---|---|
+| **事件驱动的数据接入** | 上传标准 JSON、选择已有数据版本，或通过连接器按关键词采集；已有数据路径不会启动采集。 |
+| **自动弱标注** | 先检索事件背景，再冻结标签 Schema；输出主题、发布者类别、情绪、情感极性及针对明确命题的立场。 |
+| **分布与证据分析** | 按时间窗口统计有效样本、字段覆盖率和标签分布，关联帖子、搜索结果与证据卡。 |
+| **预测与条件情景** | 提供联合 HK–EnKF、对照模型、滚动回测及配对情景脚本；模型效果等待实验验证。 |
+| **可追溯报告** | 内容先绑定证据和数值，再生成结构与报告；支持 Markdown、HTML、JSON、ZIP，以及图表源数据。 |
+| **持续运行的工作台** | 会话、图检查点、SSE 事件流、持久任务、取消、重试及产物查看；采集登录等待状态可恢复。 |
+
+**生产流程使用模型弱标注，标注后自动进入分析，不逐条安排人工复核。** 人工标注仅用于独立 Demo 的方案评测。自动校验、字段拒判、失败记录、预算和版本追溯仍保留；缺失或失败不会被填成“中性”。
+
+采集、Jev 等候选决策模型和视觉服务通过[操作者配置的连接器](doc/modules/architecture-rewrite.md#功能脚本与外部接入的区别)接入。当前仓库提供协议与执行路径，具体平台适配和真实服务验证需分别完成。
+
+<a id="quickstart"></a>
+## 快速开始
+
+### 1. 准备环境并获取代码
+
+| 依赖 | 要求 |
+|---|---|
+| Python | 3.12 或更高版本，依赖由 UV 管理 |
+| Node.js | 22 或更高版本，前端使用 npm |
+| Git | 用于获取仓库与更新代码 |
+| 服务凭据 | 执行模型流程需要 GLM，以及所选搜索服务的 API Key |
+
+```bash
+git clone --branch refine https://github.com/Hyacehila/Tweets2Insights.git
+cd Tweets2Insights
+uv sync --project backend --frozen
+npm --prefix frontend ci
+```
+
+以下命令均在包含 `backend/` 和 `frontend/` 的**仓库根目录**执行。根目录另有旧环境配置，新应用使用 `--project backend` 指定后端环境。
+
+### 2. 配置模型与搜索服务
+
+首次使用时，从模板创建 `.env`，保留已有配置。
+
+**Windows PowerShell：**
 
 ```powershell
-uv sync --project backend
-npm --prefix frontend ci
-# 首次使用时将 .env.example 复制为 .env，填写所用服务的密钥
+if (!(Test-Path .env)) { Copy-Item .env.example .env }
+```
+
+<details>
+<summary>Linux / macOS</summary>
+
+```bash
+test -f .env || cp .env.example .env
+```
+
+</details>
+
+在 `.env` 中填写本机凭据。以下以 Tavily 为例；占位文本需替换为实际密钥：
+
+```dotenv
+GLM_API_KEY=your-glm-api-key
+TAVILY_API_KEY=your-tavily-api-key
+```
+
+若选择 DeepSeek Search，则填写 `DEEPSEEK_API_KEY`，并在工作台或运行请求中选择 `deepseek`。每次运行只使用一个搜索供应商。模型名称在 [`config.yaml`](config.yaml) 中设置，默认 Agent 模型为 `glm-4.5-air`；单次领域标注模型由运行请求的 `labels.model` 指定。
+
+`.env` 不进入版本库。采集或多模态任务还需要配置对应连接器，见[配置说明](doc/configuration.md)。
+
+### 3. 启动工作台
+
+```bash
 uv run --project backend python scripts/dev.py start
-# 停止本启动器拥有的进程
+```
+
+启动器同时启动 Gateway、领域 Worker 和 Next.js 开发服务器。默认地址：
+
+| 入口 | 地址 |
+|---|---|
+| 研究工作台 | [http://127.0.0.1:3000](http://127.0.0.1:3000) |
+| Gateway API 文档 | [http://127.0.0.1:8001/docs](http://127.0.0.1:8001/docs) |
+
+停止服务：
+
+```bash
 uv run --project backend python scripts/dev.py stop
 ```
 
-默认工作台 `http://127.0.0.1:3000`，Gateway `http://127.0.0.1:8001`。
-`config.yaml` 控制应用与模型；`extensions_config.json` 配置 MCP 和技能；密钥保存在忽略文件 `.env`。
-启动器同时管理 Gateway、领域 Worker 和前端，日志位于 `.app-state`。
-Windows 也可执行 `scripts/run_dashboard.ps1`；支持 Make 的环境可使用 `make install/dev/stop/check`。
+日志默认保存在 `.app-state/gateway.log`、`.app-state/worker.log` 和 `.app-state/frontend.log`。若页面未就绪，先查看对应日志；启动脚本打印进程启动信息不等于服务已通过健康检查。
 
-生产流程自动弱标注，不设置人工逐条复核。人工金标准仅用于后置独立 Demo。
-已有数据入口不会触发采集；搜索供应商在请求中唯一确定。采集、决策模型及视觉服务需要配置真实连接器。
+<a id="first-analysis"></a>
+## 第一次分析
 
-## 文档
+1. **新建事件会话**：使用 `rain` 等事件 ID。同一事件的多个会话共享该事件的数据和领域任务。
+2. **上传标准 JSON**：选择数据版本，填写事件关键词与唯一搜索供应商。运行配置中的分析窗口应覆盖数据的发布时间。
+3. **生成计划**：描述分析目标，或使用结构化配置。自然语言规划会调用模型；结构化计划预览只校验和编译请求。
+4. **提交执行**：Worker 按阶段完成搜索、标注和分析，任务面板显示状态及停止原因。
+5. **查看产物**：选择任务中的分析或报告产物，查看有界数据和报告预览，并下载结果。
 
-- [2.7 项目目录结构总览](doc/project-structure.md)
-- [系统架构](doc/architecture.md)与[Agent Runtime 说明](doc/modules/agent-runtime-architecture.md)
-- [运行手册](doc/modules/domain-application.md)、[配置](doc/configuration.md)与[部署](doc/deployment.md)
-- [迁移及复用清单](doc/modules/architecture-rewrite.md)、[前端说明](doc/frontend-guide.md)
-- [实施记录](doc/upgrade-status.md)与[Demo 协议](doc/testing/weak-label-demo-protocol.md)
+例如，可以在选定数据后描述：
 
-当前已完成源码迁移与架构脚本，已做语法、关键导入和 TypeScript 类型检查。
-按用户指定顺序，功能与端到端测试、Demo、真实标注和数值研究验收后置；不将静态检查视为业务通过。
-Docker/K8s 尚未部署验证。当前面向本机单操作者，详细边界见 [SECURITY.md](SECURITY.md)。
+> 使用已上传的数据和 Tavily 搜索，分析 2026 年 10 月 1 日至 8 日的城市暴雨讨论。按天统计主题、情绪和立场分布，保留缺失情况与来源引用，本次只做事件复盘。
 
-原领域 CLI、Streamlit 专项视图、PDF 导出与 PocketFlow 入口保留兼容，见[运行手册](doc/modules/domain-application.md)。
-参考的 DeerFlow 版本与差异在 Agent Runtime 文档中列明；本项目没有复制上游源码或宣称全功能等价。
+编辑器中已有结构化请求时，系统优先使用该请求；需要重新由 Agent 规划时，先点击“清空配置，重新由 Agent 规划”。“停止 Agent”只停止当前会话运行，已提交的领域任务需在任务卡片中另行取消。
+
+<details>
+<summary>上传数据格式</summary>
+
+上传文件为 JSON 数组，元素遵循 [`PostRecord`](backend/src/domain/opinion_core/schemas/records.py)。以下是字段示例，不是 Demo 或评测数据：
+
+```json
+[
+  {
+    "post_id": "example-001",
+    "platform": "example",
+    "raw_id": "001",
+    "kind": "post",
+    "content": "暴雨后道路积水，希望尽快公布排水进展。",
+    "published_at": "2026-10-01T10:00:00Z",
+    "time_status": "parsed"
+  }
+]
+```
+
+时间使用含时区的 ISO 8601 格式。`published_at` 有值时，`time_status` 必须为 `parsed`；时间未知时保留缺失状态。旧格式数据可通过[迁移入口](doc/modules/domain-application.md#兼容入口)转换。
+
+</details>
+
+<details>
+<summary>通过 CLI 提交同一条领域工作流</summary>
+
+```bash
+uv run --project backend python -m src.tools.cli register --event rain --file posts.json
+uv run --project backend python -m src.tools.cli plan --request run.json
+uv run --project backend python -m src.tools.cli submit --request run.json
+```
+
+先将 [`configs/domain-run.example.json`](configs/domain-run.example.json) 保存为 `run.json`，用注册返回的 `dataset_id` 替换占位值，并调整日期和研究目标。该模板包含预测与情景配置；仅复盘时，将 `objectives` 设为 `["retrospective"]`，移除 `model` 和 `scenarios`。
+
+CLI 提交后同样需要领域 Worker；默认启动器已经包含它。独立使用 CLI 时，可另开终端运行：
+
+```bash
+uv run --project backend python -m src.tools.worker
+```
+
+同一 `event_id/run_id` 的配置会冻结，修改配置需使用新的 `run_id`。任务查询、重试与导出命令见[运行手册](doc/modules/domain-application.md)。
+
+</details>
+
+<a id="architecture"></a>
+## 系统架构
+
+```mermaid
+flowchart TD
+    UI["Next.js 研究工作台"] --> API["FastAPI Gateway"]
+    API --> LEAD["LangGraph Leader：规划与受限专业评阅"]
+    LEAD --- STATE["会话记忆 / SQLite 检查点 / SSE 事件"]
+    LEAD --> MCP["MCP 领域工具"]
+    MCP --> JOB["冻结请求 / 持久任务 / 独立 Worker"]
+    JOB --> INPUT["已有数据或按需采集"]
+    INPUT --> LABEL["事件 Schema / 自动弱标注"]
+    LABEL --> OBS["分布观测与图表"]
+    OBS --> EVIDENCE["证据检索与论坛"]
+    OBS --> MODEL["可选：同化 / 预测 / 回测 / 情景"]
+    EVIDENCE --> REPORT["内容与结构 / 引用校验 / 报告产物"]
+    MODEL --> REPORT
+```
+
+- **Agent Runtime** 管理上下文、模型调用和工具访问；领域 Worker 是业务阶段的唯一调度者。
+- **会话与业务状态分开保存**：`.app-state` 保存会话和检查点，`.opinion-assets` 保存事件数据、任务与版本产物。
+- **研究结果保留来源与语义**：报告区分观测、预测、模拟和解释；联合 HK 在多维状态上计算邻域，逐坐标模型作为对照。
+- **真实样本与虚拟粒子分开计算**：统计使用符合筛选条件的帖子及各字段有效分母；粒子数量属于数值模型配置。
+
+完整设计见[系统架构](doc/architecture.md)与[Agent Runtime 说明](doc/modules/agent-runtime-architecture.md)。DeerFlow 的分层设计是架构参考，具体适配版本和差异已在文档中列明。
+
+### 项目目录
+
+```text
+Tweets2Insights/
+├── config.yaml                 # 主应用配置
+├── extensions_config.json      # MCP 与技能配置
+├── backend/
+│   ├── pyproject.toml          # UV 后端环境
+│   ├── langgraph.json          # 图入口
+│   ├── src/
+│   │   ├── agents/             # Leader、中间件、记忆、检查点
+│   │   ├── gateway/            # FastAPI 与 6 组 API 路由
+│   │   ├── subagents/          # 专业角色与受限评阅
+│   │   ├── models/             # 模型工厂
+│   │   ├── mcp/                # MCP 客户端
+│   │   ├── tools/              # 领域工具、CLI 与 Worker 入口
+│   │   ├── skills/             # 技能加载
+│   │   ├── sandbox/            # 受限线程文件区
+│   │   ├── config/             # 配置加载
+│   │   └── domain/             # 标注、证据、分析、预测、情景、报告
+│   └── tests/                  # 新后端测试位置，待补齐
+├── frontend/src/
+│   ├── app/                    # 页面与布局
+│   ├── components/             # 工作台、任务及产物界面
+│   ├── hooks/                  # SSE 事件流
+│   └── lib/                    # API 客户端与类型
+├── skills/                     # public 项目技能与 custom 扩展
+├── docker/                     # Dockerfile、Compose、Nginx、K8s
+├── scripts/                    # 启动、停止与静态检查
+├── configs/                    # 运行请求与连接器示例
+├── doc/                        # 使用、设计与研究文档
+└── legacy/                     # 原 PocketFlow 兼容入口
+```
+
+领域源码已迁入 `backend/src/domain`；根目录同名包保留导入转发。旧 Streamlit 专项视图和 PDF 导出位于 `intelligent_ui`。更多保留目录及逐项说明见 [2.7 项目目录结构总览](doc/project-structure.md)。
+
+<a id="configuration"></a>
+## 配置与扩展
+
+| 配置位置 | 管理内容 |
+|---|---|
+| [`config.yaml`](config.yaml) | Gateway 地址、状态目录、默认 Agent 模型、上下文和调用上限 |
+| [`.env.example`](.env.example) → `.env` | API Key、真实连接器和价格配置文件位置 |
+| [`extensions_config.json`](extensions_config.json) | 启用的 MCP 服务及技能 |
+| [`RunRequest`](backend/src/domain/opinion_core/schemas/workflow.py) | 每次任务的数据、时间窗口、唯一搜索供应商、标注、数值模型和预算 |
+| [`skills/public`](skills/public) / `skills/custom` | 内置与本机自定义技能；自定义技能需在扩展配置中启用 |
+
+当前 Agent 模型工厂使用 GLM SDK；搜索提供 Tavily 和 DeepSeek 两种适配。其他标注模型、社交平台采集与视觉能力通过连接器扩展。单次领域任务的调用/金额预算与 Agent 会话调用上限独立计算，详见[配置说明](doc/configuration.md)。
+
+### Docker 与 Kubernetes
+
+仓库提供 Gateway、Worker、前端及 Nginx 的部署模板。配置 `.env` 后，可使用开发 Compose：
+
+```bash
+docker compose -f docker/docker-compose-dev.yaml up --build
+```
+
+默认入口为 `http://127.0.0.1:2026`。生产 Compose 与 Kubernetes 配置见[部署说明](doc/deployment.md)和 [K8s 快速开始](K8S_QUICK_START.md)。这些模板尚未部署验收；当前服务面向本机单操作者，访问控制与文件隔离范围见 [SECURITY.md](SECURITY.md)。
+
+<a id="project-status"></a>
+## 项目状态与评测
+
+截至 **2026-11-03**：
+
+| 范围 | 当前状态 |
+|---|---|
+| 新架构与领域模块 | 源码已写入，可复用实现已迁移 |
+| 构建准备 | 后端语法、关键导入、Ruff、配置解析、wheel 构建及前端 TypeScript 检查已完成 |
+| 应用与供应商 | 完整工作流、浏览器交互及真实连接器联调待验证 |
+| 弱标注质量 | 独立 Demo 协议与评分脚本已提供，尚无真实评测结论 |
+| 预测与情景 | 实验实现，尚未完成数值验证、回测验收及效果评估 |
+| 部署 | Compose 与 K8s 模板已提供，尚未部署验证 |
+
+当前实施顺序为**先完成功能脚本，再统一开展行为测试与研究评测**。历史测试通过数不代表本次新架构已验收；`backend/tests` 当前只包含后置验证说明。
+
+弱标注 Demo 将单独建立人工金标准，评估目标字段的 macro-F1、有效覆盖率及同标签模型基线差异。协议中的 600 条样本、F1/覆盖率阈值属于待执行的评测设计，不能作为已测得的成绩。见[弱标注 Demo 协议](doc/testing/weak-label-demo-protocol.md)与[实施记录](doc/upgrade-status.md)。
+
+新 Next.js 前端尚未覆盖旧 Streamlit 的全部专项图表和 PDF 交互；这些兼容入口仍保留。后续依次完成应用与连接器联调、独立 Demo、数值实验及部署验证，并在实施记录中更新证据。
+
+<a id="documentation"></a>
+## 文档导航
+
+| 想了解的内容 | 文档 |
+|---|---|
+| 完整文档入口 | [文档索引](doc/README.md) |
+| 启动、CLI、任务管理、导出与兼容入口 | [运行手册](doc/modules/domain-application.md) |
+| 分层设计与目录 | [系统架构](doc/architecture.md) · [目录总览](doc/project-structure.md) |
+| Leader、检查点、MCP 与子 Agent | [Agent Runtime](doc/modules/agent-runtime-architecture.md) |
+| 模型、环境变量与连接器 | [配置](doc/configuration.md) · [连接器协议](doc/modules/architecture-rewrite.md) |
+| 数据契约与弱标注 | [契约](doc/modules/opinion-contracts.md) · [自动标注](doc/modules/automatic-labeling.md) |
+| 前端与部署 | [前端说明](doc/frontend-guide.md) · [部署说明](doc/deployment.md) |
+| 研究评测与实施证据 | [Demo 协议](doc/testing/weak-label-demo-protocol.md) · [实施记录](doc/upgrade-status.md) |
+
+## 参与开发
+
+阅读 [CONTRIBUTING.md](CONTRIBUTING.md) 了解依赖方向、环境和文档维护要求。静态检查命令如下，不会启动模型或采集任务：
+
+```bash
+uv run --project backend python scripts/check_structure.py
+npm --prefix frontend run check
+```
+
+支持 Make 的环境也可使用 `make install`、`make dev`、`make stop` 和 `make check`。问题反馈请附上分支/提交、复现步骤及脱敏日志，通过 [Issues](https://github.com/Hyacehila/Tweets2Insights/issues) 提交；安全问题说明见 [SECURITY.md](SECURITY.md)。
+
+## 参考项目
+
+- [DeerFlow](https://github.com/bytedance/deer-flow)：Agent Runtime 分层的架构参考，其 README 的快速开始与配置导航也用于本页组织参考。
+- [BettaFish](https://github.com/666ghj/BettaFish)：参考其舆情分析项目的能力说明、流程介绍和目录呈现方式。
+- [Open Deep Research](https://github.com/langchain-ai/open_deep_research)：参考其将快速开始、模型/搜索配置与评测分开说明的结构。
+
+以上为架构或文档组织参考，不表示继承其全部能力或评测结果。当前仓库尚未提供独立 `LICENSE` 文件，本页不声明特定开源许可证。

@@ -1,35 +1,50 @@
-# Documentation Index
+# Tweets2Insights 文档索引
 
-> **Last Updated**: 2026-11-03
-> **Structure version**: v1.2 (Consolidated)
+更新：2026-11-03。项目介绍、核心能力和首次启动步骤见[项目 README](../README.md)。
+本索引按使用与开发任务组织；新默认应用为 Next.js + FastAPI + LangGraph + 独立领域 Worker。
 
-## Architecture
-- [Project structure](project-structure.md) — 2.7 项目目录结构总览，区分新默认入口与复用兼容层。
-- [Agent Runtime](modules/agent-runtime-architecture.md) — LangGraph、FastAPI、MCP、Next.js 与会话状态。
-- [Configuration](configuration.md) / [Deployment](deployment.md) / [Frontend](frontend-guide.md) — 新应用配置、启动和前端范围。
-- [Architecture Rewrite](modules/architecture-rewrite.md) — 全项目模块、复用清单、连接器与统一测试顺序。
-- [Domain Application](modules/domain-application.md) — 新 CLI、Worker、工作台与 MCP 运行方法。
-- [Upgrade status](upgrade-status.md) — 实施证据与未完成项。
-- [Opinion contracts](modules/opinion-contracts.md) — 版本契约与无损历史迁移。
-- [Domain gateway](modules/domain-gateway.md) — 上传、统计、证据、报告的 MCP 接入与运行限制。
-- [Search providers](modules/search-providers.md) — Tavily/DeepSeek 单选、证据字段及真实验收状态。
-- [System Architecture](architecture.md) — 新前后端分层、Agent Runtime 与领域执行边界。
+## 开始使用
 
-## Modules & Processing Detail
+| 任务 | 文档 |
+|---|---|
+| 安装、配置凭据、启动工作台 | [README：快速开始](../README.md#quickstart) |
+| 上传数据并完成第一次分析 | [README：第一次分析](../README.md#first-analysis) |
+| CLI、任务管理、导出与兼容入口 | [运行手册](modules/domain-application.md) |
+| 模型、环境变量、连接器和预算 | [应用配置](configuration.md) |
+| 页面、会话与产物交互 | [前端说明](frontend-guide.md) |
+| Docker、Nginx 与 Kubernetes | [部署说明](deployment.md) · [K8s 快速开始](../K8S_QUICK_START.md) |
 
-Stage 1/2/3、原 Dashboard 和 Utilities 文档记录历史兼容实现；新默认应用以顶部架构与运行手册为准。
-- [Automatic Weak Labeling](modules/automatic-labeling.md) — 搜索前置、冻结 schema、自动标注与实际供应商接入状态。
-- [Stage 1 Enhancement](modules/stage1_enhancement.md) — Six-dimensional expansion, parallel NLP, and asynchronous operations.
-- [Stage 2 Analysis](modules/stage2_analysis.md) — Agent decision loops, query search flow, ForumHost debate cycles.
-- [Stage 3 Report](modules/stage3_report.md) — Document outline planning, chapter parallel generation, and paragraph-level evidence fusion with indexed appendix.
-- [Dashboard Results Viewer](modules/dashboard_results_viewer.md) — Source-partitioned visualization for images/tables/forum/search outputs and insight evidence-chain trace-back.
-- [Analysis Tools](modules/analysis_tools.md) — Technical details of the 37 available tools (categorization, purpose).
-- [Utilities](modules/utils.md) — Prompt wrapper, LLM retry wrapper, File IO.
+## 理解架构与扩展
 
-## Testing & Quality Assurance
-- [Weak-label Demo Protocol](testing/weak-label-demo-protocol.md) — Demo 人工验证、质量门槛及正式运行自动弱标注边界。
-- [Testing Workflow](testing/testing_workflow.md) — Test-Driven Development workflow and execution environments.
+- [系统架构](architecture.md)：应用分层、依赖方向与研究边界。
+- [2.7 项目目录结构总览](project-structure.md)：默认入口、领域源码与兼容目录。
+- [Agent Runtime](modules/agent-runtime-architecture.md)：Leader、子 Agent、记忆、检查点、MCP 与 SSE。
+- [架构重写与迁移清单](modules/architecture-rewrite.md)：复用归属、连接器协议、数值假设与验证顺序。
+- [贡献指南](../CONTRIBUTING.md)：环境、模块依赖和文档同步要求。
+- [安全边界](../SECURITY.md)：本机部署、凭据、文件能力和访问控制范围。
 
-## Model Context Protocol (MCP)
-- [MCP Integration Overview](mcp/mcp_integration.md)
-- [MCP Tool Audit List](mcp/mcp_tool_audit.md)
+## 数据与研究方法
+
+- [数据契约与迁移](modules/opinion-contracts.md)：事件、数据版本、标签及无损历史迁移。
+- [自动弱标注](modules/automatic-labeling.md)：搜索前置、冻结 Schema、字段状态和供应商接入。
+- [搜索供应商](modules/search-providers.md)：Tavily/DeepSeek 单选、证据字段与验收状态。
+- [领域 MCP 接入](modules/domain-gateway.md)：领域服务的基础接口与早期接入记录；当前启动方式以运行手册为准。
+
+## 验证与实施状态
+
+- [项目状态](../README.md#project-status)：源码、静态检查、真实服务与研究验证的当前概览。
+- [升级实施记录](upgrade-status.md)：变更证据、历史检查结果及待完成项。
+- [弱标注 Demo 协议](testing/weak-label-demo-protocol.md)：独立人工金标准、质量与覆盖率评测；不进入日常标注流程。
+- [测试工作流](testing/testing_workflow.md)：测试分层与当前先实现、后统一验证的顺序。
+
+## 历史与兼容文档
+
+以下文档用于理解保留的 PocketFlow、旧 Dashboard 和工具实现，不作为新应用的默认启动指南：
+
+- [旧项目说明](../legacy/README.md) · [历史架构](legacy-architecture.md)
+- [Stage 1 数据增强](modules/stage1_enhancement.md)
+- [Stage 2 分析与论坛](modules/stage2_analysis.md)
+- [Stage 3 报告生成](modules/stage3_report.md)
+- [旧 Dashboard 结果查看器](modules/dashboard_results_viewer.md)
+- [旧分析工具](modules/analysis_tools.md) · [通用工具](modules/utils.md)
+- [旧 MCP 集成](mcp/mcp_integration.md) · [工具审计清单](mcp/mcp_tool_audit.md)

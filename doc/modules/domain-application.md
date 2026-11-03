@@ -2,10 +2,12 @@
 
 更新：2026-11-03。以下命令在内层业务仓库执行。源码实现与真实服务/科学验收分别记录。
 
+首次安装与凭据配置见 [README：快速开始](../../README.md#quickstart)，上传格式和操作流程见[第一次分析](../../README.md#first-analysis)。本手册补充 CLI、任务管理和兼容入口。
+
 ## 默认工作台
 
 ```powershell
-uv sync --project backend
+uv sync --project backend --frozen
 npm --prefix frontend ci
 uv run --project backend python scripts/dev.py start
 uv run --project backend python scripts/dev.py stop

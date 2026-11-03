@@ -2,10 +2,12 @@
 
 更新：2026-11-03。以下命令已提供脚本/模板，尚未进行端到端启动和部署验证。
 
+环境要求、获取代码和 `.env` 初始化见 [README：快速开始](../README.md#quickstart)。本页补充进程管理与容器部署。
+
 ## 本机
 
 ```powershell
-uv sync --project backend
+uv sync --project backend --frozen
 npm --prefix frontend ci
 uv run --project backend python scripts/dev.py start
 uv run --project backend python scripts/dev.py stop
