@@ -39,7 +39,8 @@ MCP 内存传输测试覆盖发现、输入拒绝、阶段前提、统计、证�
 另用真实 Python 子进程 stdio 在 Windows 验证发现、上传、统计、证据、短报告和产物读取，未调用外部模型。
 Windows 旧运行锁的 PID 检测已改用隐藏 tasklist，不向进程发送 signal。
 
-尚未完成：上游 Agent Runtime 安装/浏览器/真实模型端到端验收、完整 ContentBundle、外部证据论坛和新标签标注。
+尚未完成：上游 Agent Runtime 安装/浏览器/真实模型端到端验收、完整 ContentBundle、外部证据论坛和工作台新标签标注入口。
+新标签已有独立 CLI，见[自动弱标注](automatic-labeling.md)，尚未接入当前资料概览 Worker。
 工作台现在按事件读取持久任务，URL 保留所选任务，可在新会话重连。不要将本地协议测试或 Streamlit AppTest 称为真实 API 或浏览器 E2E。
 
 物理目录使用 SHA256(event_id)/runs/dataset_id/SHA256(run_id)，避免 Windows 大小写与保留名称冲突。RunManifest 记录领域源码 SHA256。

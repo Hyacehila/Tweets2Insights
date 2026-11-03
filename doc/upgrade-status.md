@@ -59,7 +59,7 @@ RunManifest.code_version 改为 opinion_core/opinion_gateway 与渲染源码指�
 真实 stdio 短报告初次超时，定位到旧 nodes 包引入 NumPy；将既有纯 IR 渲染函数抽至
 opinion_core/reporting/ir_markdown.py，由新旧入口共用。完整 stdio 链路和定向回归共 10 项通过。
 
-## 最终验证快照（2026-11-03）
+## 第一轮验证快照（2026-11-03）
 
 `uv run pytest tests dashboard/tests -v`：425 passed、1 skipped、5 deselected、4 warnings（21.38 秒）。
 完整日志保留在本地 `.opinion-assets/validation/offline.txt`（运行资产，不入 Git）。
@@ -69,10 +69,10 @@ Tavily live 单查询返回 authentication；DeepSeek 未配置凭据。没有�
 
 ## 下一批实施与前置条件
 
-1. M0：Demo 协议已登记 600 条（校准 200／独立测试 400）、逐字段 macro-F1 ≥ 0.80、覆盖率 ≥ 85%、相对同标签基线下降 ≤ 0.03；下一步准备 Demo 样本及评测入口。正式运行不进行人工标注验证。
+1. M0：Demo 协议与评分入口已落实；下一步准备真实 Demo 样本及候选/基线预测。600 条（校准 200／独立测试 400）、逐字段 macro-F1 ≥ 0.80、覆盖率 ≥ 85%、相对同标签基线下降 ≤ 0.03 仍待实测。正式运行不进行人工标注验证。
 2. M1：运行时工具前缀绑定、上游固定版本环境验证、实际标注/采集 Worker 接入仍待完成（资料概览 Worker 与刷新恢复 UI 已落实）。
 3. M2a：修复本机 Tavily 凭据并配置 DeepSeek 环境密钥后，各执行一次小规模真实 smoke；无需重新跑付费大链路。
-4. M2b：成功先导搜索→冻结词库/target→字段级标注与拒判，再迁移所有旧字段消费者和标签 UI。
+4. M2b：成功先导搜索→冻结词库/target→字段级标注与拒判已提供首版 CLI；下一步接入标注 Worker/工作台，迁移旧字段消费者，并验证实际决策模型供应商。
 5. M3–M7 尚未开始正式实现或科学验收。当前基础提交不表示整个升级或第一层产品已完成。
 
 ## 用户补充：人工验证仅用于 Demo（2026-11-03）
@@ -106,3 +106,22 @@ Demo 评分器独立处理 200/400 划分、每字段 accepted F1/全样本 F1/�
 
 尚未落实：Jev/阿里真实 adapter、金额预算账本、标注的持久 Worker/工作台接入、旧字段消费者全量清理、
 运行时前缀配置与上游环境真实验证。M3–M7 与真实模型 Demo 仍未验收。
+
+复查按 RED→GREEN 修复三个边界：0.03 差值的浮点误判、基线缺失输出仍通过验收、
+搜索失败错误继承旧 builder 用量。数值容差仅为 1e-12；基线 missing/failed 将明确阻止该字段 Demo 通过。
+搜索未进入 builder 或 builder 未成功返回时用量记为空，不冒充零费用。
+
+## 第二轮最终验证（2026-11-03）
+
+- 默认全量回归 `uv run pytest tests dashboard/tests -v`：454 passed、1 skipped、5 deselected、4 warnings，32.90 秒。
+  相比第一轮 425 项通过，新增 29 项通过；警告仍来自既有 Matplotlib 图表。
+- 本机真实 Worker 子进程、真实 MCP stdio 集成及工作台 AppTest 均包含在回归中；AppTest 不等同于浏览器 E2E。
+- 额外执行 Demo 评分 CLI：合成预测通过时退出码 0，基线缺失时退出码 2，JSON 产物核验通过。
+  合成记录只验证评分程序，不能作为人工金标准或模型效果证据。
+- 本轮未执行真实标注 API，没有新增准确率、模型费用或节费实测结论。
+  搜索联网状态仍沿用此前记录：Tavily 单次认证失败、DeepSeek 未配置凭据，本轮未复测。
+- 全量日志：本机 `.opinion-assets/validation/second-round.txt`；CLI 合成 smoke 产物在同目录
+  `synthetic-demo-cli/`。这些运行资产不入 Git。
+
+实现提交：1d36c41（持久任务/工作台）、b2fb4b3（自动弱标注）、44ea523（独立 Demo 评分）；
+后续边界修复包含上述三项 RED→GREEN 回归及文档状态同步。所有业务修改均在内层仓库 refine 分支。

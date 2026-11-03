@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 FIELDS = ('topic', 'publisher', 'emotion', 'sentiment', 'stance')
+COMPARISON_TOLERANCE = 1e-12
 
 
 def _index(rows):
@@ -98,9 +99,13 @@ def evaluate_demo(gold, candidate, baseline, labels_by_field):
         paired_baseline = _metrics(common, baseline, field, classes)['macro_f1']
         score, base = metrics['macro_f1'], reference['macro_f1']
         loss = base-score if base is not None and score is not None else None
+        baseline_complete = reference['states']['missing'] == 0 and reference['states']['failed'] == 0
         fields[field] = {**metrics, 'baseline': reference, 'baseline_minus_candidate': loss,
+                         'baseline_complete': baseline_complete,
                          'paired': {'count':len(common), 'candidate_macro_f1':paired_candidate, 'baseline_macro_f1':paired_baseline},
-                         'passed': score is not None and score >= .80 and metrics['coverage'] >= .85 and loss is not None and loss <= .03}
+                         'passed': baseline_complete and score is not None and score >= .80 - COMPARISON_TOLERANCE
+                         and metrics['coverage'] >= .85 - COMPARISON_TOLERANCE
+                         and loss is not None and loss <= .03 + COMPARISON_TOLERANCE}
     scale_passed = counts == {'calibration':200,'test':400}
     fingerprint = hashlib.sha256(json.dumps([gold, candidate, baseline, labels_by_field], ensure_ascii=False,
                                            sort_keys=True, allow_nan=False).encode()).hexdigest()
@@ -108,6 +113,7 @@ def evaluate_demo(gold, candidate, baseline, labels_by_field):
             'scale_passed':scale_passed, 'fields':fields,
             'passed':scale_passed and all(value['passed'] for value in fields.values()),
             'scope':'provided_demo_test_set_only', 'zero_division':0,
+            'comparison_tolerance':COMPARISON_TOLERANCE,
             'production_human_review_required':False}
 
 

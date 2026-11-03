@@ -69,3 +69,19 @@ def test_stance_for_different_target_cannot_pass_demo():
     predicted[0]['target_id'] = 'another-proposition'
     with pytest.raises(ValueError, match='target'):
         evaluate_demo(gold, predicted, [], labels)
+
+
+def test_exact_three_point_drop_respects_inclusive_threshold():
+    gold, predicted, labels = fixture()
+    baseline = fixture()[1]
+    for row in predicted[:12]:
+        row['topic']['value'] = 'b' if row['topic']['value'] == 'a' else 'a'
+    report = evaluate_demo(gold, predicted, baseline, labels)
+    assert report['fields']['topic']['macro_f1'] == pytest.approx(.97)
+    assert report['passed']
+
+
+def test_missing_baseline_output_cannot_support_acceptance():
+    gold, predicted, labels = fixture()
+    report = evaluate_demo(gold, predicted, predicted[:-1], labels)
+    assert not report['passed']

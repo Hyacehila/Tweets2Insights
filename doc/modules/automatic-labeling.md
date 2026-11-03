@@ -9,6 +9,8 @@
    第一版按 ID 选择且保留定义，不做未经映射的主题合并。非法输出保存为 recoverable_failure。
 3. SQLite 保存冻结 schema、证据与生成状态。事件信息、截止点、供应商、词库内容、builder 版本一致时复用，
    更换任何影响标签定义的输入都会使用新键。失败可在剩余调用预算内再次运行，无静默跳过搜索或换供应商。
+   builder_usage 只记录本次成功返回的 schema builder 用量；未调用或未成功返回时为空，不继承旧请求用量。
+   空用量不等于零费用：失败请求的收费仍可能未知。
 4. 自动批量标注 topic/publisher/emotion/sentiment/stance，情绪首版为主情绪单选。
    立场必须绑定 schema 的 target_id；情感为五档显示编码 -1/-0.5/0/0.5/1，不能推导立场。
 5. 每字段独立 accepted/abstained/failed/missing；未知标签、低置信度、错误命题分别拒判。

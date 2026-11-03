@@ -72,6 +72,7 @@ class EventPreparation:
                 return current
             self._change(key, update)
         error_type, schema, evidence = 'search_failed', None, None
+        builder_usage = {}
         try:
             reserve()
             evidence = self.search(' '.join(event.keywords), provider=event.search_provider, api_key=search_api_key,
@@ -99,6 +100,7 @@ class EventPreparation:
             error_type = 'schema_invalid'
             reserve()
             draft = self.builder(copy.deepcopy(evidence), copy.deepcopy(library))
+            builder_usage = copy.deepcopy(getattr(self.builder, 'last_usage', {}))
             schema = EventSchema(event_id=event.event_id, schema_version='schema-' + key[:32], as_of=event.as_of,
                                  evidence_refs=['ev-' + hashlib.sha256(canonical(card).encode()).hexdigest() for card in retained], **draft)
             for name, low, high in (('topics', 5, 10), ('publishers', 5, 10), ('emotions', 10, 10)):
@@ -119,6 +121,6 @@ class EventPreparation:
             return {**current, 'status': 'frozen' if schema else 'recoverable_failure',
                     'schema': schema.model_dump(mode='json') if schema else None,
                     'evidence': evidence, 'error_type': error_type, 'lease_until': 0,
-                    'builder_usage': getattr(self.builder, 'last_usage', {}),
+                    'builder_usage': builder_usage,
                     'prepared_at': datetime.now(timezone.utc).isoformat()}
         return self._change(key, publish)

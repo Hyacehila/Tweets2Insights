@@ -184,3 +184,4 @@ agent_runtime_tool_contract 和 domain_stdio 测试。domain_stdio 使用真实�
 自动标注：test_event_preparation/test_weak_labeling/test_glm_label_provider 及 test_automatic_label_workflow
 使用固定搜索与模型响应验证失败门禁、预算、缓存和全链路落盘。test_demo_evaluation 用合成金标准验证
 评分数学及拒判分母；不能把这些测试结果当作真实模型的 600 条人工 Demo 分数。
+评分边界回归覆盖恰好下降 0.03、基线输出不完整；事件准备回归确认失败搜索不会继承旧模型用量。

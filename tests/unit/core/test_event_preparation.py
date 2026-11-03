@@ -76,3 +76,12 @@ def test_persisted_call_budget_stops_retry_before_network(tmp_path):
         result = service.prepare(event(), vocab(), max_total_calls=2)
     assert len(calls) == 2 and result['calls'] == 2
     assert result['error_type'] == 'call_budget_exhausted'
+
+
+def test_failed_search_never_attributes_old_builder_usage(tmp_path):
+    class Builder:
+        last_usage = {'input_tokens':999}
+        def __call__(self, *args): pytest.fail('must not call builder')
+    service = EventPreparation(tmp_path, search=lambda *a,**k: {'provider':'deepseek','error':'timeout','results':[]},
+                               builder=Builder(), builder_version='v1')
+    assert service.prepare(event(), vocab())['builder_usage'] == {}
