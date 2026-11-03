@@ -3,8 +3,10 @@
 Updated 2026-11-03. Upstream reference: bytedance/deer-flow commit
 `1dd6d056278536af1cb4fc60347f4ca40fcb629b`. No upstream runtime source is bundled or claimed as validated.
 
-`planner.py` compiles a validated RunRequest into the required domain stages. It is the local deterministic
-Leader implementation, not a claim of installed upstream natural-language planning.
+The default LangGraph Leader now lives in `backend/src/agents/lead_agent`; its model factory, MCP client,
+checkpointer and Gateway are documented in [Agent Runtime architecture](../doc/modules/agent-runtime-architecture.md).
+This directory is retained for external-runtime compatibility. `planner.py` re-exports the deterministic
+domain compiler from `opinion_core.orchestration`; it is not a second natural-language Leader.
 `bind_tools.py` maps logical role allowlists to exact runtime-discovered MCP names and rejects ambiguity.
 Roles cover Leader, Query, Insight, Critic, Media, Forecast, Scenario, Content and Structure.
 DomainWorker is the sole domain scheduler. An external Leader submits work and observes status; it does not

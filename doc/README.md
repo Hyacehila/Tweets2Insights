@@ -4,15 +4,20 @@
 > **Structure version**: v1.2 (Consolidated)
 
 ## Architecture
+- [Project structure](project-structure.md) — 2.7 项目目录结构总览，区分新默认入口与复用兼容层。
+- [Agent Runtime](modules/agent-runtime-architecture.md) — LangGraph、FastAPI、MCP、Next.js 与会话状态。
+- [Configuration](configuration.md) / [Deployment](deployment.md) / [Frontend](frontend-guide.md) — 新应用配置、启动和前端范围。
 - [Architecture Rewrite](modules/architecture-rewrite.md) — 全项目模块、复用清单、连接器与统一测试顺序。
 - [Domain Application](modules/domain-application.md) — 新 CLI、Worker、工作台与 MCP 运行方法。
 - [Upgrade status](upgrade-status.md) — 实施证据与未完成项。
 - [Opinion contracts](modules/opinion-contracts.md) — 版本契约与无损历史迁移。
 - [Domain gateway](modules/domain-gateway.md) — 上传、统计、证据、报告的 MCP 接入与运行限制。
 - [Search providers](modules/search-providers.md) — Tavily/DeepSeek 单选、证据字段及真实验收状态。
-- [System Architecture](architecture.md) — Core system architecture, Agent flows, shared state schema, and node definitions.
+- [System Architecture](architecture.md) — 新前后端分层、Agent Runtime 与领域执行边界。
 
 ## Modules & Processing Detail
+
+Stage 1/2/3、原 Dashboard 和 Utilities 文档记录历史兼容实现；新默认应用以顶部架构与运行手册为准。
 - [Automatic Weak Labeling](modules/automatic-labeling.md) — 搜索前置、冻结 schema、自动标注与实际供应商接入状态。
 - [Stage 1 Enhancement](modules/stage1_enhancement.md) — Six-dimensional expansion, parallel NLP, and asynchronous operations.
 - [Stage 2 Analysis](modules/stage2_analysis.md) — Agent decision loops, query search flow, ForumHost debate cycles.

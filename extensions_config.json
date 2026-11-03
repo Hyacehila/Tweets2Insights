@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "opinion": {
+      "enabled": true,
+      "transport": "stdio",
+      "command": "$PYTHON",
+      "args": ["-m", "opinion_gateway.mcp_server", "--root", "$T2I_ASSET_ROOT"],
+      "env_allowlist": ["T2I_CONNECTORS_FILE", "T2I_PRICING_FILE"]
+    }
+  },
+  "skills": {"enabled": ["event-analysis", "evidence-report", "forecast-scenario"]}
+}

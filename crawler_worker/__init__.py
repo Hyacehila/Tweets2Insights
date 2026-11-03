@@ -1,1 +1,3 @@
-"""Isolated collection executable and bounded platform adapter protocol."""
+"""Compatibility namespace; implementation resides in backend/src/domain."""
+from pathlib import Path
+__path__ = [str(Path(__file__).resolve().parents[1] / "backend" / "src" / "domain" / "crawler_worker") ]

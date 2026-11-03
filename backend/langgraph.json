@@ -1,0 +1,5 @@
+{
+  "dependencies": ["."],
+  "graphs": {"leader": "./src/agents/lead_agent/graph.py:graph"},
+  "env": "../.env"
+}

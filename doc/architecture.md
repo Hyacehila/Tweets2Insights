@@ -1,50 +1,68 @@
-# Tweets2Insights 分层架构
+# Tweets2Insights 项目架构
 
-更新：2026-11-03。当前主入口已切换到领域架构。功能脚本完成后统一测试；Demo/真实标注评测后置。
+更新：2026-11-03。默认应用采用 Next.js + FastAPI + LangGraph；领域任务由独立 Worker 执行。
+目录按照用户提供的 DeerFlow 风格组织，参考版本和适配范围见 [Agent Runtime 说明](modules/agent-runtime-architecture.md)。
 
-## 依赖方向
+## 分层与依赖方向
 
 ```mermaid
 flowchart TD
-  UI[Intelligent UI / CLI / external Agent Runtime] --> APP[Domain Tool Service]
-  APP --> PLAN[Leader plan compiler]
-  APP --> JOB[Persistent jobs and immutable requests]
-  JOB --> WORKER[Domain Worker]
-  WORKER --> INPUT[Existing dataset or isolated crawler]
-  INPUT --> SCHEMA[Selected search provider and frozen schema]
-  SCHEMA --> LABEL[Automatic field-level annotation]
-  LABEL --> OBS[Distributions and source tables]
-  OBS --> FORUM[Evidence Forum]
-  OBS --> MODEL[Numerical Engine]
-  MODEL --> SCENARIO[Paired conditional scenarios]
-  FORUM --> CONTENT[ContentBundle]
-  SCENARIO --> CONTENT
-  CONTENT --> LAYOUT[LayoutSpec]
-  LAYOUT --> VALIDATE[Reference validation and deterministic rendering]
-  VALIDATE --> UI
+  UI[Next.js 工作台] --> API[FastAPI Gateway / 6 组路由]
+  API --> RUN[LangGraph Leader / 会话运行管理]
+  RUN --> CTX[中间件 / 记忆 / SQLite 检查点]
+  RUN --> SUB[受限专业子 Agent]
+  RUN --> TOOLS[工具入口 / MCP Client]
+  TOOLS --> DOMAIN[Domain Tool Service]
+  CLI[兼容 CLI] --> DOMAIN
+  DOMAIN --> JOB[冻结请求 / 持久作业 / 版本资产]
+  JOB --> WORKER[独立 Domain Worker]
+  WORKER --> INPUT[已有数据 / 独立采集进程]
+  INPUT --> LABEL[事件 Schema / 自动弱标注]
+  LABEL --> OBS[分布观测 / 来源表]
+  OBS --> EVIDENCE[取证与证据论坛]
+  OBS --> MODEL[联合 HK / 同化 / 预测 / 情景]
+  EVIDENCE --> CONTENT[内容与结构 / 引用校验]
+  MODEL --> CONTENT
+  CONTENT --> ARTIFACT[报告 / 图表 / 可追溯产物]
+  ARTIFACT --> API
 ```
 
-- `opinion_core`：类型契约和领域算法；计算不由 Agent 编造。缺失、失败、拒判、中性分别保存。
-- `opinion_gateway`：应用入口、存储、预算、供应商装配、持久执行；不依赖旧 PocketFlow。
-- `agent_runtime_extension`：领域计划与外部运行时角色/工具绑定；只有一个领域调度者。
-- `crawler_worker`：独立进程；仅 keywords 路径进入，上传不会触发采集。
-- `intelligent_ui`：通过同一应用服务提交和读取，不直接执行长任务。
-- `legacy` 与原 `nodes/flow.py`：显式兼容区域，不参与新默认主链。
+| 层 | 实际位置 | 职责 |
+|---|---|---|
+| 前端 | `frontend/src` | 会话、上传、结构化配置、SSE 状态、任务及产物 |
+| 应用层 | `backend/src/gateway` | HTTP 协议、生命周期、事件范围、会话执行 |
+| Agent Runtime | `backend/src/agents`、`subagents` | LangGraph 图、上下文、检查点、有限专业评阅 |
+| 通用能力 | `backend/src/models`、`mcp`、`tools`、`skills`、`sandbox`、`config` | 模型和工具适配、技能、受限文件区、配置 |
+| 领域核心 | `backend/src/domain/opinion_core` | 契约、确定性计划、弱标注、分析、实验模型和报告 |
+| 领域应用服务 | `backend/src/domain/opinion_gateway` | MCP、冻结请求、JobStore、预算、资产和独立 Worker |
+| 采集进程 | `backend/src/domain/crawler_worker` | 按需采集、限额、分页、去重和恢复 |
 
-## 运行一致性
+Gateway 可以调用 Runtime；Runtime 不导入 Gateway。领域核心不依赖 Next.js、HTTP 或 LangGraph。
+应用包使用 `src.*` 命名空间，避免 `src/mcp` 与第三方 `mcp` 包、`src/config` 与旧 `config.py` 冲突。
 
-事件、数据版本和运行 ID 全程绑定。运行请求冻结，产物按内容与类型寻址。
-阶段结果只有在持有有效租约时才能提交；最终状态和结果一起发布。取消阻止后续阶段。
-重试保留完整检查点，在首次需要重算的阶段清除下游缓存引用。
-搜索供应商在请求中固定，所有补证继承该配置；模型/网页内容不能扩大权限或改变预算。
+## 会话与领域任务
 
-## 业务与数值边界
+会话状态保存在 `.app-state`，包括线程、消息、显式记忆、SSE 事件和图检查点。
+事件数据与领域任务保存在 `.opinion-assets`，按 event/dataset/run 隔离。
+Leader 生成或校验 RunRequest；领域 Worker 是唯一领域执行调度者。停止 Agent 与取消已提交 Job 分别操作。
+SSE 支持游标续读；Gateway 重启会将未结束的 Agent execution 标为 interrupted，不自动重发模型请求。
 
-新标签为平面 topic、publisher、emotion、sentiment 与 target-bound stance。
-信念网络、父子主题、publisher_decision 不出现在新默认注册表和报告主链中。
-分布窗口使用所有满足筛选条件的帖子，并报告字段分母和缺测；虚拟粒子不替代真实样本。
-预测和情景使用独立模型状态与种子；输出分别标记 observed、forecast、simulated、interpretation。
-内容先绑定数值/证据，结构只排列已有内容。人工真值只进入独立评测脚本。
+## 研究约束
 
-完整源码映射、复用清单、连接器协议及研究假设见 [架构重写清单](modules/architecture-rewrite.md)。
-入口命令见 [运行手册](modules/domain-application.md)，旧架构见 [历史存档](legacy-architecture.md)。
+生产流程自动标注，不设置逐条人工验证关卡。人工真值及质量门槛仅用于后置独立 Demo；当前没有 Demo 达标结论。
+标签采用平面 topic、publisher、emotion、sentiment 和 target-bound stance；缺失、失败、拒判、中性分开保存。
+观测使用所有满足筛选条件的帖子并记录各字段分母；虚拟粒子数不替代真实样本量。
+产物区分 observed、forecast、simulated 和 interpretation，数值由领域模块计算，不由 Agent 编造。
+
+## 2.7 项目目录结构总览
+
+完整、可维护的目录表见 [项目目录结构总览](project-structure.md#27-项目目录结构总览)。
+复用文件已实际迁入 `backend/src/domain`；根目录旧包保留导入兼容入口，不维护另一份领域实现。
+迁移明细见 [重写与复用清单](modules/architecture-rewrite.md)，启动见 [运行手册](modules/domain-application.md)。
+
+## 当前实施状态
+
+架构、功能脚本、启动和部署模板已写入。后端语法/关键导入及前端类型检查已执行；这些不是业务验收。
+按用户要求，端到端、真实标注、采集、Demo 和科学实验在脚本完成后统一测试。
+Compose/Kubernetes 未部署验证；当前为单操作者环境，无多租户认证；sandbox 是文件能力隔离，不是 OS 执行沙箱。
+旧 Streamlit 专项图表与 PDF 导出入口保留，新 Next.js 界面尚未覆盖全部旧可视化交互。

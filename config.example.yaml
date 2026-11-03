@@ -1,0 +1,21 @@
+application:
+  name: Tweets2Insights
+  host: 127.0.0.1
+  port: 8001
+  frontend_origin: http://localhost:3000
+  state_dir: .app-state
+  asset_dir: .opinion-assets
+models:
+  default:
+    provider: glm
+    model: glm-4.5-air
+    api_key_env: GLM_API_KEY
+agent_runtime:
+  max_model_calls: 4
+  max_subagents: 2
+  context_messages: 12
+  timeout_seconds: 180
+domain:
+  worker: independent_process
+  production_human_review: false
+  validation_status: pending

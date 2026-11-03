@@ -1,56 +1,21 @@
-data:
-  input_path: data/posts.json
-  output_path: data/enhanced_posts.json
-  resume_if_exists: true
-  topics_path: data/topics.json
-  sentiment_attributes_path: data/sentiment_attributes.json
-  publisher_objects_path: data/publisher_objects.json
-  belief_system_path: data/believe_system_common.json
-  publisher_decision_path: data/publisher_decision.json
-pipeline:
-  start_stage: 2
-  user_analysis_instruction: 我们希望围绕2024年6月2日至11月30日期间，位于河南郑州的大学生夜骑开封事件，进行详细的探索和事件分析。侧重于公众感受构建该事件的全景脉络。
-stage1:
-  mode: async
-  checkpoint:
-    enabled: true
-    save_every: 100
-    min_interval_seconds: 20.0
-  nlp:
-    enabled: true
-    keyword_top_n: 8
-    similarity_threshold: 0.85
-    min_cluster_size: 2
-stage2:
-  mode: agent
-  tool_source: mcp
-  agent_max_iterations: 30
-  search_reflection_max_rounds: 10
-  forum_max_rounds: 10
-  forum_min_rounds_for_sufficient: 5
-  search_provider: tavily
-  search_max_results: 30
-  search_timeout_seconds: 120
-  search_api_key: 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
-  chart_tool_policy: coverage_first
-  chart_missing_policy: warn
-  chart_min_per_category:
-    sentiment: 1
-    topic: 1
-    geographic: 1
-    interaction: 1
-    nlp: 1
-stage3:
-  max_iterations: 10
-  chapter_review_max_rounds: 10
-runtime:
-  concurrent_num: 3
-  max_retries: 3
-  wait_time: 8
-llm:
-  acceptance_profile: quality
-  reasoning_enabled_stage2: true
-  reasoning_enabled_stage3: true
-  vision_thinking_enabled: true
-  request_timeout_seconds: 150
-  glm_api_key: fecda0f3e009473a88c9bcfe711c3248.D35PCYssGvjLqObH
+application:
+  name: Tweets2Insights
+  host: 127.0.0.1
+  port: 8001
+  frontend_origin: http://localhost:3000
+  state_dir: .app-state
+  asset_dir: .opinion-assets
+models:
+  default:
+    provider: glm
+    model: glm-4.5-air
+    api_key_env: GLM_API_KEY
+agent_runtime:
+  max_model_calls: 4
+  max_subagents: 2
+  context_messages: 12
+  timeout_seconds: 180
+domain:
+  worker: independent_process
+  production_human_review: false
+  validation_status: pending

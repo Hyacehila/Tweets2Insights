@@ -18,8 +18,8 @@ class DomainService:
         self.jobs = JobStore(self.repo.root / 'jobs.sqlite')
         source_root = Path(__file__).resolve().parents[1]
         sources = sorted((source_root / 'opinion_core').rglob('*.py')) + sorted((source_root / 'opinion_gateway').rglob('*.py'))
-        sources += sorted((source_root / 'agent_runtime_extension').rglob('*.py')) + sorted((source_root / 'crawler_worker').rglob('*.py'))
-        sources += [source_root / 'nodes/stage3/ir_renderer.py']
+        sources += sorted((source_root / 'crawler_worker').rglob('*.py'))
+        sources += sorted((source_root / 'opinion_core/labeling/vocabularies').glob('*.json'))
         digest = hashlib.sha256()
         for source in sources:
             digest.update(str(source.relative_to(source_root)).replace('\\', '/').encode())

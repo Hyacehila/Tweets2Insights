@@ -5,14 +5,16 @@
 
 ## 主链与边界
 
-`RunRequest → Leader 计划编译 → ApplicationService → SQLite Job → DomainWorker → 阶段产物 → 工作台/报告`。
+当前默认主链为 `Next.js → FastAPI → LangGraph Leader → MCP → ApplicationService → SQLite Job → DomainWorker → 阶段产物`。
+领域包已迁入 `backend/src/domain`；下表 `opinion_core`、`opinion_gateway`、`crawler_worker` 均指此处的真实源码。
+根目录同名包仅转发导入；前端为 `frontend/src`，旧 `intelligent_ui` 保留兼容。
 外部 Agent Runtime 通过 MCP 提交同一份 RunRequest，不能与领域 Worker 同时调度重试或补搜。
-本机计划编译器提供确定性任务计划；不宣称已安装参考运行时或已实现自然语言自主规划。
+LangGraph Leader 的自然语言规划脚本已经实现；领域计划编译仍为确定性函数。模型与完整工作流尚未联调验收。
 
 | 层 | 源码 | 职责 |
 |---|---|---|
 | 契约 | opinion_core/schemas/workflow.py、artifacts.py | 运行、采集、窗口、模型、情景、内容、布局、证据与产物引用 |
-| Leader 与角色 | agent_runtime_extension/planner.py、bind_tools.py | 选择必要阶段、定义角色、绑定实际发现的工具名 |
+| Leader 与角色 | backend/src/agents/lead_agent、subagents；opinion_core/orchestration.py | 模型规划与有限评阅；确定性领域阶段编译 |
 | 应用服务 | opinion_gateway/application.py、cli.py | CLI/MCP/UI 共用入口、冻结运行请求、任务和产物访问 |
 | 执行器 | opinion_gateway/domain_worker.py、runtime.py | 独立进程、租约、心跳、检查点、取消、登录等待、部分结果 |
 | 基础设施 | assets.py、budget.py、jobs.py、dataset_repository.py | 版本资产、数据隔离、调用预留与持久任务 |
@@ -23,7 +25,7 @@
 | 数值引擎 | opinion_core/dynamics/ | 联合 HK、分布摘要 EnKF、预测、滚动诊断与基线 |
 | 条件情景 | opinion_core/scenarios/ | 相同状态与配对种子的条件差异 |
 | 内容与结构 | opinion_core/reporting/ | 内容绑定证据和数值、布局引用已有块、验证及确定性渲染 |
-| 智能工作台 | intelligent_ui/ | 双入口、任务、复盘、预测、情景、证据、报告与按需 PDF |
+| 智能工作台 | frontend/src；intelligent_ui/ 兼容视图 | 默认会话、配置、任务与产物；旧专项图表与按需 PDF 保留 |
 
 ## 真实复用与兼容归属
 
@@ -36,7 +38,7 @@
 | dashboard/utils/pdf_* | 复用源码到 intelligent_ui/exports，调整隔离子进程模块名；原文件保留兼容 |
 | 数据仓储、JobStore、搜索适配器、标注缓存 | 直接扩展已存在实现，避免复制另一套状态系统 |
 | utils/analysis_tools 的旧标签工具 | 仅留在 legacy 路径；新分析直接消费平面标签与字段有效性状态 |
-| config.yaml | 仅控制 legacy；新入口使用经过契约校验且冻结的 RunRequest JSON |
+| config.yaml | 新主应用配置；旧配置保存在忽略文件 legacy/config.yaml；领域请求仍由 RunRequest 冻结 |
 | dashboard/app.py | 新工作台兼容启动器；旧多页界面不再作为默认导航 |
 
 旧文件仍可供对照与回退，不代表新主链继续消费旧字段。原始数据、旧增强数据及仓库外笔记不改写。

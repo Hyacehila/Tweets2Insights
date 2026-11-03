@@ -1,0 +1,108 @@
+# 项目目录说明
+
+更新：2026-11-03。以下展示架构主目录；依赖缓存、运行产物及部分旧模块文件省略。
+标记 ★ 为新默认应用的关键入口。目录对应已写入的文件，不表示已通过端到端或研究验收。
+
+## 2.7 项目目录结构总览
+
+```text
+Tweets2Insights/
+├── Makefile                         # install / dev / stop / check / test
+├── config.yaml                      # ★ 主应用配置，不保存密钥
+├── config.example.yaml              # 主配置模板
+├── extensions_config.json           # ★ MCP 服务和技能启用配置
+├── .env                             # ★ 本机密钥与连接器变量，gitignored
+├── .env.example                     # 空密钥环境模板
+├── README.md                        # 默认启动方法和项目说明
+├── CONTRIBUTING.md                  # 分层约束与开发指南
+├── SECURITY.md                      # 当前安全边界
+├── K8S_QUICK_START.md                # K8s 模板使用说明
+│
+├── backend/                         # ★ Python 后端，独立 UV 环境
+│   ├── Makefile                     # 后端安装、Gateway、Worker、静态检查
+│   ├── pyproject.toml               # 后端依赖与包定义
+│   ├── uv.lock                      # 后端依赖锁
+│   ├── langgraph.json               # ★ LangGraph 图入口配置
+│   ├── src/
+│   │   ├── agents/                  # ★ Agent Runtime 核心
+│   │   │   ├── lead_agent/          # 工厂、提示词、图导出
+│   │   │   ├── middlewares/         # 上下文、技能注入、请求范围校验
+│   │   │   ├── memory/              # 会话消息、显式记忆、持久事件
+│   │   │   ├── checkpointer/        # LangGraph SQLite 检查点
+│   │   │   └── thread_state.py      # 图状态定义
+│   │   ├── gateway/                 # ★ FastAPI 应用层
+│   │   │   ├── app.py               # 应用工厂与生命周期
+│   │   │   ├── runtime.py           # Agent 执行、取消、事件发布
+│   │   │   ├── dependencies.py      # 配置、线程仓库、Runtime 注入
+│   │   │   └── routers/             # threads/runs/events/datasets/artifacts/system
+│   │   ├── sandbox/                 # 线程文件区与路径约束
+│   │   ├── subagents/               # 专业角色注册与受限执行
+│   │   ├── tools/                   # 领域工具入口、CLI 与 Worker 启动
+│   │   ├── mcp/                     # MCP 配置、发现和调用客户端
+│   │   ├── models/                  # 模型工厂与 SDK 适配
+│   │   ├── skills/                  # 项目技能加载
+│   │   ├── config/                  # YAML/环境变量加载与类型化配置
+│   │   └── domain/                  # ★ 迁入的新旧可复用领域实现
+│   │       ├── opinion_core/
+│   │       │   ├── schemas/         # 事件、标签、请求、任务、产物契约
+│   │       │   ├── ingestion/       # 历史数据无损迁移
+│   │       │   ├── labeling/        # 事件 Schema、自动弱标注、词表
+│   │       │   ├── evidence/        # 搜索适配、证据卡、论坛、多模态接口
+│   │       │   ├── analytics/       # 分布观测、图表、复用 NLP
+│   │       │   ├── dynamics/        # 联合 HK、同化、预测与回测
+│   │       │   ├── scenarios/       # 配对条件情景
+│   │       │   ├── reporting/       # 内容、结构、引用校验与渲染
+│   │       │   ├── evaluation/      # Demo 与消融脚本，后置评测
+│   │       │   └── orchestration.py # 确定性领域计划编译
+│   │       ├── opinion_gateway/     # MCP 服务、应用服务、资产、预算、Job/Worker
+│   │       └── crawler_worker/      # 独立采集执行器和连接器协议
+│   └── tests/                       # 新后端测试位置；统一验证阶段补齐
+│
+├── frontend/                        # ★ Next.js + React + TypeScript
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── next.config.ts               # standalone 构建与 API 代理
+│   ├── tsconfig.json
+│   └── src/
+│       ├── app/                     # App Router、布局、工作区和聊天页
+│       ├── components/              # 工作台、任务面板、产物查看器
+│       ├── hooks/                   # SSE 事件流与游标续读
+│       └── lib/                     # API 客户端和共享类型
+│
+├── skills/
+│   ├── public/                      # 当前 3 个项目技能
+│   │   ├── event-analysis/
+│   │   ├── evidence-report/
+│   │   └── forecast-scenario/
+│   └── custom/                      # 本机自定义技能，gitignored
+│
+├── docker/
+│   ├── backend.Dockerfile
+│   ├── frontend.Dockerfile
+│   ├── docker-compose-dev.yaml      # Gateway/Worker/前端/Nginx
+│   ├── docker-compose-production.yaml
+│   ├── nginx/default.conf           # 同源路由与 SSE 代理
+│   └── k8s/app.yaml                 # 单副本、共享卷、Secret 引用模板
+│
+├── scripts/                         # 本地启动/停止、静态检查及兼容启动器
+├── doc/                             # 架构、目录、配置、部署和实施记录
+├── tests/                           # 保留的既有测试，等待统一回归
+├── configs/                         # 领域请求等示例
+├── main.py                          # 兼容领域 CLI
+├── opinion_core/                    # 旧导入路径转发至 backend/src/domain
+├── opinion_gateway/                 # 旧导入路径转发
+├── crawler_worker/                  # 旧导入路径转发
+├── agent_runtime_extension/         # 外部工具绑定兼容层，planner 转发
+├── intelligent_ui/                  # 保留的 Streamlit 视图与 PDF 导出
+├── legacy/                          # 原 PocketFlow 入口与本机旧配置
+├── flow.py / nodes/ / dashboard/     # 历史模块，供显式兼容入口使用
+├── pyproject.toml / uv.lock          # 保留的兼容环境
+├── .app-state/                      # 运行生成：会话、检查点、进程日志
+└── .opinion-assets/                  # 运行生成：数据、领域作业与版本资产
+```
+
+`backend/tests` 目前只有后置验证说明，不能据此认定新增了完整测试集。
+`sandbox` 仅限制文件访问能力；子 Agent 只做有调用上限的专业评阅，不获得任意 shell 或嵌套调度权限。
+Docker/K8s 为待验证部署模板；开发 Compose 只为后端挂载热重载代码，前端仍使用构建镜像。
+
+参见 [分层架构](architecture.md)、[Agent Runtime](modules/agent-runtime-architecture.md) 和 [复用清单](modules/architecture-rewrite.md)。

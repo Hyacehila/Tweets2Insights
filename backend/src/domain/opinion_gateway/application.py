@@ -2,7 +2,7 @@
 import hashlib
 import json
 import sqlite3
-from agent_runtime_extension.planner import compile_plan
+from opinion_core.orchestration import compile_plan
 from opinion_core.schemas.workflow import RunRequest
 from .assets import ArtifactStore
 from .mcp_server import DomainService

@@ -35,3 +35,15 @@ report/images/
 .playwright-browsers/
 
 .pytest_tmp_stdio/
+
+# Local application configuration and runtime state
+.env
+.env.local
+.app-state/
+/legacy/config.yaml
+skills/custom/*
+!skills/custom/.gitkeep
+node_modules/
+.next/
+*.tsbuildinfo
+backend/.venv/

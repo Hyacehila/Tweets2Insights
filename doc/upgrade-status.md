@@ -2,6 +2,23 @@
 
 更新：2026-11-03。代码基线 c29743a，开发分支 refine。
 
+## 当前架构：DeerFlow 风格前后端分层
+
+在领域重写提交 7bb678f 之后，按用户给出的目录布局实现 backend/frontend/skills/docker：
+
+- 领域实现迁入 backend/src/domain，根旧包保留导入转发；确定性计划编译迁入 opinion_core。
+- 新增 LangGraph Leader、受限子 Agent、上下文中间件、SQLite 检查点、显式记忆和持久 SSE 事件。
+- 新增 FastAPI 的 threads/runs/events/datasets/artifacts/system 六组路由及 Next.js 工作台。
+- 根 config.yaml、extensions_config.json 与忽略的 .env 分别管理应用、扩展和凭据。
+- 新增启动/停止脚本、依赖锁、Compose/Nginx/K8s 模板及目录、配置、部署说明。
+
+静态检查记录：后端源码及 JSON/YAML 可解析，关键新旧包可导入，新增 Runtime 的 Ruff F/E9 检查通过，
+后端 wheel 成功构建，前端 tsc --noEmit 通过。
+没有运行新增业务测试、Demo、模型或采集调用、浏览器端到端、Docker/K8s 部署或数值研究验证。
+backend/tests 当前仅为后置验证位置；不引用下方历史通过数证明新架构可用。
+Next.js 已提供主流程界面；旧 Streamlit 专项图表/PDF 仍为兼容功能，尚未全部迁成新组件。
+详见 [2.7 目录总览](project-structure.md)、[运行时架构](modules/agent-runtime-architecture.md)。
+
 ## 当前优先级：全项目架构重写
 
 用户最新指示：先完成整个项目架构及各功能脚本，保留并迁移可复用代码，之后再统一测试。

@@ -1,0 +1,9 @@
+{
+  "name": "tweets2insights-frontend",
+  "version": "0.2.0",
+  "private": true,
+  "engines": {"node": ">=22"},
+  "scripts": {"dev": "next dev --hostname 127.0.0.1 --port 3000", "build": "next build", "start": "next start --hostname 0.0.0.0 --port 3000", "check": "tsc --noEmit"},
+  "dependencies": {"next": "16.4.4", "react": "19.3.1", "react-dom": "19.3.1"},
+  "devDependencies": {"typescript": "^5.9.3", "@types/node": "^24", "@types/react": "^19", "@types/react-dom": "^19"}
+}

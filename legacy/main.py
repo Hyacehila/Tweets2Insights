@@ -385,7 +385,7 @@ def main():
     所有配置参数直接在此函数中修改。
     系统会根据 start_stage 配置自动执行对应阶段。
     """
-    config = load_config("config.yaml")
+    config = load_config("legacy/config.yaml")
     apply_glm_api_key(config)
 
     # Agent(MCP)模式下：MCP server 是独立子进程，需通过环境变量告知增强数据路径
