@@ -80,4 +80,3 @@ uv run --project backend python -m opinion_core.ingestion --source OLD.json --ou
 ```
 
 迁移保留旧原文与字段；缺少的立场继续标为 missing，正式标签由后续模型标注生成。
-测试进度见[实施记录](../upgrade-status.md)。

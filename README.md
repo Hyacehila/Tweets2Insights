@@ -5,9 +5,8 @@
 [![Python](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white)](backend/pyproject.toml)
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933?logo=node.js&logoColor=white)](frontend/package.json)
 [![Stack](https://img.shields.io/badge/Stack-LangGraph%20%7C%20FastAPI%20%7C%20Next.js-0F766E)](doc/architecture.md)
-[![Status](https://img.shields.io/badge/Status-Research%20Preview-D97706)](#project-status)
 
-[核心能力](#features) · [快速开始](#quickstart) · [第一次分析](#first-analysis) · [系统架构](#architecture) · [文档](#documentation) · [项目状态](#project-status)
+[核心能力](#features) · [快速开始](#quickstart) · [第一次分析](#first-analysis) · [系统架构](#architecture) · [文档](#documentation)
 
 Tweets2Insights 将一次事件研究组织为可追溯的工作流：导入帖子和评论，或按关键词与时间范围采集；前端选择复盘、训练预测和调控情景，由 Leader 编译阶段依赖。高阅读量随机样本用于选定标签，模型对全部输入自动弱标注，论坛按证据缺口调用分析工具、补充搜索和解释图表，最后形成交互报告。预测采用可训练 PCA 隐空间、联合 HK 和集合卡尔曼滤波（EnKF），解码回标签分布；当前为实验模型。
 
@@ -245,20 +244,6 @@ docker compose -f docker/docker-compose-dev.yaml up --build
 
 默认入口为 `http://127.0.0.1:2026`。Compose 与 Kubernetes 配置见[部署说明](doc/deployment.md)和 [K8s 快速开始](K8S_QUICK_START.md)。服务面向本机单用户，访问控制与凭据管理见 [SECURITY.md](SECURITY.md)。
 
-<a id="project-status"></a>
-## 项目状态与评测
-
-截至 **2026-11-03**：
-
-| 范围 | 当前状态 |
-|---|---|
-| 功能实现 | 复盘、论坛、报告、实验预测与情景脚本已接入工作台 |
-| 构建与检查 | 后端静态检查和 wheel 构建、Next.js 生产构建通过 |
-| 离线测试 | 使用合成数据与供应商替身，新后端及相关契约模块合计 70 项通过 |
-| 后续验证 | 真实服务联调、浏览器流程、弱标注 Demo、预测与情景实验、容器部署 |
-
-具体检查记录与后续任务见[实施记录](doc/upgrade-status.md)。弱标注 Demo 按独立人工金标准评估 macro-F1、有效覆盖率和同标签基线差异，样本划分与目标阈值见[评测协议](doc/testing/weak-label-demo-protocol.md)。
-
 <a id="documentation"></a>
 ## 文档导航
 
@@ -271,18 +256,10 @@ docker compose -f docker/docker-compose-dev.yaml up --build
 | 模型、环境变量与连接器 | [配置](doc/configuration.md) · [连接器协议](doc/modules/architecture-rewrite.md) |
 | 数据契约与弱标注 | [契约](doc/modules/opinion-contracts.md) · [自动标注](doc/modules/automatic-labeling.md) |
 | 前端与部署 | [前端说明](doc/frontend-guide.md) · [部署说明](doc/deployment.md) |
-| 研究评测与开发进度 | [Demo 协议](doc/testing/weak-label-demo-protocol.md) · [实施记录](doc/upgrade-status.md) |
 
-## 参与开发
+## 反馈与贡献
 
-阅读 [CONTRIBUTING.md](CONTRIBUTING.md) 了解依赖方向、环境和文档维护要求。静态检查命令如下，不会启动模型或采集任务：
-
-```bash
-uv run --project backend python scripts/check_structure.py
-npm --prefix frontend run check
-```
-
-支持 Make 的环境也可使用 `make install`、`make dev`、`make stop` 和 `make check`。问题反馈请附上分支/提交、复现步骤及脱敏日志，通过 [Issues](https://github.com/Hyacehila/Tweets2Insights/issues) 提交；安全问题说明见 [SECURITY.md](SECURITY.md)。
+通过 [Issues](https://github.com/Hyacehila/Tweets2Insights/issues) 反馈问题或建议。参与贡献请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)，安全问题说明见 [SECURITY.md](SECURITY.md)。
 
 ## 参考项目
 

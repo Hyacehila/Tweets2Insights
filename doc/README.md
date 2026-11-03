@@ -30,9 +30,8 @@
 - [搜索供应商](modules/search-providers.md)：Tavily/DeepSeek 配置、证据字段与调用方法。
 - [领域 MCP 接入](modules/domain-gateway.md)：领域服务的基础接口与早期接入记录；当前启动方式以运行手册为准。
 
-## 验证与实施状态
+## 开发文档
 
-- [项目状态](../README.md#project-status)：源码、静态检查、真实服务与研究验证的当前概览。
 - [升级实施记录](upgrade-status.md)：版本变更、检查结果及后续任务。
 - [弱标注 Demo 协议](testing/weak-label-demo-protocol.md)：独立人工金标准、质量与覆盖率评测；不进入日常标注流程。
 - [测试工作流](testing/testing_workflow.md)：测试分层、执行命令与用例映射。
