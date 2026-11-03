@@ -31,6 +31,7 @@ class FieldAnnotation(Contract):
     value: str | float | None = None
     reason: str | None = None
     probability: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
+    provider_confidence: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
 
     @model_validator(mode='after')
     def value_consistency(self):

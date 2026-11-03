@@ -11,6 +11,7 @@
 - [System Architecture](architecture.md) — Core system architecture, Agent flows, shared state schema, and node definitions.
 
 ## Modules & Processing Detail
+- [Automatic Weak Labeling](modules/automatic-labeling.md) — 搜索前置、冻结 schema、自动标注与实际供应商接入状态。
 - [Stage 1 Enhancement](modules/stage1_enhancement.md) — Six-dimensional expansion, parallel NLP, and asynchronous operations.
 - [Stage 2 Analysis](modules/stage2_analysis.md) — Agent decision loops, query search flow, ForumHost debate cycles.
 - [Stage 3 Report](modules/stage3_report.md) — Document outline planning, chapter parallel generation, and paragraph-level evidence fusion with indexed appendix.

@@ -1,0 +1,39 @@
+{
+  "version": "common-v1",
+  "topics": [
+    {"id":"event_progress","definition":"事件现场、进展与经过"},
+    {"id":"official_response","definition":"政府或主管部门的响应、公告与行动"},
+    {"id":"public_impact","definition":"事件对公众生活、健康与财产的影响"},
+    {"id":"resource_needs","definition":"物资、服务、救援及其他资源需求"},
+    {"id":"public_discussion","definition":"围绕事件的公众讨论和观点表达"},
+    {"id":"accountability","definition":"责任归属、问责与制度改进"},
+    {"id":"information_check","definition":"事件信息的澄清、核实与谣言辨析"},
+    {"id":"mutual_aid","definition":"个人、组织和社区的互助行动"}
+  ],
+  "publishers": [
+    {"id":"individual","definition":"普通个人账号"},
+    {"id":"government","definition":"政府及公共管理机构账号"},
+    {"id":"news_media","definition":"新闻媒体及新闻采编机构账号"},
+    {"id":"professional","definition":"以专业知识参与讨论的专家或从业者账号"},
+    {"id":"business","definition":"企业、品牌及商业服务账号"},
+    {"id":"civic_organization","definition":"社会组织、公益组织及社区组织账号"}
+  ],
+  "emotions": [
+    {"id":"relief","definition":"紧张缓解或风险消退带来的安心"},
+    {"id":"worry","definition":"对可能的不良后果感到担忧"},
+    {"id":"fear","definition":"面对威胁或危险时的恐惧"},
+    {"id":"anger","definition":"对事件或处理方式感到愤怒"},
+    {"id":"sadness","definition":"因损失或不幸感到悲伤"},
+    {"id":"sympathy","definition":"对受影响者处境的同情"},
+    {"id":"gratitude","definition":"对帮助或贡献表达感激"},
+    {"id":"admiration","definition":"对他人的行动或品质表达敬佩"},
+    {"id":"hope","definition":"对未来改善抱有希望"},
+    {"id":"disappointment","definition":"因现实未达到期待而失望"},
+    {"id":"helplessness","definition":"认为自身难以改变处境的无奈"},
+    {"id":"confusion","definition":"因信息不清或解释冲突感到疑惑"},
+    {"id":"surprise","definition":"因事件出乎预料而惊讶"},
+    {"id":"satisfaction","definition":"对积极进展感到欣慰"},
+    {"id":"calm","definition":"情绪平稳或平静，不等同于立场中性"},
+    {"id":"anxiety","definition":"持续不确定性引起的焦虑"}
+  ]
+}

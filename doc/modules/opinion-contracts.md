@@ -9,6 +9,7 @@ EventSchema 的类别只有 ID 与定义，无层级；证据引用不能为空�
 
 PostRecord 保留原始 ID、时间、来源和媒体引用。缺失或无法解释的发布时间为 null；采集时间不能替代发布时间。
 AnnotationRecord 每字段分别存 accepted/abstained/failed/missing；只有 accepted 带值。
+provider_confidence 单列模型自报置信度，不能自动当作 probability；自动标注入口不声称已完成置信度校准。
 立场只接受 support/oppose/neutral 且必须绑定 target_id；情感为 [-1,1] 显示编码。
 RunManifest 保存数据、代码、schema、模型、提示词版本、seed、预算与配置，拒绝含凭据名称的配置字段。
 
