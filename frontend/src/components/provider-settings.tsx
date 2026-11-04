@@ -17,7 +17,6 @@ const providers = [
     purpose: "舆情数据决策标注",
     mark: "A",
   },
-  { id: "glm", name: "GLM", purpose: "GLM 弱标注服务", mark: "GL" },
   { id: "tavily", name: "Tavily", purpose: "事件检索与外部补证", mark: "T" },
   { id: "deepseek", name: "DeepSeek", purpose: "事件搜索服务", mark: "D" },
   { id: "x", name: "X API", purpose: "历史帖子采集", mark: "X" },
@@ -169,10 +168,6 @@ export function ProviderSettings() {
             <p>
               {selected === "openai_decisions"
                 ? t("使用 OpenAI Decisions 原生接口完成话题、发布者、情绪、情感与立场标注，返回类别概率；默认模型为 gpt-6-luna。")
-                : selected === "glm"
-                ? t(
-                    "在研究工作台选择 GLM 标注时使用此凭据；主 Agent 模型在“Agent 模型”中配置。",
-                  )
                 : selected === "jev" || selected === "aliyun_decision"
                   ? t(
                       "在研究工作台的“标注模型”中选择此服务，即可用于自动标注。",

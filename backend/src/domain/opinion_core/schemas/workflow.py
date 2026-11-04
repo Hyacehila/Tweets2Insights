@@ -17,7 +17,6 @@ class LabelOptions(Contract):
                 "openai_decisions": ("gpt-6-luna", 1),
                 "jev": ("jev-latest", 1),
                 "aliyun_decision": ("decision-model-preview", 1),
-                "glm": ("glm-4.5-air", 10),
             }
             provider = value.get("provider", "openai_decisions")
             if provider in defaults:
@@ -27,9 +26,9 @@ class LabelOptions(Contract):
         return value
 
     model: str = "gpt-6-luna"
-    provider: Literal[
-        "openai_decisions", "glm", "jev", "aliyun_decision", "connector"
-    ] = "openai_decisions"
+    provider: Literal["openai_decisions", "jev", "aliyun_decision", "connector"] = (
+        "openai_decisions"
+    )
     connector: Identifier | None = None
     confidence_threshold: float = Field(default=0.7, ge=0, le=1)
     batch_size: int = Field(default=1, ge=1, le=100)

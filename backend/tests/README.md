@@ -19,5 +19,9 @@ Existing domain and legacy tests live in `tests/` and `dashboard/tests/`.
 configuration validation, save-after-probe behavior and frozen Leader model choices.
 `test_mcp_payloads.py` checks that the real MCP transport preserves job records,
 nested artifact fields and analysis tool names through gateway serialization.
+`test_label_providers.py` checks the shared decision-model factory, CLI defaults,
+saved search credentials and generic schema builder.
+`test_event_deletion.py` checks event-wide cleanup, dataset retention, isolation,
+active-work conflicts, late events and rollback after a file move failure.
 See the [testing guide](../../doc/testing/testing_workflow.md) for commands and
 [implementation record](../../doc/upgrade-status.md) for results and planned coverage.

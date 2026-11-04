@@ -1,7 +1,7 @@
 import json
 import sqlite3
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 
 class ThreadStore:
@@ -32,7 +32,7 @@ class ThreadStore:
         with sqlite3.connect(self.path) as db:
             db.execute(
                 "INSERT INTO threads VALUES (?,?,?,?,?)",
-                (key, event, title[:120], datetime.now(timezone.utc).isoformat(), "{}"),
+                (key, event, title[:120], datetime.now(UTC).isoformat(), "{}"),
             )
         return self.get(key)
 
@@ -82,8 +82,14 @@ class ThreadStore:
     def event(self, key, kind, payload):
         with sqlite3.connect(self.path) as db:
             cursor = db.execute(
-                "INSERT INTO events(thread,kind,payload) VALUES (?,?,?)",
-                (key, kind, json.dumps(payload, ensure_ascii=False, allow_nan=False)),
+                "INSERT INTO events(thread,kind,payload) SELECT ?,?,? "
+                "WHERE EXISTS (SELECT 1 FROM threads WHERE id=?)",
+                (
+                    key,
+                    kind,
+                    json.dumps(payload, ensure_ascii=False, allow_nan=False),
+                    key,
+                ),
             )
             return cursor.lastrowid
 
@@ -101,6 +107,11 @@ class ThreadStore:
         key = uuid.uuid4().hex
         with sqlite3.connect(self.path, timeout=30) as db:
             db.execute("BEGIN IMMEDIATE")
+            if (
+                db.execute("SELECT 1 FROM threads WHERE id=?", (thread,)).fetchone()
+                is None
+            ):
+                raise KeyError(thread)
             if db.execute(
                 "SELECT 1 FROM executions WHERE thread=? AND status='running'",
                 (thread,),

@@ -24,6 +24,14 @@ export const artifactLabels: Record<string, string> = {
 };
 
 const english: Record<string, string> = {
+  "右键管理事件": "Right-click to manage event",
+  "删除事件": "Delete event",
+  "确认删除": "Confirm deletion",
+  "正在删除…": "Deleting…",
+  "将删除事件“{event}”下的全部研究会话、标注与分析结果、预测、情景模拟和报告。": "This will delete all research sessions, annotations, analyses, forecasts, scenarios and reports for event “{event}”.",
+  "数据集将保留。以后使用相同事件标识新建研究，即可继续使用这些数据。": "Datasets will be kept. Create a new research session with the same event ID to use them again.",
+  "该事件仍有任务运行，请先停止 Agent 和分析任务，待任务结束后再删除。": "This event has active work. Stop its Agent and analysis tasks, then delete it once they have finished.",
+  "该研究已被删除，请刷新列表。": "This research has already been deleted. Refresh the list.",
   "OpenAI Decisions（默认）": "OpenAI Decisions (default)",
   "默认决策标注 · gpt-6-luna": "Default labeling · gpt-6-luna",
   "使用 gpt-6-luna 的 Decisions API，返回五个标注字段及类别概率。": "Uses the gpt-6-luna Decisions API for five annotation fields and class probabilities.",
@@ -31,7 +39,6 @@ const english: Record<string, string> = {
   "OpenAI Decisions 官方说明": "Official OpenAI Decisions documentation",
   "Agent 模型": "Agent model",
   "规划、分析与报告": "Planning, analysis & reports",
-  "GLM 弱标注服务": "GLM weak labeling",
   "推荐模型": "Recommended models",
   "默认推荐 · 综合分析": "Default · General analysis",
   "推荐 · 推理与报告": "Recommended · Reasoning & reports",
@@ -60,7 +67,6 @@ const english: Record<string, string> = {
   "正在检测…": "Checking…",
   "附加参数必须是 JSON 对象。": "Additional parameters must be a JSON object.",
   "接口与 JSON 输出检查通过，配置已保存。后续 Agent 任务将使用此模型。": "Connection and JSON checks passed. Settings saved for subsequent agent tasks.",
-  "在研究工作台选择 GLM 标注时使用此凭据；主 Agent 模型在“Agent 模型”中配置。": "Used when GLM labeling is selected in the workspace. Configure the main agent under Agent model.",
   "API key required for this endpoint": "API key required for this endpoint",
   "model did not follow the required JSON contract": "The model did not follow the required JSON output contract.",
   "model connection failed; check endpoint, model and credential": "Connection failed. Check the base URL, model ID and API key.",
@@ -277,8 +283,6 @@ const english: Record<string, string> = {
   "https://空间ID.cn-beijing.maas.aliyuncs.com/compatible-mode/v1/systemone":
     "https://workspace-id.cn-beijing.maas.aliyuncs.com/compatible-mode/v1/systemone",
   如何使用: "How to use",
-  "Leader Agent、分析论坛和报告 Agent 使用 GLM 组织研究与解读结果。":
-    "The Leader, analysis forum and report agents use GLM to organize research and interpret results.",
   "在研究工作台的“标注模型”中选择此服务，即可用于自动标注。":
     "Select this service under “Labeling provider” in the research workspace for automatic labeling.",
   "在研究工作台选择“关键词采集”，设置关键词和时间范围后使用。":

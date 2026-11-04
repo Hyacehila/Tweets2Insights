@@ -34,7 +34,7 @@ graph 为 context → leader → subagents → dispatch。结构化请求直接�
 - memory：显式编辑的线程事实存储；外部资料不会自动写入长期记忆。
 - checkpointer：AsyncSqliteSaver，持久化图状态。
 - mcp：加载 extensions_config.json，发现并精确匹配工具名；Gateway 读取 MCP 结构化结果，保留任务和产物中的动态字段。
-- models：生成式 Agent 共用 OpenAI 兼容 JSON 适配器，默认 Qwen3.8-Max、备选 GLM-5.3，支持自定义接口。Leader 规划使用操作者选择的配置，任务提交后冻结公开模型参数。决策标注默认 OpenAI Decisions / gpt-6-luna，并支持 Jev/阿里/GLM/连接器；密钥从本机配置或环境读取。
+- models：生成式 Agent 共用 OpenAI 兼容 JSON 适配器，默认 Qwen3.8-Max、备选 GLM-5.3，支持自定义接口。Leader 规划使用操作者选择的配置，任务提交后冻结公开模型参数。决策标注默认 OpenAI Decisions / gpt-6-luna，并支持 Jev/阿里/决策连接器；密钥从本机配置或环境读取。
 - skills：加载已启用的 public/custom SKILL.md；内置 3 个项目技能。
 - subagents：角色注册和受限评阅执行；不开放嵌套委派。
 
@@ -42,6 +42,7 @@ graph 为 context → leader → subagents → dispatch。结构化请求直接�
 
 6 组路由：threads、runs、events、datasets、artifacts、system；system 增加工具目录与写入式本机凭据配置。
 客户端仅提交会话输入和配置；event_id 从线程记录解析。上传、任务、产物读取都走同一事件范围。
+`DELETE /api/threads/{thread_id}/event` 删除该会话所属事件的全部研究记录及产物，保留注册数据集。删除包含会话消息、记忆、SSE 事件、LangGraph 检查点、领域任务与批次、标注缓存、预算记录和报告；不同事件的记录保持独立。SQLite 写锁防止排队任务在清理时被 Worker 领取；运行中或正在取消的任务返回 409，需先停止并等待结束。
 前端使用 App Router，聊天地址 `/workspace/chats/[threadId]`，通过 EventSource 接收阶段事件。
 Next.js 为 `/api` 提供同源代理。SSE 使用本项目的事件协议。
 报告支持 Markdown/HTML/JSON/ZIP 下载；ZIP 包含图表。完整领域分布、预测与情景计算继续复用已有实现。

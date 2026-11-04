@@ -1,6 +1,8 @@
-from fastapi import APIRouter, Depends
-from pydantic import BaseModel, Field, ConfigDict
-from ..dependencies import store, runtime
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, ConfigDict, Field
+
+from ..dependencies import runtime, settings, store
+from ..event_deletion import EventBusy, delete_event_research
 
 router = APIRouter(prefix="/api/threads", tags=["threads"])
 
@@ -24,6 +26,14 @@ def list_threads(db=Depends(store)):
 @router.get("/{thread_id}")
 def get_thread(thread_id: str, db=Depends(store)):
     return {**db.get(thread_id), "latest_execution": db.latest_execution(thread_id)}
+
+
+@router.delete("/{thread_id}/event")
+def delete_event(thread_id: str, db=Depends(store), config=Depends(settings)):
+    try:
+        return delete_event_research(db, config.asset_root, thread_id)
+    except EventBusy as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @router.get("/{thread_id}/state")

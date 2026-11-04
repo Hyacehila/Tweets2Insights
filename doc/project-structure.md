@@ -27,6 +27,7 @@ Tweets2Insights/
 │   │   ├── gateway/                 # FastAPI 应用层
 │   │   │   ├── app.py               # 应用工厂与生命周期
 │   │   │   ├── runtime.py           # Agent 执行、取消、事件发布
+│   │   │   ├── event_deletion.py    # 删除事件研究记录与产物，保留数据集
 │   │   │   ├── dependencies.py      # 配置、线程仓库、Runtime 注入
 │   │   │   └── routers/             # threads/runs/events/datasets/artifacts/system
 │   │   ├── subagents/               # 专业角色注册与受限执行
@@ -44,6 +45,7 @@ Tweets2Insights/
 │   │       │   │   ├── sampling.py  # 高阅读量池随机抽样，仅用于标签发现
 │   │       │   │   ├── openai_provider.py # 通用 Chat Completions JSON 适配
 │   │       │   │   ├── openai_decisions.py # OpenAI 原生决策标注与类别概率
+│   │       │   │   ├── schema_builder.py # 通用 Agent 标签体系设计
 │   │       │   │   └── system_one.py # Jev / 阿里 decision 原生协议
 │   │       │   ├── evidence/        # 搜索适配、证据卡、论坛、多模态接口
 │   │       │   ├── analytics/       # 分布观测、图表、复用 NLP
@@ -56,7 +58,8 @@ Tweets2Insights/
 │   │       │   ├── evaluation/      # Demo 与消融脚本，后置评测
 │   │       │   └── orchestration.py # 确定性领域计划编译
 │   │       ├── opinion_gateway/     # MCP 服务、应用服务、资产、预算、Job/Worker
-│   │       │   └── agent_models.py  # 推荐模型、配置保存与端点凭据解析
+│   │       │   ├── agent_models.py  # 推荐模型、配置保存与端点凭据解析
+│   │       │   └── label_providers.py # Worker/CLI 共用决策标注适配器
 │   │       └── crawler_worker/      # 独立采集执行器、X 官方 API、连接器协议
 │   └── tests/                       # 离线工程契约与 Worker 集成检查
 │
@@ -72,6 +75,7 @@ Tweets2Insights/
 │       ├── app/                     # App Router、布局、工作区和聊天页
 │       ├── components/              # 工作台、任务面板、产物查看器
 │       │   ├── workflow-builder.tsx # 输入、阶段、角色和模型参数
+│       │   ├── recent-research.tsx  # 最近研究、右键菜单及事件删除
 │       │   ├── tremor/              # Tremor Card / Badge
 │       │   ├── provider-settings.tsx # 独立 API 设置页
 │       │   ├── agent-model-settings.tsx # 模型推荐、参数与兼容性检测

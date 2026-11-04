@@ -18,7 +18,7 @@ Tweets2Insights 将一次事件研究组织为可追溯的工作流：导入帖�
 | 能力 | 项目中的实现 |
 |---|---|
 | **事件驱动的数据接入** | 上传标准 JSON、选择已有数据；内置 X 官方归档搜索，其他平台由本机连接器扩展。 |
-| **自动弱标注** | 高阅读量随机抽样 → Schema Agent → OpenAI Decisions（默认）/ Jev / 阿里 decision / GLM；完整类别概率、自动拒判、覆盖率与版本缓存。 |
+| **自动弱标注** | 高阅读量随机抽样 → Schema Agent → OpenAI Decisions（默认）/ Jev / 阿里 decision；完整类别概率、自动拒判、覆盖率与版本缓存。 |
 | **分布与证据分析** | 41 个保留工具入口覆盖情绪、话题、地区、互动和 NLP；继承本项目第二阶段选工具、补数据、补搜索、补图的反馈机制。 |
 | **预测与条件情景** | 训练截止点内拟合 PCA 和 HK 参数；隐空间同化、解码预测、六种模型/基线滚动诊断；相同起点与随机流下比较措施及资源成本。 |
 | **可追溯报告** | 内容整理 Agent → 社科解释 Agent → 页面组织 Agent；交互图表、证据和来源表，支持 Markdown、HTML、JSON、ZIP。 |
@@ -120,6 +120,8 @@ uv run --project backend python scripts/dev.py stop
 3. **生成计划**：点击“应用研究配置”，再让 Leader 生成计划；也可在高级运行配置中改用自然语言规划。
 4. **提交执行**：点击“开始执行”，在“分析与报告”中跟踪任务进度。
 5. **查看结果**：打开已完成的任务，浏览交互图表、论坛讨论与章节报告，并下载结果。
+
+在侧栏“最近研究”中右键选择“删除事件”，可清理该事件的全部会话和研究产物。数据集保留，使用相同事件 ID 新建研究后可继续使用。
 
 例如，可以在选定数据后描述：
 
@@ -231,7 +233,7 @@ Tweets2Insights/
 | [`RunRequest`](backend/src/domain/opinion_core/schemas/workflow.py) | 每次任务的数据、时间窗口、唯一搜索供应商、标注、数值模型和预算 |
 | [`skills/public`](skills/public) / `skills/custom` | 内置与本机自定义技能；自定义技能需在扩展配置中启用 |
 
-Agent 模型工厂通过 OpenAI 兼容 Chat Completions 接口调用所选模型；弱标注默认使用 OpenAI Decisions，也可选择 Jev、阿里 decision、GLM 或自定义连接器；搜索提供 Tavily/DeepSeek。采集内置 X 官方接口，并保留其他平台扩展。单次领域任务的模型/搜索预算、采集分页上限和 Agent 会话调用上限分别记录，详见[配置说明](doc/configuration.md)。
+Agent 模型工厂通过 OpenAI 兼容 Chat Completions 接口调用所选模型；弱标注默认使用 OpenAI Decisions，也可选择 Jev、阿里 decision 或自定义决策连接器；搜索提供 Tavily/DeepSeek。采集内置 X 官方接口，并保留其他平台扩展。单次领域任务的模型/搜索预算、采集分页上限和 Agent 会话调用上限分别记录，详见[配置说明](doc/configuration.md)。
 
 <a id="documentation"></a>
 ## 文档导航

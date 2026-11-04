@@ -14,6 +14,7 @@
   --blue: #2563eb;
   --blue-soft: #eff6ff;
   --green: #059669;
+  --danger: #dc2626;
   --shadow: 0 1px 3px rgb(15 23 42 / 3%);
 }
 .dark {
@@ -29,6 +30,7 @@
   --blue: #60a5fa;
   --blue-soft: #152a49;
   --green: #34d399;
+  --danger: #b91c1c;
   --shadow: none;
 }
 * {
@@ -403,6 +405,39 @@ code {
 .recent-navigation {
   overflow: auto;
 }
+.research-context-menu {
+  z-index: 70;
+  min-width: 180px;
+  max-width: min(280px, calc(100vw - 24px));
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  box-shadow: 0 6px 24px #00000018;
+}
+.research-context-label {
+  padding: 7px 9px;
+  color: var(--muted);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.research-context-delete {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px;
+  border-radius: 5px;
+  color: var(--danger);
+  cursor: pointer;
+  outline: none;
+  font-size: 13px;
+}
+.research-context-delete[data-highlighted] { background: var(--subtle); }
+.dark .research-context-delete { color: #fca5a5; }
+.delete-dataset-note { margin: 20px 0; color: var(--muted); line-height: 1.7; }
+button.danger-button { background: var(--danger); border-color: var(--danger); color: white; }
 .recent-navigation a {
   display: flex;
   align-items: center;

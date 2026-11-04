@@ -55,7 +55,7 @@ OpenAI Decisions 使用官方 `/v1/decisions` 原生协议，作为默认决策�
 - label：输入 operation=label、mode、schema、posts；输出 records（post_id/fields）、usage、cost。接口字段与 WeakLabeler 相同。
 - media/default：输入指定 post_id/media_ref；输出 items（post_id、media_ref、ocr、interpretation）、usage、cost。
 - 未登录可返回 `{"status":"waiting_for_auth"}`。会话内容由连接器从本机环境/会话存储解析，不进入请求清单。
-- Schema、论坛和报告生成共用独立的 OpenAI 兼容 Agent 模型配置，默认 Qwen3.8-Max；标签阶段默认 OpenAI Decisions / gpt-6-luna，也支持 Jev/阿里/GLM 或 label 连接器。
+- Schema、论坛和报告生成共用独立的 OpenAI 兼容 Agent 模型配置，默认 Qwen3.8-Max；标签阶段默认 OpenAI Decisions / gpt-6-luna，也支持 Jev/阿里或决策 label 连接器。
 
 调用账本记录预留、返回或不确定状态。设置金额上限时，每次调用必须有操作者提供的上界价格：
 `T2I_PRICING_FILE` 指向 provider-version → 单次上界费用的 JSON；未知价格时停止付费请求。

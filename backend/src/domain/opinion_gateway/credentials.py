@@ -9,7 +9,6 @@ import threading
 LOCK = threading.Lock()
 KEYS = {
     "openai_decisions": "OPENAI_API_KEY",
-    "glm": "GLM_API_KEY",
     "jev": "TYPESAFE_API_KEY",
     "aliyun_decision": "DASHSCOPE_API_KEY",
     "tavily": "TAVILY_API_KEY",

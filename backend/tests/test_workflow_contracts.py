@@ -223,8 +223,8 @@ def test_openai_is_default_label_provider_with_legacy_choices_preserved():
         "gpt-6-luna",
         1,
     )
-    assert LabelOptions(provider="glm").model == "glm-4.5-air"
-    assert LabelOptions(provider="glm").batch_size == 10
+    with pytest.raises(ValueError):
+        LabelOptions(provider="glm", model="glm-4.5-air")
     assert LabelOptions(provider="jev").model == "jev-latest"
     with pytest.raises(ValueError):
         LabelOptions(provider="openai_decisions", model="unsupported")
@@ -578,6 +578,9 @@ def test_local_credentials_never_appear_in_status(tmp_path, monkeypatch):
     credentials.save("jev", secret)
     assert credentials.get("TYPESAFE_API_KEY") == secret
     assert secret not in json.dumps(credentials.status())
+    assert "glm" not in {row["provider"] for row in credentials.status()}
+    with pytest.raises(ValueError):
+        credentials.save("glm", secret)
     with pytest.raises(ValueError):
         credentials.save("aliyun_decision", secret, "http://localhost/internal")
 

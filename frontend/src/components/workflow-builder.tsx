@@ -96,7 +96,7 @@ export function WorkflowBuilder({
         labels: {
           provider: labelProvider,
           model,
-          batch_size: labelProvider === "glm" ? 10 : 1,
+          batch_size: 1,
           max_calls: maxCalls,
           confidence_threshold: 0.7,
           probability_margin: 0.1,
@@ -227,7 +227,6 @@ export function WorkflowBuilder({
               {
                 jev: "jev-latest",
                 aliyun_decision: "decision-model-preview",
-                glm: "glm-4.5-air",
               }[e.target.value] ?? "",
             );
           }}
@@ -235,7 +234,6 @@ export function WorkflowBuilder({
           <option value="openai_decisions">{t("OpenAI Decisions（默认）")}</option>
           <option value="jev">TypeSafe Jev</option>
           <option value="aliyun_decision">{t("阿里 decision")}</option>
-          <option value="glm">GLM JSON</option>
         </select>
       </label>
       <label>

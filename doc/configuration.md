@@ -45,7 +45,7 @@ API Key 按 Base URL 分别保存，切换厂商不会把原密钥发送到新�
 
 ## 标注与外部服务
 
-新任务默认选择 **OpenAI Decisions / `gpt-6-luna`**，通过 `POST https://api.openai.com/v1/decisions` 调用。一条帖子提出五个命名 choice 问题，接收完整类别概率和单独的 confidence，保留 unknown 与拒答状态；每条帖子一次调用进入持久预算。缺失、重复答案或无效概率会记录为失败；拒答字段记为弃权，其余字段继续处理。模型当前只支持 `gpt-6-luna`，本项目适配器使用 `batch_size=1`，文本输入。原有任务保留其显式指定的供应商。
+新任务默认选择 **OpenAI Decisions / `gpt-6-luna`**，通过 `POST https://api.openai.com/v1/decisions` 调用。一条帖子提出五个命名 choice 问题，接收完整类别概率和单独的 confidence，保留 unknown 与拒答状态；每条帖子一次调用进入持久预算。缺失、重复答案或无效概率会记录为失败；拒答字段记为弃权，其余字段继续处理。模型当前只支持 `gpt-6-luna`，本项目适配器使用 `batch_size=1`，文本输入。旧 GLM 标注配置需改选决策模型并创建新任务；历史产物仍可查看。
 
 在“API 设置 → OpenAI Decisions”输入 API Key，或设置 `OPENAI_API_KEY`。[官方 Decisions 指南](https://developers.openai.com/api/docs/guides/decisions)与[请求/响应定义](https://developers.openai.com/api/reference/resources/decisions/methods/create)。
 
@@ -54,8 +54,7 @@ API Key 按 Base URL 分别保存，切换厂商不会把原密钥发送到新�
 | `openai_decisions`（默认） | `gpt-6-luna` | `OPENAI_API_KEY` | 固定 `https://api.openai.com/v1/decisions`；batch_size=1，每帖五个 choice 问题 |
 | `jev` | `jev-latest` | `TYPESAFE_API_KEY` | 固定 `https://api.typesafe.ai/v1/systemone`；batch_size=1，每帖五个 choice 问题 |
 | `aliyun_decision` | `decision-model-preview` | `DASHSCOPE_API_KEY` | `ALIYUN_DECISION_ENDPOINT` 为业务空间域名，见下文；batch_size=1 |
-| `glm` | `glm-4.5-air` | `GLM_API_KEY` | 既有 GLM JSON 协议 |
-| `connector` | 由操作者设置 | 由本机连接器解析 | `labels.connector` 选择已安装 ID |
+| `connector` | 自定义决策模型 | 由本机连接器解析 | `labels.connector` 选择已安装 ID |
 
 阿里端点为 `https://{WorkspaceId}.cn-beijing.maas.aliyuncs.com/compatible-mode/v1/systemone`，
 或同路径的新加坡 `ap-southeast-1` 域名。配置接口仅接受官方 HTTPS 域名，禁止重定向。

@@ -8,7 +8,7 @@ CollectTools → DecisionTools → ExecuteTools → ProcessResult → EnsureChar
 
 1. 前端选择数据/关键词输入与复盘、训练预测、情景建议；Leader 生成运行请求，领域服务编译依赖，Worker 按阶段执行。
 2. 随机抽取高阅读量候选记录，由 Schema Agent 结合搜索选择标签；抽样不截断后续分析数据。
-3. 默认用 OpenAI Decisions / gpt-6-luna 标注，也支持 TypeSafe Jev、阿里 decision、GLM 与自定义连接器；用户在本机配置 API 凭据。
+3. 默认用 OpenAI Decisions / gpt-6-luna 标注，也支持 TypeSafe Jev、阿里 decision 与自定义决策连接器；用户在本机配置 API 凭据。
 4. 41 个保留分析工具迁移到新契约；独立工具目录、参数验证、结果/图表/来源资产。
 5. 按需论坛角色、工具自主选择、搜索补证、图表覆盖检查、分歧记录和有界反馈循环。
 6. 内容整理 Agent → 人文社科解释 Agent → 页面结构 Agent → 程序校验与智能报告页面。

@@ -195,7 +195,7 @@ agent_runtime_tool_contract 和 domain_stdio 测试。domain_stdio 使用本机�
 
 持久作业验证：tests/integration/pipeline/test_persistent_worker.py 启动真实本机 Worker 子进程；dashboard/tests/test_opinion_workbench.py 使用 Streamlit AppTest 验证新会话重连与取消/重试，属于离线集成测试。
 
-自动标注：test_event_preparation/test_weak_labeling/test_glm_label_provider 及 test_automatic_label_workflow
+自动标注：test_event_preparation/test_weak_labeling 与 backend/tests/test_label_providers 及 test_automatic_label_workflow
 使用固定搜索与模型响应验证失败门禁、预算、缓存和全链路落盘。test_demo_evaluation 用合成金标准验证
 评分数学及拒判分母。独立模型评测使用[Demo 协议](weak-label-demo-protocol.md)。
 评分边界回归覆盖恰好下降 0.03、基线输出不完整；事件准备回归确认失败搜索不会继承旧模型用量。

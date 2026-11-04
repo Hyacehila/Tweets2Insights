@@ -22,6 +22,10 @@ async def stream(
     async def generate():
         nonlocal cursor
         while not await request.is_disconnected():
+            try:
+                db.get(thread_id)
+            except KeyError:
+                return
             events = db.events(thread_id, cursor)
             for event in events:
                 cursor = event["id"]

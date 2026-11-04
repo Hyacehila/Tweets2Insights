@@ -3,68 +3,52 @@
 import hashlib
 import json
 import os
-from pathlib import Path
-from datetime import datetime, timedelta
 import subprocess
 import sys
-from opinion_core.schemas.workflow import RunRequest
-from opinion_core.labeling.glm_provider import GLMJsonProvider, GLMSchemaBuilder
-from opinion_core.labeling.event_preparation import EventPreparation
-from opinion_core.labeling.pipeline import WeakLabeler
-from opinion_core.labeling.sampling import sample_for_schema
-from opinion_core.labeling.system_one import SystemOneProvider
-from opinion_core.labeling.openai_decisions import OpenAIDecisionsProvider
-from opinion_core.analytics.toolbox import AnalysisToolbox, chart_svg
-from opinion_core.analytics.observations import build_observations, summarize
+from datetime import datetime, timedelta
+from pathlib import Path
+
 from opinion_core.analytics.charts import build_charts
-from opinion_core.evidence.providers import search as provider_search
-from opinion_core.evidence.cards import web_cards, post_cards
+from opinion_core.analytics.observations import build_observations, summarize
+from opinion_core.analytics.toolbox import AnalysisToolbox, chart_svg
+from opinion_core.dynamics.backtest import rolling_backtest
+from opinion_core.dynamics.engine import fit_assimilate, forecast
+from opinion_core.evidence.cards import post_cards, web_cards
 from opinion_core.evidence.forum import (
+    brief_tool,
+    calculation_card,
     discuss,
     select_tools,
-    calculation_card,
-    brief_tool,
 )
 from opinion_core.evidence.media import analyze_media
-from opinion_core.dynamics.engine import fit_assimilate, forecast
-from opinion_core.dynamics.backtest import rolling_backtest
-from opinion_core.scenarios.paired import compare_scenarios
-from opinion_core.reporting.content import build_content
+from opinion_core.evidence.providers import search as provider_search
+from opinion_core.labeling.event_preparation import EventPreparation
+from opinion_core.labeling.openai_provider import OpenAIJsonProvider
+from opinion_core.labeling.pipeline import WeakLabeler
+from opinion_core.labeling.sampling import sample_for_schema
+from opinion_core.labeling.schema_builder import SchemaBuilder
 from opinion_core.reporting.agents import (
-    organize_content,
-    interpret_theory,
     arrange_report,
+    interpret_theory,
+    organize_content,
     recommend,
 )
+from opinion_core.reporting.content import build_content
 from opinion_core.reporting.render import render_report
-from .connectors import (
-    DecisionConnector,
-    invoke_connector,
-    WaitingForAuthentication,
-    ConnectorUnavailable,
-)
-from .budget import CallLedger
-from .label_workflow import DurableLabelBudget
-from .dataset_repository import storage_id
+from opinion_core.scenarios.paired import compare_scenarios
+from opinion_core.schemas.workflow import RunRequest
+
 from . import credentials
-from .agent_models import resolve_request, api_key_for, is_local
-from opinion_core.labeling.openai_provider import OpenAIJsonProvider
-
-
-class MeteredGLM(GLMJsonProvider):
-    def __init__(self, ledger, **kwargs):
-        super().__init__(**kwargs)
-        self.ledger, self.stage = ledger, "model"
-
-    def request(self, instruction, payload):
-        call = self.ledger.reserve(self.stage, self.version)
-        try:
-            result, usage = super().request(instruction, payload)
-            self.ledger.settle(call, usage)
-            return result, usage
-        except Exception:
-            self.ledger.settle(call, status="uncertain")
-            raise
+from .agent_models import api_key_for, is_local, resolve_request
+from .budget import CallLedger
+from .connectors import (
+    ConnectorUnavailable,
+    WaitingForAuthentication,
+    invoke_connector,
+)
+from .dataset_repository import storage_id
+from .label_providers import make_label_provider
+from .label_workflow import DurableLabelBudget
 
 
 class MeteredAgent(OpenAIJsonProvider):
@@ -261,8 +245,8 @@ class Execution:
             result = EventPreparation(
                 self.service.repo.root,
                 search=self.search,
-                builder=GLMSchemaBuilder(self.model),
-                builder_version=GLMSchemaBuilder(self.model).version,
+                builder=SchemaBuilder(self.model),
+                builder_version=SchemaBuilder(self.model).version,
             ).prepare(
                 event,
                 library,
@@ -273,40 +257,7 @@ class Execution:
                 raise IncompleteStage(result["error_type"])
             return result
         if operation == "label":
-            if req.labels.provider == "connector":
-                if not req.labels.connector:
-                    raise ConnectorUnavailable("label connector ID required")
-                provider = DecisionConnector(
-                    req.labels.connector, req.media_mode, self.ledger
-                )
-            elif req.labels.provider == "openai_decisions":
-                key = credentials.get("OPENAI_API_KEY")
-                if not key:
-                    raise WaitingForAuthentication(
-                        "OpenAI Decisions credential required"
-                    )
-                provider = OpenAIDecisionsProvider(req.labels.model, key, self.ledger)
-            elif req.labels.provider in {"jev", "aliyun_decision"}:
-                provider = SystemOneProvider(
-                    req.labels.provider,
-                    req.labels.model,
-                    credentials.get(credentials.KEYS[req.labels.provider]),
-                    "https://api.typesafe.ai/v1/systemone"
-                    if req.labels.provider == "jev"
-                    else credentials.get("ALIYUN_DECISION_ENDPOINT"),
-                    self.ledger,
-                )
-            else:
-                if req.media_mode != "text_only":
-                    raise ValueError(
-                        "image labeling requires an explicit multimodal connector"
-                    )
-                provider = MeteredGLM(
-                    self.ledger,
-                    model=req.labels.model,
-                    api_key=credentials.get("GLM_API_KEY"),
-                )
-                provider.stage = "label"
+            provider = make_label_provider(req.labels, self.ledger, req.media_mode)
             labeler = WeakLabeler(
                 self.service.repo.root,
                 provider,

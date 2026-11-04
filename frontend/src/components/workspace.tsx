@@ -37,6 +37,7 @@ import { useThreadStream } from "@/hooks/use-thread-stream";
 import { JobPanel } from "./job-panel";
 import { WorkflowBuilder } from "./workflow-builder";
 import { ProviderSettings } from "./provider-settings";
+import { RecentResearch } from "./recent-research";
 import { Card } from "./tremor/Card";
 import { Badge } from "./tremor/Badge";
 import { EmptyState, Modal, StatusBadge, statusLabels, formatDate } from "./ui";
@@ -422,21 +423,11 @@ export function Workspace({ threadId }: { threadId?: string }) {
           <p className="nav-label">{t("最近研究")}</p>
           <span>{threads.length}</span>
         </div>
-        <nav className="recent-navigation" aria-label={t("研究会话")}>
-          {threads.slice(0, 8).map((item) => (
-            <Link
-              key={item.thread_id}
-              href={`/workspace/chats/${item.thread_id}`}
-              className={threadId === item.thread_id ? "selected" : ""}
-            >
-              <span className="session-dot" />
-              <span>{item.title}</span>
-            </Link>
-          ))}
-          {!threads.length && (
-            <p className="sidebar-empty">{t("你的事件研究会出现在这里")}</p>
-          )}
-        </nav>
+        <RecentResearch threads={threads} threadId={threadId} onDeleted={(eventId, ids) => {
+          setThreads((items) => items.filter((item) => item.event_id !== eventId));
+          if (threadId && ids.includes(threadId)) router.replace("/workspace");
+          else setRefreshKey((key) => key + 1);
+        }} />
       </aside>
       <div className="app-main">
         <header className="topbar">
