@@ -57,10 +57,10 @@ retry 为失败/取消/部分完成建立后继；resume 仅恢复 waiting_for_a
 默认 Runtime 自动读取根 extensions_config.json，并在本机发现和调用领域 MCP 工具。
 
 唯一匹配失败时拒绝调用，不放宽为所有工具。参考上游版本与适配范围见 [Agent Runtime](agent-runtime-architecture.md)。
-生成式 Agent 使用 GLM_API_KEY；弱标注可独立选择 Jev（TYPESAFE_API_KEY）、阿里（DASHSCOPE_API_KEY）或 GLM。
-搜索使用所选服务的 TAVILY_API_KEY 或 DEEPSEEK_API_KEY。Jev/阿里已有原生协议，X 有官方归档搜索适配；
-其他平台及视觉服务使用[连接器协议](architecture-rewrite.md#外部服务接入)。
-GLM 标准标注路径处理文本；image_only/text_image 必须配置支持相应模式的标签连接器。
+生成式 Agent 沿用 API 设置中的 OpenAI 兼容接口与对应凭据；弱标注独立选择 OpenAI Decisions（OPENAI_API_KEY）、Jev（TYPESAFE_API_KEY）或阿里（DASHSCOPE_API_KEY）。
+搜索使用所选服务的 TAVILY_API_KEY 或 DEEPSEEK_API_KEY。OpenAI Decisions 和 Jev 原生接收文字与配图；阿里模型按文本输入并提示。X 有官方归档搜索适配，其他平台使用[连接器协议](architecture-rewrite.md#外部服务接入)。
+
+已有事件数据的筛选、配图整理与试用步骤见[本地 Demo 数据集](../testing/event-demo-datasets.md)。
 
 ## 兼容入口
 

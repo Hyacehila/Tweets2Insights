@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { MediaInput } from "@/lib/types";
 import { MediaInputNotice } from "./media-input-notice";
+import { workflowState } from "@/lib/workflow-state";
 
 const phaseLabels: Record<string, string> = {
   retrospective: "事件复盘",
@@ -24,6 +25,7 @@ export function WorkflowBuilder({
   dataset,
   keywords,
   searchProvider,
+  savedRequest,
   onBuild,
   onDirty,
 }: {
@@ -31,6 +33,7 @@ export function WorkflowBuilder({
   dataset: string;
   keywords: string;
   searchProvider: string;
+  savedRequest?: unknown;
   onBuild: (text: string) => void;
   onDirty: () => void;
 }) {
@@ -70,6 +73,30 @@ export function WorkflowBuilder({
   const [cost, setCost] = useState(0);
   const [assumption, setAssumption] = useState<string | undefined>(undefined);
   const [error, setError] = useState("");
+  useEffect(() => {
+    const state = workflowState(savedRequest);
+    if (!state) return;
+    if (state.input !== undefined) setInput(state.input === "upload" ? "existing" : state.input);
+    if (state.phases !== undefined) setPhases(state.phases);
+    if (state.roles !== undefined) setRoles(state.roles);
+    if (state.start !== undefined) setStart(state.start);
+    if (state.end !== undefined) setEnd(state.end);
+    if (state.labelProvider !== undefined) setLabelProvider(state.labelProvider);
+    if (state.model !== undefined) setModel(state.model);
+    if (state.mediaMode !== undefined) setMediaMode(state.mediaMode);
+    if (state.maxImages !== undefined) setMaxImages(state.maxImages);
+    if (state.maxCalls !== undefined) setMaxCalls(state.maxCalls);
+    if (state.rounds !== undefined) setRounds(state.rounds);
+    if (state.horizon !== undefined) setHorizon(state.horizon);
+    if (state.maxPosts !== undefined) setMaxPosts(state.maxPosts);
+    if (state.platforms !== undefined) setPlatforms(state.platforms);
+    if (state.instruction !== undefined) setInstruction(state.instruction);
+    if (state.mechanism !== undefined) setMechanism(state.mechanism);
+    if (state.measure !== undefined) setMeasure(state.measure);
+    if (state.magnitude !== undefined) setMagnitude(state.magnitude);
+    if (state.cost !== undefined) setCost(state.cost);
+    if (state.assumption !== undefined) setAssumption(state.assumption);
+  }, [savedRequest]);
   function build() {
     try {
       if (

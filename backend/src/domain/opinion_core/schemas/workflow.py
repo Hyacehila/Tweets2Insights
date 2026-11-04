@@ -166,7 +166,7 @@ class RunRequest(Contract):
     model: ModelSpec | None = None
     scenarios: list[ScenarioSpec] = Field(default_factory=list, max_length=20)
     forum_rounds: int = Field(default=3, ge=0, le=8)
-    max_total_calls: int = Field(default=120, ge=1, le=10000)
+    max_total_calls: int = Field(default=120, ge=1, le=100000)
     max_cost: float | None = Field(default=None, ge=0)
     media_mode: Literal["text_only", "image_only", "text_image"] = "text_image"
 

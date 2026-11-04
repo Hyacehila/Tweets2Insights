@@ -45,7 +45,7 @@ API Key 按 Base URL 分别保存，切换厂商不会把原密钥发送到新�
 
 ## 标注与外部服务
 
-新任务默认选择 **OpenAI Decisions / `gpt-6-luna`**，通过 `POST https://api.openai.com/v1/decisions` 调用。一条帖子提出五个命名 choice 问题，接收完整类别概率和单独的 confidence，保留 unknown 与拒答状态；每条帖子一次调用进入持久预算。缺失、重复答案或无效概率会记录为失败；拒答字段记为弃权，其余字段继续处理。模型当前只支持 `gpt-6-luna`，本项目适配器使用 `batch_size=1`，文本输入。旧 GLM 标注配置需改选决策模型并创建新任务；历史产物仍可查看。
+新任务默认选择 **OpenAI Decisions / `gpt-6-luna`**，通过 `POST https://api.openai.com/v1/decisions` 调用。一条帖子提出五个命名 choice 问题，接收完整类别概率和单独的 confidence，保留 unknown 与拒答状态；每条帖子一次调用进入持久预算。缺失、重复答案或无效概率会记录为失败；拒答字段记为弃权，其余字段继续处理。本项目适配器使用 `batch_size=1`，支持文字和配图；每帖默认最多 3 张图片。
 
 在“API 设置 → OpenAI Decisions”输入 API Key，或设置 `OPENAI_API_KEY`。[官方 Decisions 指南](https://developers.openai.com/api/docs/guides/decisions)与[请求/响应定义](https://developers.openai.com/api/reference/resources/decisions/methods/create)。
 
@@ -68,6 +68,8 @@ Worker 每次创建服务适配器时重新读取本机配置，无须把密钥�
 `domain` 配置区记录固定部署策略：独立 Worker、关闭生产人工复核，以及质量验证状态。
 Demo 结果由独立评分工具生成。
 `agent_runtime.max_model_calls` 限制每次会话的模型规划/专业评阅调用；领域运行的调用与金额预算由 RunRequest 独立控制。
+
+`labels.max_calls` 限制标注调用，`max_total_calls` 覆盖所有付费阶段，取值范围为 1–100000。10,000 条 Demo 默认保留 64 次额外调用供搜索、论坛与报告使用，总上限为 10064。Token 用量和供应商返回的费用在任务结果中查看。
 两者不属于同一本调用账本，当前没有跨会话、跨领域运行的总金额上限。
 MCP 的 `$PYTHON`、`$PROJECT_ROOT`、`$T2I_ASSET_ROOT` 由客户端替换，命令只来自操作者配置。
 相对路径按项目根解析。

@@ -8,6 +8,7 @@
 |---|---|
 | 安装、配置凭据、启动工作台 | [README：快速开始](../README.md#quickstart) |
 | 上传数据并完成第一次分析 | [README：第一次分析](../README.md#first-analysis) |
+| 使用本地事件 Demo，查看图文分析用量 | [本地 Demo 数据集](testing/event-demo-datasets.md) |
 | CLI、任务管理、导出与兼容入口 | [运行手册](modules/domain-application.md) |
 | 模型、环境变量、连接器和预算 | [应用配置](configuration.md) |
 | 页面、会话与产物交互 | [前端说明](frontend-guide.md) |

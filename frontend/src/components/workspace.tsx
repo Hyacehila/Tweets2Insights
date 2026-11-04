@@ -33,6 +33,7 @@ import {
 import { artifactLabels } from "@/lib/i18n";
 import { api, post } from "@/lib/api";
 import { importDatasetFiles } from "@/lib/dataset-import";
+import { workflowState } from "@/lib/workflow-state";
 import type { Thread, Dataset, Job } from "@/lib/types";
 import { useThreadStream } from "@/hooks/use-thread-stream";
 import { JobPanel } from "./job-panel";
@@ -75,6 +76,7 @@ export function Workspace({ threadId }: { threadId?: string }) {
   const [keywords, setKeywords] = useState("");
   const [message, setMessage] = useState("");
   const [requestText, setRequestText] = useState("");
+  const [savedRequest, setSavedRequest] = useState<unknown>();
   const [requestDirty, setRequestDirty] = useState(false);
   const [execution, setExecution] = useState("");
   const [busy, setBusy] = useState(false);
@@ -123,6 +125,7 @@ export function Workspace({ threadId }: { threadId?: string }) {
     setMessage("");
     setBusy(false);
     setRequestText("");
+    setSavedRequest(undefined);
     setRequestDirty(false);
     setError("");
     setExecution("");
@@ -144,8 +147,14 @@ export function Workspace({ threadId }: { threadId?: string }) {
       });
     api<{ run_request?: unknown }>(`/threads/${threadId}/state`)
       .then((s) => {
-        if (live && s.run_request)
+        if (live && s.run_request) {
           setRequestText(JSON.stringify(s.run_request, null, 2));
+          setSavedRequest(s.run_request);
+          const state = workflowState(s.run_request);
+          if (state?.dataset !== undefined) setDataset(state.dataset);
+          if (state?.keywords !== undefined) setKeywords(state.keywords);
+          if (state?.searchProvider !== undefined) setProvider(state.searchProvider);
+        }
       })
       .catch((e: Error) => {
         if (live) setError(e.message);
@@ -182,6 +191,11 @@ export function Workspace({ threadId }: { threadId?: string }) {
     if (!latest) return;
     if (latest.run_request) {
       setRequestText(JSON.stringify(latest.run_request, null, 2));
+      setSavedRequest(latest.run_request);
+      const state = workflowState(latest.run_request);
+      if (state?.dataset !== undefined) setDataset(state.dataset);
+      if (state?.keywords !== undefined) setKeywords(state.keywords);
+      if (state?.searchProvider !== undefined) setProvider(state.searchProvider);
       setRequestDirty(false);
     }
     if (["completed", "failed", "cancelled"].includes(latest.status ?? "")) {
@@ -764,6 +778,7 @@ export function Workspace({ threadId }: { threadId?: string }) {
                               dataset={dataset}
                               keywords={keywords}
                               searchProvider={provider}
+                              savedRequest={savedRequest}
                               onDirty={onDirty}
                               onBuild={onBuild}
                             />

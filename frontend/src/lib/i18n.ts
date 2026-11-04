@@ -1,6 +1,18 @@
 export type Locale = "zh-CN" | "en-US";
 
 const mediaMessages: Record<string, string> = {
+  "用量与费用": "Usage and cost",
+  "已记录 {count} 次调用": "{count} recorded calls",
+  "服务商未返回完整费用。下表显示已返回的 Token 用量，金额请查看服务商账单。": "Complete cost was not returned by the providers. Returned token usage appears below; check provider billing for charges.",
+  "服务商返回费用：{amount}": "Provider-reported cost: {amount}",
+  "阶段": "Stage",
+  "模型 / 服务": "Model / service",
+  "调用次数": "Calls",
+  "输入 Token": "Input tokens",
+  "输出 Token": "Output tokens",
+  "其中缓存 Token": "Cached tokens included",
+  "未返回 Token 的调用": "Calls without token usage",
+  "原始用量记录": "Raw usage records",
   "请选择一个 JSON 文件，可同时选择它引用的配图。": "Select one JSON file, optionally with the images it references.",
   "配图文件名重复，请重命名后再导入。": "Image filenames are duplicated. Rename them before importing.",
   "每张图片不得超过 16 MiB。": "Each image must be at most 16 MiB.",

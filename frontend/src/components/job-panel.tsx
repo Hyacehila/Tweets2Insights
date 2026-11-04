@@ -15,6 +15,7 @@ import { api, post } from "@/lib/api";
 import type { Job, DomainResult, ArtifactRef } from "@/lib/types";
 import { ArtifactViewer } from "./artifact-viewer";
 import { MediaInputNotice } from "./media-input-notice";
+import { UsageSummary } from "./usage-summary";
 import { Card } from "./tremor/Card";
 import { Badge } from "./tremor/Badge";
 import { EmptyState, StatusBadge, statusLabels } from "./ui";
@@ -268,6 +269,7 @@ export function JobPanel({
           <p className="loading-text">{t("正在读取研究产物…")}</p>
         </Card>
       )}
+      <UsageSummary value={result.usage} />
       {result.artifacts && (
         <Card className="surface result-card">
           <MediaInputNotice value={result.media_input} counts />

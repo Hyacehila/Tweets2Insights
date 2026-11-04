@@ -40,7 +40,7 @@ Tweets2Insights/
 │   │       ├── opinion_core/
 │   │       │   ├── schemas/         # 事件、标签、请求、任务、产物契约
 │   │       │   │   └── agent_model.py # 模型接口与生成参数契约
-│   │       │   ├── ingestion/       # 历史数据无损迁移
+│   │       │   ├── ingestion/       # 历史数据迁移、Demo 字段映射与逐日热度筛选
 │   │       │   ├── labeling/        # 事件 Schema、自动弱标注、词表
 │   │       │   │   ├── sampling.py  # 高阅读量池随机抽样，仅用于标签发现
 │   │       │   │   ├── openai_provider.py # 通用 Chat Completions JSON 适配
@@ -60,6 +60,7 @@ Tweets2Insights/
 │   │       │   └── orchestration.py # 确定性领域计划编译
 │   │       ├── opinion_gateway/     # MCP 服务、应用服务、资产、预算、Job/Worker
 │   │       │   ├── media_assets.py  # 数据集配图原文件存储与事件隔离
+│   │       │   ├── demo_preparation.py # 本地 Demo 图片整理、登记与运行配置
 │   │       │   ├── agent_models.py  # 推荐模型、配置保存与端点凭据解析
 │   │       │   └── label_providers.py # Worker/CLI 共用决策标注适配器
 │   │       └── crawler_worker/      # 独立采集执行器、X 官方 API、连接器协议
@@ -96,7 +97,7 @@ Tweets2Insights/
 │   │   └── forecast-scenario/
 │   └── custom/                      # 本机自定义技能，gitignored
 │
-├── scripts/                         # 本地启动/停止、静态检查及兼容启动器
+├── scripts/                         # 本地启动/停止、Demo 整理、静态检查及兼容启动器
 ├── doc/                             # 架构、目录、配置与部署说明
 │   └── diagrams/                    # 系统、论坛、预测情景图及 Mermaid 源文件
 ├── tests/                           # 领域契约与历史模块测试
