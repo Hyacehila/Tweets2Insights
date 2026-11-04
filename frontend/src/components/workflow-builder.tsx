@@ -10,7 +10,6 @@ const phaseLabels: Record<string, string> = {
   retrospective: "事件复盘",
   forecast: "训练与预测",
   scenario: "调控模拟与建议",
-  backtest: "历史回测",
 };
 const roleLabels: Record<string, string> = {
   data: "数据分析",
