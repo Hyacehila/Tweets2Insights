@@ -13,7 +13,6 @@ from utils.data_loader import (
     load_publisher_objects,
     load_enhanced_blog_data,
     load_belief_system,
-    load_publisher_decisions,
 )
 from utils.data_sources.json_source import JsonDataSource
 
@@ -52,7 +51,6 @@ class DataLoadNode(MonitoredNode):
             "sentiment_attributes_path": data_paths.get("sentiment_attributes_path", "data/sentiment_attributes.json"),
             "publisher_objects_path": data_paths.get("publisher_objects_path", "data/publisher_objects.json"),
             "belief_system_path": data_paths.get("belief_system_path", "data/believe_system_common.json"),
-            "publisher_decision_path": data_paths.get("publisher_decision_path", "data/publisher_decision.json"),
         }
 
     def exec(self, prep_res):
@@ -64,7 +62,6 @@ class DataLoadNode(MonitoredNode):
             "load_sentiment_attributes": load_sentiment_attributes,
             "load_publisher_objects": load_publisher_objects,
             "load_belief_system": load_belief_system,
-            "load_publisher_decisions": load_publisher_decisions,
         })
 
         if prep_res["load_type"] == "enhanced":
@@ -110,7 +107,6 @@ class DataLoadNode(MonitoredNode):
             "sentiment_attributes": source.load_sentiment_attributes(prep_res["sentiment_attributes_path"]),
             "publisher_objects": source.load_publisher_objects(prep_res["publisher_objects_path"]),
             "belief_system": source.load_belief_system(prep_res["belief_system_path"]),
-            "publisher_decisions": source.load_publisher_decisions(prep_res["publisher_decision_path"]),
             "load_type": "original",
         }
 
@@ -127,9 +123,7 @@ class DataLoadNode(MonitoredNode):
             shared["data"]["sentiment_attributes"] = exec_res["sentiment_attributes"]
             shared["data"]["publisher_objects"] = exec_res["publisher_objects"]
             shared["data"]["belief_system"] = exec_res["belief_system"]
-            shared["data"]["publisher_decisions"] = exec_res["publisher_decisions"]
             print(f"[DataLoad] belief_system loaded: {len(exec_res['belief_system'])} items")
-            print(f"[DataLoad] publisher_decisions loaded: {len(exec_res['publisher_decisions'])} items")
 
         if "stage1_results" not in shared:
             shared["stage1_results"] = {"statistics": {}}
@@ -143,7 +137,6 @@ class DataLoadNode(MonitoredNode):
                     "topics_empty": 0,
                     "publisher_empty": 0,
                     "belief_system_empty": 0,
-                    "publisher_decision_empty": 0,
                 },
                 "engagement_statistics": {
                     "total_reposts": 0,

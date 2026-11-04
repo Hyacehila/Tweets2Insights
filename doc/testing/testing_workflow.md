@@ -119,7 +119,7 @@ powershell -ExecutionPolicy Bypass -File scripts/run_full_acceptance.ps1 -BaseTe
 | 线性主链入口与阶段状态（StageD） | `tests/unit/core/test_flow_entrypoint.py`, `tests/unit/core/test_pipeline_state.py` |
 | 状态事件链路（enter/exit + 并行分支） | `tests/unit/core/test_status_events.py`, `tests/unit/core/test_node_status_events.py`, `tests/unit/stage2/test_stage2_parallel_flow.py` |
 | E2E 运行时配置构造与产物契约断言 | `tests/unit/core/test_e2e_runtime_profile.py`, `tests/unit/core/test_e2e_config_runtime_keys.py` |
-| Stage 1 节点/六维增强/NLP | `tests/unit/stage1/test_stage1_nodes.py`, `tests/unit/stage1/test_stage1_analysis.py`, `tests/unit/stage1/test_stage1_nlp_pipeline.py` |
+| Stage 1 节点/五维增强/NLP | `tests/unit/stage1/test_stage1_nodes.py`, `tests/unit/stage1/test_stage1_analysis.py`, `tests/unit/stage1/test_stage1_nlp_pipeline.py` |
 | Stage 2 Agent 决策与执行 | `tests/unit/stage2/test_stage2_agent.py`, `tests/unit/stage2/test_stage2_execute_tools.py`, `tests/unit/stage2/test_stage2_ensure_charts.py`, `tests/unit/stage2/test_stage2_data_agent_trace.py` |
 | Stage 2 QuerySearchFlow + SearchAgent + 并行桥接 | `tests/unit/stage2/test_stage2_search_flow.py`, `tests/unit/stage2/test_stage2_search_agent.py`, `tests/unit/stage2/test_stage2_parallel_flow.py` |
 | Stage 2 Forum 动态循环（B5~B8） | `tests/unit/stage2/test_stage2_forum.py`, `tests/unit/stage2/test_stage2_supplement.py`, `tests/unit/stage2/test_stage2_visual.py`, `tests/unit/stage2/test_stage2_merge.py`, `tests/unit/stage2/test_stage2_chart_analysis_gapfill.py` |

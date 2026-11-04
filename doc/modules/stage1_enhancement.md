@@ -1,6 +1,6 @@
 # 阶段 1：数据增强子系统
 
-> **文档状态**: 2026-02-20 更新  
+> **文档状态**: 2026-11-04 更新
 > **关联源码**: `nodes/stage1/*`, `nodes/base.py`, `flow.py`  
 > **上级文档**: [系统设计总览](design.md)
 
@@ -10,7 +10,7 @@
 
 ### 1.1 目标
 
-将非结构化的社交媒体博文转化为**六维结构化数据**，为后续的统计分析和报告生成提供标准化输入。
+将非结构化的社交媒体博文转化为**五维结构化数据**，为后续的统计分析和报告生成提供标准化输入。
 
 ### 1.2 输入/输出
 
@@ -18,7 +18,7 @@
 |:---|:---|
 | **输入** | `data/posts_sample_30.json` — 原始博文 JSON 数组（可配置） |
 | **输出** | `data/enhanced_posts_sample_30.json` — 增强后的博文 JSON 数组（可配置） |
-| **参考数据** | `data/topics.json`、`data/sentiment_attributes.json`、`data/publisher_objects.json`、`data/believe_system_common.json`、`data/publisher_decision.json` |
+| **参考数据** | `data/topics.json`、`data/sentiment_attributes.json`、`data/publisher_objects.json`、`data/believe_system_common.json` |
 
 ### 1.3 执行模式
 
@@ -26,9 +26,9 @@
 
 ---
 
-## 2. 六个增强维度
+## 2. 五个增强维度
 
-每条博文经过阶段 1 处理后，会新增以下 6 个字段：
+每条博文经过阶段 1 处理后，会新增以下 5 个字段：
 
 ### 2.1 维度定义
 
@@ -37,9 +37,10 @@
 | 1 | `sentiment_polarity` | `int` | 情感极性评分 | 1=极度悲观, 2=悲观, 3=中性, 4=乐观, 5=极度乐观 |
 | 2 | `sentiment_attribute` | `List[str]` | 情感属性标签（1-3 个） | `["支持", "期待"]` |
 | 3 | `topics` | `List[Dict]` | 二级主题分类（1-2 个） | `[{"parent_topic": "灾害", "sub_topic": "暴雨"}]` |
-| 4 | `publisher` | `str` | 发布者类型 | `"官方新闻媒体"` / `"个人用户"` |
+| 4 | `publisher` | `str` | 发布者类型 | `"新闻媒体"` / `"个人用户"` |
 | 5 | `belief_signals` | `List[Dict]` | 信念体系信号（1-3 个） | `[{"category": "安全", "subcategories": ["人身安全"]}]` |
-| 6 | `publisher_decision` | `str` | 事件关联身份 | `"直接参与者"` / `"旁观者"` |
+
+发布者词库统一为政府机构、新闻媒体、自媒体、企业账号、事业单位、社会组织、个人用户，分类边界见[基础类型说明](automatic-labeling.md#发布者基础类型)。
 
 ### 2.2 参考数据来源
 
@@ -51,13 +52,12 @@
 | topics | `data/topics.json` | `data.topics_hierarchy` |
 | publisher | `data/publisher_objects.json` | `data.publisher_objects` |
 | belief_signals | `data/believe_system_common.json` | `data.belief_system` |
-| publisher_decision | `data/publisher_decision.json` | `data.publisher_decisions` |
 
 > `sentiment_polarity` 维度不需要参考数据，直接由 LLM 输出 1-5 的数字。
 
 ### 2.3 NLP 增强字段（新增）
 
-阶段 1 在六维增强前增加 **NLPEnrichmentNode**，对文本进行本地处理，新增字段：
+阶段 1 在五维增强前增加 **NLPEnrichmentNode**，对文本进行本地处理，新增字段：
 
 | 字段名 | 类型 | 说明 |
 |:---|:---|:---|
@@ -80,17 +80,16 @@ flowchart LR
     SA --> TP[TopicAnalysis]
     TP --> PO[PublisherObject]
     PO --> BS[BeliefSystem]
-    BS --> PD[PublisherDecision]
-    PD --> SD[SaveEnhancedData]
+    BS --> SD[SaveEnhancedData]
     SD --> DV[DataValidation]
     DV --> SC[Stage1Completion]
 ```
 
-6 个分析节点**串行执行**（非并行），每个节点内部对所有博文进行**异步并发**处理。
+5 个分析节点**串行执行**（非并行），每个节点内部对所有博文进行**异步并发**处理。
 
 ### 3.2 `AsyncParallelBatchNode` 基类
 
-所有 6 个分析节点都继承自 `AsyncParallelBatchNode`，该类组合了 PocketFlow 的 `AsyncNode` 和 `BatchNode`。
+所有 5 个分析节点都继承自 `AsyncParallelBatchNode`，该类组合了 PocketFlow 的 `AsyncNode` 和 `BatchNode`。
 
 #### 核心特性
 
@@ -242,22 +241,6 @@ post_async(shared, prep_res, exec_res) → 将结果批量写回 shared
 - `category` 必须在信念体系定义中存在
 - `subcategories` 中的每个子类必须在对应 `category` 的定义列表中
 
-#### 3.3.6 `AsyncPublisherDecisionAnalysisBatchNode`
-
-| 属性 | 值 |
-|:---|:---|
-| **输出字段** | `publisher_decision` (str) |
-| **LLM 模型** | `call_glm_45_air`（纯文本） |
-| **Temperature** | 0.2 |
-| **Fallback** | 候选列表的第一项（或 `None`） |
-
-**Prompt 策略**：
-- 将候选身份分类以 JSON 格式传入
-- 额外传入发布者昵称/账号信息
-- 明确要求"若无法判断，选择最接近的类型"
-
-**验证逻辑**：模糊匹配 — 遍历候选列表，检查 `cand in chosen`，找到第一个包含关系即返回
-
 ### 3.4 各节点 LLM 调用模型选择总结
 
 | 节点 | 纯文本模型 | 视觉模型 | 条件 |
@@ -267,7 +250,6 @@ post_async(shared, prep_res, exec_res) → 将结果批量写回 shared
 | TopicAnalysis | `call_glm_45_air` | `call_glm4v_plus` | 有 `image_urls` 时用视觉模型 |
 | PublisherObject | `call_glm_45_air` | — | 仅文本 |
 | BeliefSystem | `call_glm_45_air` | — | 仅文本 |
-| PublisherDecision | `call_glm_45_air` | — | 仅文本 |
 
 ---
 
@@ -308,7 +290,6 @@ post_async(shared, prep_res, exec_res) → 将结果批量写回 shared
 - `shared["data"]["sentiment_attributes"]` ← 情感属性列表
 - `shared["data"]["publisher_objects"]` ← 发布者类型列表
 - `shared["data"]["belief_system"]` ← 信念体系分类
-- `shared["data"]["publisher_decisions"]` ← 事件身份列表
 - 初始化 `shared["stage1_results"]["statistics"]` 结构（详细的空值统计、参与度统计等）
 
 ### 4.2 `SaveEnhancedDataNode`
@@ -335,7 +316,7 @@ post_async(shared, prep_res, exec_res) → 将结果批量写回 shared
 
 | 统计类别 | 统计项 |
 |:---|:---|
-| **空值统计** | 6 个增强字段的空值计数（`sentiment_polarity_empty`、`sentiment_attribute_empty` 等） |
+| **空值统计** | 5 个增强字段的空值计数（`sentiment_polarity_empty`、`sentiment_attribute_empty` 等） |
 | **参与度统计** | 总转发/评论/点赞数、平均值 |
 | **用户统计** | 独立用户数、活跃用户 Top10、发布者类型分布 |
 | **内容统计** | 总图片数、含图博文数、平均内容长度、按小时的发布时间分布 |

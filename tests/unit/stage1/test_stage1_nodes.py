@@ -41,7 +41,6 @@ class TestDataLoadNodePrep:
             "sentiment_attributes_path": "data/sa.json",
             "publisher_objects_path": "data/po.json",
             "belief_system_path": "data/bs.json",
-            "publisher_decision_path": "data/pd.json",
         }
         node = DataLoadNode()
         result = node.prep(minimal_shared)
@@ -69,14 +68,13 @@ class TestDataLoadNodeExec:
         assert result["blog_data"] == sample_enhanced_data
         mock_load.assert_called_once_with("data/enh.json")
 
-    @patch("nodes.stage1.data_load.load_publisher_decisions")
     @patch("nodes.stage1.data_load.load_belief_system")
     @patch("nodes.stage1.data_load.load_publisher_objects")
     @patch("nodes.stage1.data_load.load_sentiment_attributes")
     @patch("nodes.stage1.data_load.load_topics")
     @patch("nodes.stage1.data_load.load_blog_data")
     def test_original_load(self, mock_blog, mock_topics, mock_sa, mock_po,
-                           mock_bs, mock_pd,
+                           mock_bs,
                            sample_blog_data, sample_topics,
                            sample_sentiment_attrs, sample_publishers):
         mock_blog.return_value = sample_blog_data
@@ -84,7 +82,6 @@ class TestDataLoadNodeExec:
         mock_sa.return_value = sample_sentiment_attrs
         mock_po.return_value = sample_publishers
         mock_bs.return_value = [{"category": "test"}]
-        mock_pd.return_value = ["type1"]
 
         node = DataLoadNode()
         prep_res = {
@@ -96,7 +93,6 @@ class TestDataLoadNodeExec:
             "sentiment_attributes_path": "data/sa.json",
             "publisher_objects_path": "data/po.json",
             "belief_system_path": "data/bs.json",
-            "publisher_decision_path": "data/pd.json",
         }
         result = node.exec(prep_res)
         assert result["load_type"] == "original"
@@ -105,7 +101,6 @@ class TestDataLoadNodeExec:
         assert len(result["sentiment_attributes"]) == len(sample_sentiment_attrs)
 
     @patch("nodes.stage1.data_load.load_enhanced_blog_data")
-    @patch("nodes.stage1.data_load.load_publisher_decisions")
     @patch("nodes.stage1.data_load.load_belief_system")
     @patch("nodes.stage1.data_load.load_publisher_objects")
     @patch("nodes.stage1.data_load.load_sentiment_attributes")
@@ -114,7 +109,7 @@ class TestDataLoadNodeExec:
     @patch("os.path.exists", return_value=True)
     def test_resume_loads_enhanced_data(
         self, mock_exists, mock_blog, mock_topics, mock_sa, mock_po,
-        mock_bs, mock_pd, mock_enh_load,
+        mock_bs, mock_enh_load,
         sample_blog_data
     ):
         """断点续跑: 增强文件存在且匹配 → 使用增强数据"""
@@ -125,7 +120,6 @@ class TestDataLoadNodeExec:
         mock_sa.return_value = []
         mock_po.return_value = []
         mock_bs.return_value = []
-        mock_pd.return_value = []
 
         node = DataLoadNode()
         prep_res = {
@@ -137,7 +131,6 @@ class TestDataLoadNodeExec:
             "sentiment_attributes_path": "sa.json",
             "publisher_objects_path": "po.json",
             "belief_system_path": "bs.json",
-            "publisher_decision_path": "pd.json",
         }
         result = node.exec(prep_res)
         # 断点续跑成功时，blog_data 应包含 sentiment_polarity 字段
@@ -156,7 +149,6 @@ class TestDataLoadNodePost:
             "sentiment_attributes": ["attr1"],
             "publisher_objects": ["pub1"],
             "belief_system": [{"category": "test"}],
-            "publisher_decisions": ["type1"],
         }
         action = node.post(minimal_shared, {}, exec_res)
         assert minimal_shared["data"]["blog_data"] == sample_blog_data

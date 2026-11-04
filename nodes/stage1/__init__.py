@@ -11,7 +11,6 @@ from nodes.stage1.sentiment import (
 from nodes.stage1.topic import AsyncTwoLevelTopicAnalysisBatchNode
 from nodes.stage1.publisher import (
     AsyncPublisherObjectAnalysisBatchNode,
-    AsyncPublisherDecisionAnalysisBatchNode,
 )
 from nodes.stage1.belief import AsyncBeliefSystemAnalysisBatchNode
 from nodes.stage1.nlp_enrichment import NLPEnrichmentNode
@@ -25,6 +24,5 @@ __all__ = [
     "AsyncTwoLevelTopicAnalysisBatchNode",
     "AsyncPublisherObjectAnalysisBatchNode",
     "AsyncBeliefSystemAnalysisBatchNode",
-    "AsyncPublisherDecisionAnalysisBatchNode",
     "NLPEnrichmentNode",
 ]

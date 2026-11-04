@@ -1,6 +1,6 @@
 # 工具函数文档
 
-> **文档状态**: 2026-11-03 更新  
+> **文档状态**: 2026-11-04 更新
 > **关联源码**: `utils/call_llm.py`, `utils/llm_retry.py`, `utils/data_loader.py`, `utils/console_safe.py`, `utils/path_manager.py`, `utils/status_events.py`, `utils/status_store.py`, `utils/trace_manager.py`, `utils/web_search.py`, `utils/data_sources/*`, `utils/nlp/*`  
 > **上级文档**: [系统设计总览](../architecture.md)
 
@@ -119,7 +119,6 @@ if enable_reasoning:
 | `load_sentiment_attributes` | 加载情感属性列表 | `data/sentiment_attributes.json` | `List[str]` |
 | `load_publisher_objects` | 加载发布者类型列表 | `data/publisher_objects.json` | `List[str]` |
 | `load_belief_system` | 加载信念体系分类 | `data/believe_system_common.json` | `List[Dict]`（含 `category` + `subcategories`） |
-| `load_publisher_decisions` | 加载事件关联身份分类 | `data/publisher_decision.json` | `List[Dict]` |
 | `save_enhanced_blog_data` | 保存增强后数据 | 数据 + 路径 | `bool` |
 | `load_enhanced_blog_data` | 加载增强后数据 | 路径 | `List[Dict]` |
 | `save_analysis_results` | 保存分析结果 | 结果字典 + 路径 | `bool` |

@@ -99,6 +99,8 @@ Tweets2Insights/
 │   └── diagrams/                    # 系统、论坛、预测情景图及 Mermaid 源文件
 ├── tests/                           # 领域契约与历史模块测试
 ├── configs/                         # 领域请求等示例
+├── data/                            # 输入数据与兼容词库
+│   └── publisher_objects.json        # 7 类基础发布者类型
 ├── main.py                          # 兼容领域 CLI
 ├── opinion_core/                    # 旧导入路径转发至 backend/src/domain
 ├── opinion_gateway/                 # 旧导入路径转发

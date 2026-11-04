@@ -33,7 +33,6 @@ def test_build_shared_from_config(tmp_path, monkeypatch):
             "sentiment_attributes_path": "tests/fixtures/sample_sentiment_attrs.json",
             "publisher_objects_path": "tests/fixtures/sample_publishers.json",
             "belief_system_path": "data/believe_system_common.json",
-            "publisher_decision_path": "data/publisher_decision.json",
         },
         "pipeline": {
             "start_stage": 1,
@@ -64,7 +63,6 @@ def test_run_pipeline_dry_run(tmp_path, monkeypatch):
             "sentiment_attributes_path": "tests/fixtures/sample_sentiment_attrs.json",
             "publisher_objects_path": "tests/fixtures/sample_publishers.json",
             "belief_system_path": "data/believe_system_common.json",
-            "publisher_decision_path": "data/publisher_decision.json",
         },
         "pipeline": {
             "start_stage": 1,

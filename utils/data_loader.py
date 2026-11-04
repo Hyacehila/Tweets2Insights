@@ -107,19 +107,6 @@ def load_belief_system(belief_system_file_path: str) -> List[Dict[str, Any]]:
         raise
 
 
-def load_publisher_decisions(publisher_decision_file_path: str) -> List[Dict[str, Any]]:
-    """
-    加载发布者事件关联身份分类
-    """
-    try:
-        with open(publisher_decision_file_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        logger.info(f"成功加载发布者决策分类，共 {len(data)} 条")
-        return data
-    except Exception as e:
-        logger.error(f"加载发布者决策分类失败: {e}")
-        raise
-
 def save_enhanced_blog_data(enhanced_blog_data: List[Dict[str, Any]], output_path: str) -> bool:
     """
     保存增强后的博文数据

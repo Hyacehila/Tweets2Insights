@@ -36,7 +36,6 @@ def _complete_stage(shared, completion_cls):
 
 class TestStage1PipelineFlow:
     @patch("nodes.stage1.save.save_enhanced_blog_data", return_value=True)
-    @patch("nodes.stage1.data_load.load_publisher_decisions", return_value=["type1"])
     @patch("nodes.stage1.data_load.load_belief_system", return_value=[])
     @patch("nodes.stage1.data_load.load_publisher_objects")
     @patch("nodes.stage1.data_load.load_sentiment_attributes")
@@ -49,7 +48,6 @@ class TestStage1PipelineFlow:
         mock_sa,
         mock_po,
         _mock_bs,
-        _mock_pd,
         _mock_save,
         sample_blog_data,
         sample_topics,

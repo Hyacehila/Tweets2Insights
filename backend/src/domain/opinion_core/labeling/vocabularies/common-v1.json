@@ -11,12 +11,13 @@
     {"id":"mutual_aid","definition":"个人、组织和社区的互助行动"}
   ],
   "publishers": [
-    {"id":"individual","definition":"普通个人账号"},
-    {"id":"government","definition":"政府及公共管理机构账号"},
-    {"id":"news_media","definition":"新闻媒体及新闻采编机构账号"},
-    {"id":"professional","definition":"以专业知识参与讨论的专家或从业者账号"},
-    {"id":"business","definition":"企业、品牌及商业服务账号"},
-    {"id":"civic_organization","definition":"社会组织、公益组织及社区组织账号"}
+    {"id":"government","definition":"政府机构：党政机关及公共管理部门的机构账号，包括公安、消防、气象、应急等部门"},
+    {"id":"news_media","definition":"新闻媒体：报社、广播电视台、通讯社及新闻网站的机构账号；媒体从业者的私人账号不归此类"},
+    {"id":"self_media","definition":"自媒体：以持续内容创作和公开传播为主要用途的博主、主播及独立内容账号；不以粉丝数量作为唯一依据"},
+    {"id":"business","definition":"企业账号：公司、品牌、商家及商业服务机构的官方账号，包括金融、交通、能源和通信企业"},
+    {"id":"public_institution","definition":"事业单位：学校、医院、科研院所和公共文化服务等事业单位的机构账号；行政机关与新闻媒体按各自类型分类"},
+    {"id":"civic_organization","definition":"社会组织：协会、商会、公益慈善组织、志愿者组织及其他非营利社会团体的机构账号"},
+    {"id":"individual","definition":"个人用户：以个人身份发言的普通用户及各类职业人士；教师、医生、律师、专家、学生等不按职业另设类别，专门运营的内容创作账号归自媒体"}
   ],
   "emotions": [
     {"id":"relief","definition":"紧张缓解或风险消退带来的安心"},

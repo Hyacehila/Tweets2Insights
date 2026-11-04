@@ -22,7 +22,6 @@ from nodes import (
     AsyncTwoLevelTopicAnalysisBatchNode,
     AsyncPublisherObjectAnalysisBatchNode,
     AsyncBeliefSystemAnalysisBatchNode,
-    AsyncPublisherDecisionAnalysisBatchNode,
     # Stage2 节点
     LoadEnhancedDataNode,
     DataSummaryNode,
@@ -86,11 +85,6 @@ def _create_async_enhancement_flow(
         wait=wait_time,
         max_concurrent=concurrent_num,
     )
-    publisher_decision_node = AsyncPublisherDecisionAnalysisBatchNode(
-        max_retries=max_retries,
-        wait=wait_time,
-        max_concurrent=concurrent_num,
-    )
 
     save_data_node = SaveEnhancedDataNode()
     validation_node = DataValidationAndOverviewNode()
@@ -102,8 +96,7 @@ def _create_async_enhancement_flow(
     sentiment_attribute_node >> topic_analysis_node
     topic_analysis_node >> publisher_analysis_node
     publisher_analysis_node >> belief_analysis_node
-    belief_analysis_node >> publisher_decision_node
-    publisher_decision_node >> save_data_node
+    belief_analysis_node >> save_data_node
     save_data_node >> validation_node
     validation_node >> completion_node
 

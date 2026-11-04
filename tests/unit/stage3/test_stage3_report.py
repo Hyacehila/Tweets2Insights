@@ -16,7 +16,11 @@ from nodes import (
 
 
 class TestLoadAnalysisResultsNode:
-    def test_exec_prefers_memory_and_keeps_trace(self, minimal_shared):
+    def test_exec_prefers_memory_and_keeps_trace(self, minimal_shared, tmp_path):
+        enhanced_path = tmp_path / "enhanced.json"
+        sample = [{"id": "sample-1", "content": "synthetic report sample"}]
+        enhanced_path.write_text(json.dumps(sample), encoding="utf-8")
+        minimal_shared["config"]["data_source"]["enhanced_data_path"] = str(enhanced_path)
         minimal_shared["pipeline_state"]["completed_stages"] = [1, 2]
         minimal_shared["stage2_results"] = {
             "charts": [{"id": "c1"}],
@@ -33,13 +37,13 @@ class TestLoadAnalysisResultsNode:
             "loop_status": {"stage3_chapter_review": {"current": 1, "max": 2, "termination_reason": "sufficient"}},
         }
 
-        with patch("os.path.exists", return_value=True):
-            node = LoadAnalysisResultsNode()
-            prep_res = node.prep(minimal_shared)
-            exec_res = node.exec(prep_res)
-            action = node.post(minimal_shared, prep_res, exec_res)
+        node = LoadAnalysisResultsNode()
+        prep_res = node.prep(minimal_shared)
+        exec_res = node.exec(prep_res)
+        action = node.post(minimal_shared, prep_res, exec_res)
 
         assert action == "default"
+        assert exec_res["sample_blogs"] == sample
         assert exec_res["analysis_data"]["charts"][0]["id"] == "c1"
         assert exec_res["trace"]["decisions"][0]["id"] == "d1"
         assert minimal_shared["stage3_data"]["trace"]["insight_provenance"] == {"summary": []}

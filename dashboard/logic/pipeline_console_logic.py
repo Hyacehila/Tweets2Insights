@@ -15,7 +15,6 @@ REQUIRED_PATH_FIELDS = (
     ("data.sentiment_attributes_path", "Sentiment attributes path"),
     ("data.publisher_objects_path", "Publisher objects path"),
     ("data.belief_system_path", "Belief system path"),
-    ("data.publisher_decision_path", "Publisher decision path"),
 )
 
 

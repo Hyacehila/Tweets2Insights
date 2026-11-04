@@ -1,5 +1,5 @@
 """
-test_stage1_analysis.py — Stage 1 六维分析节点单元测试
+test_stage1_analysis.py — Stage 1 五维分析节点单元测试
 
 测试异步批量分析节点的核心方法:
   - exec_async: Prompt 构建与 LLM 响应解析
@@ -17,7 +17,6 @@ from nodes import (
     AsyncTwoLevelTopicAnalysisBatchNode,
     AsyncPublisherObjectAnalysisBatchNode,
     AsyncBeliefSystemAnalysisBatchNode,
-    AsyncPublisherDecisionAnalysisBatchNode,
 )
 
 
@@ -196,27 +195,3 @@ class TestBeliefSystemNode:
             node.exec_fallback_async(sample_blog_data[0], Exception("test"))
         )
         assert result == []
-
-
-# =============================================================================
-# AsyncPublisherDecisionAnalysisBatchNode
-# =============================================================================
-
-class TestPublisherDecisionNode:
-
-    def test_apply_item_result(self, sample_blog_data):
-        node = AsyncPublisherDecisionAnalysisBatchNode()
-        post = sample_blog_data[0]
-        item = {"blog_data": post}
-        node.apply_item_result(item, "事件旁观者")
-        assert post["publisher_decision"] == "事件旁观者"
-
-    def test_fallback_returns_none_or_str(self, sample_blog_data):
-        """fallback 从 prep_res 中提取候选值，若无则返回 None"""
-        node = AsyncPublisherDecisionAnalysisBatchNode()
-        # 传入空的 prep_res，没有 publisher_decisions 字段
-        result = run_async(
-            node.exec_fallback_async({}, Exception("test"))
-        )
-        # 无候选值时返回 None
-        assert result is None

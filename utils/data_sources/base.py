@@ -26,6 +26,3 @@ class BaseDataSource:
 
     def load_belief_system(self, path: str) -> List[Dict[str, Any]]:
         raise NotImplementedError
-
-    def load_publisher_decisions(self, path: str) -> List[Dict[str, Any]]:
-        raise NotImplementedError

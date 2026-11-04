@@ -13,7 +13,6 @@ def _valid_flat_config():
         "data.sentiment_attributes_path": "data/sentiment_attributes.json",
         "data.publisher_objects_path": "data/publisher_objects.json",
         "data.belief_system_path": "data/believe_system_common.json",
-        "data.publisher_decision_path": "data/publisher_decision.json",
         "stage2.forum_max_rounds": 5,
         "stage2.forum_min_rounds_for_sufficient": 2,
     }

@@ -136,12 +136,6 @@ with st.form("config_form"):
             data_candidates,
             key="output_path",
         )
-        publisher_decision_path = _path_selector(
-            "Publisher decision path",
-            config["data"]["publisher_decision_path"],
-            data_candidates,
-            key="publisher_decision_path",
-        )
 
         start_stage = st.selectbox(
             "Start stage",
@@ -378,7 +372,6 @@ flat_config = {
     "data.sentiment_attributes_path": sentiment_attributes_path,
     "data.publisher_objects_path": publisher_objects_path,
     "data.belief_system_path": belief_system_path,
-    "data.publisher_decision_path": publisher_decision_path,
     "pipeline.start_stage": int(start_stage),
     "pipeline.user_analysis_instruction": user_analysis_instruction.strip(),
     "stage1.mode": stage1_mode,

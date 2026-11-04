@@ -20,7 +20,6 @@ class JsonDataSource(BaseDataSource):
         self._load_sentiment_attributes = loaders.get("load_sentiment_attributes", data_loader.load_sentiment_attributes)
         self._load_publisher_objects = loaders.get("load_publisher_objects", data_loader.load_publisher_objects)
         self._load_belief_system = loaders.get("load_belief_system", data_loader.load_belief_system)
-        self._load_publisher_decisions = loaders.get("load_publisher_decisions", data_loader.load_publisher_decisions)
 
     def load_blog_data(self, path: str) -> List[Dict[str, Any]]:
         return self._load_blog_data(path)
@@ -39,6 +38,3 @@ class JsonDataSource(BaseDataSource):
 
     def load_belief_system(self, path: str) -> List[Dict[str, Any]]:
         return self._load_belief_system(path)
-
-    def load_publisher_decisions(self, path: str) -> List[Dict[str, Any]]:
-        return self._load_publisher_decisions(path)

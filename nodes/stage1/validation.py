@@ -44,7 +44,6 @@ class DataValidationAndOverviewNode(MonitoredNode):
                 "topics_empty": 0,
                 "publisher_empty": 0,
                 "belief_system_empty": 0,
-                "publisher_decision_empty": 0,
             },
         }
 
@@ -113,8 +112,6 @@ class DataValidationAndOverviewNode(MonitoredNode):
             belief_signals = blog_post.get("belief_signals")
             if not belief_signals:
                 stats["empty_fields"]["belief_system_empty"] += 1
-            if blog_post.get("publisher_decision") is None:
-                stats["empty_fields"]["publisher_decision_empty"] += 1
 
             publisher = blog_post.get("publisher")
             if publisher:
@@ -175,7 +172,6 @@ class DataValidationAndOverviewNode(MonitoredNode):
             print(f"  ├─ 主题为空: {empty_fields.get('topics_empty', 0)}")
             print(f"  ├─ 发布者为空: {empty_fields.get('publisher_empty', 0)}")
             print(f"  ├─ 信念分类为空: {empty_fields.get('belief_system_empty', 0)}")
-            print(f"  └─ 事件关联身份为空: {empty_fields.get('publisher_decision_empty', 0)}")
 
         engagement = stats.get("engagement_statistics", {})
         if engagement:

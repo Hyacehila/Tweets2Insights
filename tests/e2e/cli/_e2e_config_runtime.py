@@ -22,7 +22,6 @@ DATA_PATH_KEYS = (
     "sentiment_attributes_path",
     "publisher_objects_path",
     "belief_system_path",
-    "publisher_decision_path",
 )
 
 

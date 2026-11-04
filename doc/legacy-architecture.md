@@ -98,7 +98,7 @@ flowchart TD
 - opinion_workbench 从持久任务列表恢复事件视图，不依赖旧会话内存；模型标注尚未接入该页。
 - opinion_gateway.label_workflow 提供显式自动弱标注 CLI：所选搜索 → 冻结 schema → 批量模型标注 → 字段校验/拒判 → 版本缓存与覆盖统计。
 - opinion_core.evaluation.demo 是独立 Demo 评分入口，不被生产标注流程调用，不创建人工审核环节。
-- 默认 PocketFlow 入口与旧工具仍兼容运行。新领域标签不包含 belief/publisher_decision，旧消费者的整体迁移仍未完成。
+- PocketFlow 兼容入口与旧分析工具可继续使用。新领域采用五字段标签；旧事件关联身份分类已移除，兼容入口的信念分析保留。
 
 ## Utility Functions
 

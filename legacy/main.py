@@ -35,7 +35,6 @@ def init_shared(
     sentiment_attributes_path: str = "data/sentiment_attributes.json",
     publisher_objects_path: str = "data/publisher_objects.json",
     belief_system_path: str = "data/believe_system_common.json",
-    publisher_decision_path: str = "data/publisher_decision.json",
     # 管线配置
     start_stage: int = 1,
     # 阶段1配置
@@ -91,7 +90,6 @@ def init_shared(
                 "sentiment_attributes_path": sentiment_attributes_path,
                 "publisher_objects_path": publisher_objects_path,
                 "belief_system_path": belief_system_path,
-                "publisher_decision_path": publisher_decision_path
             }
         },
 

@@ -21,7 +21,6 @@ class DataConfig:
     sentiment_attributes_path: str = "data/sentiment_attributes.json"
     publisher_objects_path: str = "data/publisher_objects.json"
     belief_system_path: str = "data/believe_system_common.json"
-    publisher_decision_path: str = "data/publisher_decision.json"
 
 
 @dataclass
@@ -118,7 +117,9 @@ def load_config(path: str) -> AppConfig:
     with open(path, "r", encoding="utf-8") as f:
         raw = yaml.safe_load(f) or {}
 
-    data = DataConfig(**(raw.get("data", {}) or {}))
+    data_raw = dict(raw.get("data", {}) or {})
+    data_raw.pop("publisher_decision_path", None)
+    data = DataConfig(**data_raw)
     pipeline = PipelineConfig(**(raw.get("pipeline", {}) or {}))
 
     stage1_raw = raw.get("stage1", {}) or {}
@@ -311,7 +312,6 @@ def config_to_shared(config: AppConfig) -> dict:
                 "sentiment_attributes_path": config.data.sentiment_attributes_path,
                 "publisher_objects_path": config.data.publisher_objects_path,
                 "belief_system_path": config.data.belief_system_path,
-                "publisher_decision_path": config.data.publisher_decision_path,
             },
         },
         "pipeline_state": {
