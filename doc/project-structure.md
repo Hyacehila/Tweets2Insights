@@ -12,16 +12,14 @@ Tweets2Insights/
 ├── README.md                        # 默认启动方法和项目说明
 ├── CONTRIBUTING.md                  # 分层约束与开发指南
 ├── SECURITY.md                      # 当前安全边界
-├── K8S_QUICK_START.md                # K8s 模板使用说明
 │
 ├── backend/                         # Python 后端，独立 UV 环境
 │   ├── Makefile                     # 后端安装、Gateway、Worker、静态检查
 │   ├── pyproject.toml               # 后端依赖与包定义
 │   ├── uv.lock                      # 后端依赖锁
-│   ├── langgraph.json               # LangGraph 图入口配置
 │   ├── src/
 │   │   ├── agents/                  # Agent Runtime 核心
-│   │   │   ├── lead_agent/          # 工厂、提示词、图导出
+│   │   │   ├── lead_agent/          # 工厂、提示词与编排
 │   │   │   ├── middlewares/         # 上下文、技能注入、请求范围校验
 │   │   │   ├── memory/              # 会话消息、显式记忆、持久事件
 │   │   │   ├── checkpointer/        # LangGraph SQLite 检查点
@@ -31,7 +29,6 @@ Tweets2Insights/
 │   │   │   ├── runtime.py           # Agent 执行、取消、事件发布
 │   │   │   ├── dependencies.py      # 配置、线程仓库、Runtime 注入
 │   │   │   └── routers/             # threads/runs/events/datasets/artifacts/system
-│   │   ├── sandbox/                 # 线程文件区与路径约束
 │   │   ├── subagents/               # 专业角色注册与受限执行
 │   │   ├── tools/                   # 领域工具入口、CLI 与 Worker 启动
 │   │   ├── mcp/                     # MCP 配置、发现和调用客户端
@@ -59,20 +56,27 @@ Tweets2Insights/
 │   │       └── crawler_worker/      # 独立采集执行器、X 官方 API、连接器协议
 │   └── tests/                       # 离线工程契约与 Worker 集成检查
 │
-├── frontend/                        # Next.js + React + TypeScript
+├── frontend/                        # Next.js + React + Tremor + TypeScript
 │   ├── package.json
 │   ├── package-lock.json
-│   ├── next.config.ts               # standalone 构建与 API 代理
+│   ├── postcss.config.mjs           # Tailwind CSS 构建
+│   ├── TREMOR_LICENSE               # 复用组件的 MIT 许可
+│   ├── next.config.ts               # 本机 API 代理
 │   ├── tsconfig.json
+│   ├── tests/                       # 界面语言转换检查
 │   └── src/
 │       ├── app/                     # App Router、布局、工作区和聊天页
 │       ├── components/              # 工作台、任务面板、产物查看器
-│       │   ├── workflow-builder.tsx # 输入、阶段、角色、模型及本机凭据
+│       │   ├── workflow-builder.tsx # 输入、阶段、角色和模型参数
+│       │   ├── tremor/              # Tremor Card / Badge
+│       │   ├── provider-settings.tsx # 独立 API 设置页
+│       │   ├── language-provider.tsx # 中英文切换与本机语言记忆
+│       │   ├── specialty-chart.tsx   # 热图、网络与词云
 │       │   ├── forum-view.tsx       # 讨论、补充行动、分歧与停止原因
 │       │   ├── analysis-chart.tsx   # 交互图表、序列筛选和来源表
 │       │   └── report-view.tsx      # 章节化报告与证据引用
 │       ├── hooks/                   # SSE 事件流与游标续读
-│       └── lib/                     # API 客户端和共享类型
+│       └── lib/                     # API 客户端、共享类型和中英文文案
 │
 ├── skills/
 │   ├── public/                      # 当前 3 个项目技能
@@ -80,14 +84,6 @@ Tweets2Insights/
 │   │   ├── evidence-report/
 │   │   └── forecast-scenario/
 │   └── custom/                      # 本机自定义技能，gitignored
-│
-├── docker/
-│   ├── backend.Dockerfile
-│   ├── frontend.Dockerfile
-│   ├── docker-compose-dev.yaml      # Gateway/Worker/前端/Nginx
-│   ├── docker-compose-production.yaml
-│   ├── nginx/default.conf           # 同源路由与 SSE 代理
-│   └── k8s/app.yaml                 # 单副本、共享卷、Secret 引用模板
 │
 ├── scripts/                         # 本地启动/停止、静态检查及兼容启动器
 ├── doc/                             # 架构、目录、配置与部署说明
@@ -98,7 +94,6 @@ Tweets2Insights/
 ├── opinion_core/                    # 旧导入路径转发至 backend/src/domain
 ├── opinion_gateway/                 # 旧导入路径转发
 ├── crawler_worker/                  # 旧导入路径转发
-├── agent_runtime_extension/         # 外部工具绑定兼容层，planner 转发
 ├── intelligent_ui/                  # 保留的 Streamlit 视图与 PDF 导出
 ├── legacy/                          # 原 PocketFlow 入口与本机旧配置
 ├── flow.py / nodes/ / dashboard/     # 历史模块，供显式兼容入口使用

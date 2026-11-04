@@ -1,6 +1,6 @@
-# 启动与部署
+# 本机启动与运行
 
-环境要求、获取代码和 `.env` 初始化见 [README：快速开始](../README.md#quickstart)。本页补充进程管理与容器部署。
+环境要求、获取代码和 `.env` 初始化见 [README：快速开始](../README.md#quickstart)。本页补充本机进程管理。
 
 ## 本机
 
@@ -23,23 +23,5 @@ uv run --project backend python scripts/dev.py start --no-browser
 
 页面就绪最多等待 60 秒；超时会提示“前端尚未就绪”、显示日志位置并返回非零退出码，服务继续运行。浏览器打开失败时，显示“自动打开浏览器失败，请使用以下网址打开”，已启动的服务继续运行。
 日志和进程记录位于 `.app-state`；停止前核对 PID、创建时间及命令，只停止本启动器拥有的进程。
-Windows 后台服务以无窗口方式启动，浏览器正常显示。只运行一个 Gateway 进程，不使用多副本共享 SQLite 会话状态。
+Windows 后台服务以无窗口方式启动，浏览器正常显示。只运行一个 Gateway 进程，使用独立 Worker 执行领域任务。
 主配置中的 Gateway host/port 同时用于启动器和前端代理；前端开发端口固定为 3000。
-
-## Compose
-
-```powershell
-docker compose -f docker/docker-compose-dev.yaml up --build
-docker compose -f docker/docker-compose-production.yaml up --build -d
-```
-
-二选一使用，入口均为 127.0.0.1:2026；四个服务为 backend、worker、frontend、nginx。
-backend 与 worker 共享 research-data 卷。使用 `.env` 传递变量，但不把它复制进镜像。
-开发模板的后端挂载源码并启用 reload；前端仍由 Dockerfile 构建，未配置热重载。
-`T2I_CONNECTORS_FILE` 等路径需在容器内有效；真实连接器应由操作者额外挂载/安装。
-
-## Kubernetes
-
-见 [K8S_QUICK_START.md](../K8S_QUICK_START.md)。模板采用一个 Pod、四个容器、共享 PVC、Secret 引用，
-仅提供 ClusterIP 与本机端口转发。需要自行构建/推送镜像并准备真实凭据和存储。
-公网访问需另行配置认证与访问控制，见[安全说明](../SECURITY.md)。

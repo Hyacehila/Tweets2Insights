@@ -1,9 +1,7 @@
 from opinion_core.schemas.workflow import RunRequest
-from src.sandbox import ThreadWorkspace
 
 
 def prepare_context(state, settings, skills):
-    ThreadWorkspace(settings.state_root, state["thread_id"])
     return {
         "messages": state.get("messages", [])[-settings.context_messages :],
         "skills": skills.context(skills.enabled),

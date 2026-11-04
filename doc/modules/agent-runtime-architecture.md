@@ -30,11 +30,10 @@ graph 为 context → leader → subagents → dispatch。结构化请求直接�
 
 ## 通用模块
 
-- middlewares：会话目录、上下文截断、技能注入、字段/事件/数据引用校验。
+- middlewares：上下文截断、技能注入、字段/事件/数据引用校验。
 - memory：显式编辑的线程事实存储；外部资料不会自动写入长期记忆。
 - checkpointer：AsyncSqliteSaver，持久化图状态。
-- sandbox：线程文件访问约束，执行隔离范围见 [安全说明](../../SECURITY.md)。
-- mcp：加载 extensions_config.json，发现并精确匹配真实工具名，禁止模糊授权。
+- mcp：加载 extensions_config.json，发现并精确匹配工具名；Gateway 读取 MCP 结构化结果，保留任务和产物中的动态字段。
 - models：生成式 Agent 使用 GLM；决策标注模型独立配置为 GLM/Jev/阿里/连接器，密钥来自本机配置或环境。
 - skills：加载已启用的 public/custom SKILL.md；内置 3 个项目技能。
 - subagents：角色注册和受限评阅执行；不开放嵌套委派。
@@ -44,7 +43,7 @@ graph 为 context → leader → subagents → dispatch。结构化请求直接�
 6 组路由：threads、runs、events、datasets、artifacts、system；system 增加工具目录与写入式本机凭据配置。
 客户端仅提交会话输入和配置；event_id 从线程记录解析。上传、任务、产物读取都走同一事件范围。
 前端使用 App Router，聊天地址 `/workspace/chats/[threadId]`，通过 EventSource 接收阶段事件。
-Next 开发代理 `/api`；容器由 Nginx 分流 `/api` 与前端页面。SSE 使用本项目的事件协议。
+Next.js 为 `/api` 提供同源代理。SSE 使用本项目的事件协议。
 报告支持 Markdown/HTML/JSON/ZIP 下载；ZIP 包含图表。完整领域分布、预测与情景计算继续复用已有实现。
 Next 前端当前提供会话、配置、上传、任务、产物与报告；原 Streamlit 的细分图表与 PDF 导出保留为兼容视图。
 会话模型调用数量按回合受限；领域调用与金额预算独立计算，当前没有跨层累计金额上限。
@@ -58,9 +57,8 @@ uv run --project backend python scripts/dev.py start
 uv run --project backend python scripts/dev.py stop
 ```
 
-本机入口 http://127.0.0.1:3000；Gateway 127.0.0.1:8001。无需为本机开发启动 Nginx。
+本机入口 http://127.0.0.1:3000；Gateway 127.0.0.1:8001。
 脚本记录 PID 和创建时间，只停止自己启动且身份仍匹配的进程；Windows 后台进程不弹出窗口。
-Compose 入口为 127.0.0.1:2026，提供开发与生产两份配置。
 
 根 config.yaml 现在是主应用配置；原配置保存到本机忽略文件 legacy/config.yaml。
 backend/uv.lock 与 frontend/package-lock.json 固定依赖；根 pyproject/uv.lock 保留兼容环境。
@@ -73,5 +71,4 @@ backend/uv.lock 与 frontend/package-lock.json 固定依赖；根 pyproject/uv.l
 
 实现依据另参见 [LangGraph 持久化](https://docs.langchain.com/oss/python/langgraph/persistence)、
 [Next.js 安装](https://nextjs.org/docs/app/getting-started/installation)、
-[FastAPI 生命周期](https://fastapi.tiangolo.com/advanced/events/)、
-[UV Docker](https://docs.astral.sh/uv/guides/integration/docker/)。
+[FastAPI 生命周期](https://fastapi.tiangolo.com/advanced/events/)。

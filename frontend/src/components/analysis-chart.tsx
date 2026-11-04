@@ -1,38 +1,324 @@
 "use client";
+import { useI18n } from "./language-provider";
 import { useState } from "react";
-export type ChartRow=Record<string,unknown>;
-export type ChartData={title?:string;description?:string;data?:ChartRow[];table?:ChartRow[];data_total?:number;table_total?:number;bins?:number[];chart?:{kind?:string}|null;coverage?:unknown;notes?:string[]};
-const colors=["#277f84","#b46a46","#7078ad","#76913c","#ba688b","#a29344"];
+import {
+  Area,
+  Bar,
+  CartesianGrid,
+  Cell,
+  ComposedChart,
+  Line,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import {
+  AnalysisChart as SpecialtyChart,
+  type ChartData,
+  type ChartRow,
+} from "./specialty-chart";
+export type { ChartData, ChartRow } from "./specialty-chart";
 
-export function AnalysisChart({name,value}:{name:string;value:ChartData}){
-  const [chosen,setChosen]=useState("all"),[page,setPage]=useState(0),[hover,setHover]=useState("");
-  const source=value.data??value.table??[];
-  const distribution=source.some(r=>"mass" in r);
-  const rows:ChartRow[]=distribution?source.flatMap(r=>Array.isArray(r.mass)?r.mass.map((v,i)=>({label:String(r.start),series:`${value.bins?.[i]?.toFixed(1)??i}…${value.bins?.[i+1]?.toFixed(1)??i+1}`,value:v})):[]):source;
-  const allSeries=Array.from(new Set(rows.map(r=>String(r.series??"value"))));
-  const filtered=rows.filter(r=>chosen==="all"||String(r.series??"value")===chosen);
-  const plotted=filtered.filter(r=>typeof r.value==="number"&&Number.isFinite(r.value)).slice(0,200);
-  const labels=Array.from(new Set(filtered.map(r=>String(r.label))));
-  const groups=allSeries.filter(g=>chosen==="all"||g===chosen);
-  const extent=plotted.flatMap(r=>[r.value,r.lower,r.upper].filter((v):v is number=>typeof v==="number"&&Number.isFinite(v)));
-  const minimum=Math.min(0,...extent),maximum=Math.max(0.01,...extent);
-  const x=(label:unknown)=>60+labels.indexOf(String(label))*650/Math.max(1,labels.length-1);
-  const y=(v:unknown)=>240-(Number(v)-minimum)/(maximum-minimum)*200;
-  const kind=distribution?"heatmap":value.chart?.kind??"bar";
-  const total=plotted.reduce((sum,r)=>sum+Math.max(0,Number(r.value)),0)||1;
-  const nodes=Array.from(new Set(plotted.flatMap(r=>[String(r.label),String(r.series)])));
-  const position=(node:string)=>{const i=nodes.indexOf(node),a=i/Math.max(nodes.length,1)*Math.PI*2;return [385+175*Math.cos(a),145+110*Math.sin(a)];};
-  const tip=(row:ChartRow)=>`${row.label}${row.series?" / "+row.series:""}: ${Number(row.value).toPrecision(4)}${row.n!==undefined?" · n="+row.n:""}`;
-  const columns=Array.from(new Set(source.slice(0,60).flatMap(r=>Object.keys(r).filter(k=>k!=="post_ids"))));
-  return <article className="analysis-chart"><div className="section-heading"><h3>{value.title??value.description??name}</h3>{groups.length>1||chosen!=="all"?<select aria-label="选择图表序列" value={chosen} onChange={e=>setChosen(e.target.value)}><option value="all">所有序列</option>{allSeries.map(s=><option key={s}>{s}</option>)}</select>:null}</div>
-    {!plotted.length?<p className="caption">当前范围没有可绘制的有效数值。请检查字段覆盖与来源表。</p>:<svg viewBox="0 0 780 290" role="img" aria-label={value.title??value.description??name}>
-      {kind==="heatmap"?plotted.map((r,i)=>{const col=labels.indexOf(String(r.label)),row=groups.indexOf(String(r.series??"value"));const width=650/Math.max(labels.length,1),height=210/Math.max(groups.length,1);return <rect key={i} x={70+col*width} y={25+row*height} width={Math.max(1,width-1)} height={Math.max(1,height-1)} fill={`rgba(39,127,132,${0.1+0.9*(Number(r.value)-minimum)/(maximum-minimum)})`} onMouseEnter={()=>setHover(tip(r))}><title>{tip(r)}</title></rect>;}):kind==="network"?<>{plotted.map((r,i)=>{const a=position(String(r.label)),b=position(String(r.series));return <line key={i} x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="#91b6b1" strokeWidth={1+Math.log1p(Number(r.value))} onMouseEnter={()=>setHover(tip(r))}><title>{tip(r)}</title></line>;})}{nodes.map((n,i)=>{const p=position(n);return <g key={n}><circle cx={p[0]} cy={p[1]} r={6} fill={colors[i%colors.length]}/><text x={p[0]+8} y={p[1]+4} fontSize="10">{n.slice(0,18)}</text></g>;})}</>:kind==="wordcloud"?plotted.map((r,i)=><text key={i} x={30+(i%5)*145} y={35+Math.floor(i/5)*45} fontSize={12+20*Number(r.value)/maximum} fill={colors[i%colors.length]} onMouseEnter={()=>setHover(tip(r))}>{String(r.label).slice(0,12)}<title>{tip(r)}</title></text>):kind==="pie"?(()=>{let angle=0;return plotted.map((r,i)=>{const next=angle+Number(r.value)/total*Math.PI*2,a=[250+95*Math.cos(angle),140+95*Math.sin(angle)],b=[250+95*Math.cos(next),140+95*Math.sin(next)];const path=`M250 140 L${a[0]} ${a[1]} A95 95 0 ${next-angle>Math.PI?1:0} 1 ${b[0]} ${b[1]} Z`;angle=next;return <g key={i}>{Number(r.value)/total>.999?<circle cx={250} cy={140} r={95} fill={colors[i%colors.length]}/>:<path d={path} fill={colors[i%colors.length]} onMouseEnter={()=>setHover(tip(r))}><title>{tip(r)}</title></path>}<text x={400} y={45+i*20} fontSize={12} fill={colors[i%colors.length]}>{String(r.label)} · {(100*Number(r.value)/total).toFixed(1)}%</text></g>;});})():<>
-      <line x1={55} y1={y(0)} x2={735} y2={y(0)} stroke="#aab5af"/>{[minimum,(minimum+maximum)/2,maximum].map((v,i)=><text key={i} x={5} y={y(v)+4} fontSize={10}>{v.toPrecision(3)}</text>)}
-      {kind==="line"?groups.map((g,gi)=>{const points=filtered.filter(r=>String(r.series??"value")===g);let drawing=false;const path=points.map(r=>{if(typeof r.value!=="number"){drawing=false;return "";}const part=`${drawing?"L":"M"}${x(r.label)} ${y(r.value)}`;drawing=true;return part;}).join(" ");return <g key={g}><path d={path} fill="none" stroke={colors[gi%colors.length]} strokeWidth={2}/>{points.filter(r=>typeof r.value==="number").map((r,i)=><g key={i}>{typeof r.lower==="number"&&typeof r.upper==="number"&&<line x1={x(r.label)} x2={x(r.label)} y1={y(r.lower)} y2={y(r.upper)} stroke={colors[gi%colors.length]} strokeOpacity={0.4} strokeWidth={7}/>}<circle cx={x(r.label)} cy={y(r.value)} r={3.5} fill={colors[gi%colors.length]} onMouseEnter={()=>setHover(tip(r))}><title>{tip(r)}</title></circle></g>)}</g>;}):plotted.map((r,i)=>{const w=650/plotted.length;return <rect key={i} x={65+i*w} y={Math.min(y(0),y(r.value))} width={Math.max(1,w-2)} height={Math.abs(y(r.value)-y(0))} fill={colors[i%colors.length]} onMouseEnter={()=>setHover(tip(r))}><title>{tip(r)}</title></rect>;})}</>}
-      {kind!=="network"&&kind!=="wordcloud"&&kind!=="pie"&&<><text x={60} y={270} fontSize={10}>{labels[0]?.slice(0,26)}</text><text x={710} y={270} textAnchor="end" fontSize={10}>{labels.at(-1)?.slice(0,26)}</text></>}
-    </svg>}
-    <p className="chart-hover" aria-live="polite">{hover||"悬停查看数值；图表最多显示二百项，完整数据可下载。"}</p>
-    {value.notes?.map((n,i)=><p className="caption" key={i}>{n}</p>)}
-    <details><summary>数据与覆盖 · {value.data_total??value.table_total??source.length} 行</summary>{value.coverage!==undefined&&<pre>{JSON.stringify(value.coverage,null,2)}</pre>}<div className="table-scroll"><table><thead><tr>{columns.map(c=><th key={c}>{c}</th>)}</tr></thead><tbody>{source.slice(page*10,(page+1)*10).map((r,i)=><tr key={i}>{columns.map(c=><td key={c}>{typeof r[c]==="object"?JSON.stringify(r[c]):String(r[c]??"缺失")}</td>)}</tr>)}</tbody></table></div><div className="actions"><button disabled={page===0} onClick={()=>setPage(page-1)}>上一页</button><button disabled={(page+1)*10>=source.length} onClick={()=>setPage(page+1)}>下一页</button></div></details>
-  </article>;
+const colors = [
+  "#3b82f6",
+  "#14b8a6",
+  "#8b5cf6",
+  "#f59e0b",
+  "#f43f5e",
+  "#64748b",
+];
+
+export function AnalysisChart({
+  name,
+  value,
+}: {
+  name: string;
+  value: ChartData;
+}) {
+  const { t, locale } = useI18n();
+  const numberFormat = (value: unknown) =>
+    typeof value === "number"
+      ? value.toLocaleString(locale, { maximumFractionDigits: 3 })
+      : String(value ?? "—");
+  const [chosen, setChosen] = useState("all");
+  const [page, setPage] = useState(0);
+  const source = value.data ?? value.table ?? [];
+  const kind = value.chart?.kind ?? "bar";
+  if (
+    ["heatmap", "network", "wordcloud"].includes(kind) ||
+    source.some((row) => "mass" in row)
+  )
+    return <SpecialtyChart name={name} value={value} />;
+  const series = [
+    ...new Set(source.map((row) => String(row.series ?? "数值"))),
+  ];
+  const selected = series.filter((item) => chosen === "all" || item === chosen);
+  const rows = source
+    .filter(
+      (row) => chosen === "all" || String(row.series ?? "数值") === chosen,
+    )
+    .slice(0, 200);
+  const groups = new Map<string, Record<string, unknown>>();
+  for (const row of rows) {
+    const label = String(row.label ?? "");
+    const item = groups.get(label) ?? { label };
+    const key = `s${series.indexOf(String(row.series ?? "数值"))}`;
+    item[key] =
+      typeof row.value === "number" && Number.isFinite(row.value)
+        ? row.value
+        : null;
+    if (
+      typeof row.lower === "number" &&
+      typeof row.upper === "number" &&
+      item[key] !== null
+    )
+      item[`${key}_range`] = [row.lower, row.upper];
+    groups.set(label, item);
+  }
+  const chartRows = [...groups.values()];
+  const hasValues = rows.some(
+    (row) => typeof row.value === "number" && Number.isFinite(row.value),
+  );
+  const columns = [
+    ...new Set(
+      source
+        .slice(0, 60)
+        .flatMap((row) => Object.keys(row).filter((key) => key !== "post_ids")),
+    ),
+  ];
+  return (
+    <article className="analysis-chart">
+      <div className="section-heading">
+        <h3>{value.title ?? value.description ?? name}</h3>
+        {series.length > 1 && (
+          <select
+            aria-label={t("选择图表序列")}
+            value={chosen}
+            onChange={(e) => {
+              setChosen(e.target.value);
+              setPage(0);
+            }}
+          >
+            <option value="all">{t("所有序列")}</option>
+            {series.map((item) => (
+              <option key={item} value={item}>
+                {t(item)}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
+      {hasValues ? (
+        <>
+          <div
+            className="chart-container"
+            role="img"
+            aria-label={value.title ?? value.description ?? name}
+          >
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+              {kind === "pie" ? (
+                <PieChart>
+                  <Pie
+                    data={rows.filter(
+                      (row) => typeof row.value === "number" && row.value >= 0,
+                    )}
+                    dataKey="value"
+                    nameKey="label"
+                    innerRadius="58%"
+                    outerRadius="83%"
+                    paddingAngle={2}
+                    stroke="none"
+                    isAnimationActive={false}
+                  >
+                    {rows.map((_, i) => (
+                      <Cell key={i} fill={colors[i % colors.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value) => numberFormat(value)}
+                    contentStyle={{
+                      background: "var(--surface)",
+                      border: "1px solid var(--border)",
+                      borderRadius: 7,
+                      fontSize: 12,
+                      color: "var(--text)",
+                    }}
+                  />
+                </PieChart>
+              ) : (
+                <ComposedChart
+                  data={chartRows}
+                  margin={{ top: 10, right: 14, bottom: 8, left: 0 }}
+                >
+                  <CartesianGrid
+                    stroke="var(--border)"
+                    vertical={false}
+                    strokeDasharray="3 3"
+                  />
+                  <XAxis
+                    dataKey="label"
+                    tickLine={false}
+                    axisLine={false}
+                    minTickGap={35}
+                    tick={{ fill: "var(--muted)", fontSize: 10 }}
+                    tickFormatter={(label) => String(label).slice(0, 16)}
+                    dy={8}
+                  />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    width={55}
+                    tick={{ fill: "var(--muted)", fontSize: 10 }}
+                    tickFormatter={numberFormat}
+                  />
+                  <Tooltip
+                    formatter={(value) =>
+                      Array.isArray(value)
+                        ? value.map(numberFormat).join(" – ")
+                        : numberFormat(value)
+                    }
+                    contentStyle={{
+                      background: "var(--surface)",
+                      border: "1px solid var(--border)",
+                      borderRadius: 7,
+                      fontSize: 12,
+                      color: "var(--text)",
+                    }}
+                    cursor={{ fill: "var(--subtle)", stroke: "var(--border)" }}
+                  />
+                  {selected.map((item) => {
+                    const index = series.indexOf(item),
+                      key = `s${index}`,
+                      color = colors[index % colors.length];
+                    return kind === "line" ? (
+                      <Area
+                        key={`${key}-range`}
+                        dataKey={`${key}_range`}
+                        name={t("{series}区间", { series: t(item) })}
+                        type="linear"
+                        fill={color}
+                        fillOpacity={0.12}
+                        stroke="none"
+                        connectNulls={false}
+                        isAnimationActive={false}
+                      />
+                    ) : null;
+                  })}
+                  {selected.map((item) => {
+                    const index = series.indexOf(item),
+                      key = `s${index}`,
+                      color = colors[index % colors.length];
+                    return kind === "line" ? (
+                      <Line
+                        key={key}
+                        dataKey={key}
+                        name={t(item)}
+                        stroke={color}
+                        strokeWidth={2}
+                        type="linear"
+                        dot={false}
+                        activeDot={{ r: 4 }}
+                        connectNulls={false}
+                        isAnimationActive={false}
+                      />
+                    ) : (
+                      <Bar
+                        key={key}
+                        dataKey={key}
+                        name={t(item)}
+                        fill={color}
+                        maxBarSize={36}
+                        radius={[3, 3, 0, 0]}
+                        isAnimationActive={false}
+                      />
+                    );
+                  })}
+                </ComposedChart>
+              )}
+            </ResponsiveContainer>
+          </div>
+          <div className="chart-legend">
+            {(kind === "pie"
+              ? rows.map((row) => String(row.label))
+              : selected
+            ).map((item, i) => (
+              <span key={`${item}-${i}`}>
+                <i
+                  style={{
+                    background:
+                      colors[
+                        (kind === "pie" ? i : series.indexOf(item)) %
+                          colors.length
+                      ],
+                  }}
+                />
+                {t(item)}
+              </span>
+            ))}
+          </div>
+        </>
+      ) : (
+        <p className="caption">{t("当前数据没有可绘制的数值。")}</p>
+      )}
+      {value.notes?.map((note, i) => (
+        <p className="caption" key={i}>
+          {note}
+        </p>
+      ))}
+      <details>
+        <summary>
+          {t("查看源数据 · {count} 行", {
+            count: value.data_total ?? value.table_total ?? source.length,
+          })}
+        </summary>
+        {value.coverage !== undefined && (
+          <pre>{JSON.stringify(value.coverage, null, 2)}</pre>
+        )}
+        <div className="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                {columns.map((column) => (
+                  <th key={column}>{column}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {source.slice(page * 10, (page + 1) * 10).map((row, i) => (
+                <tr key={i}>
+                  {columns.map((column) => (
+                    <td key={column}>
+                      {typeof row[column] === "object"
+                        ? JSON.stringify(row[column])
+                        : String(row[column] ?? t("缺失"))}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="actions">
+          <button disabled={!page} onClick={() => setPage(page - 1)}>
+            {t("上一页")}
+          </button>
+          <span className="caption">
+            {t("第 {page} 页", { page: page + 1 })}
+          </span>
+          <button
+            disabled={(page + 1) * 10 >= source.length}
+            onClick={() => setPage(page + 1)}
+          >
+            {t("下一页")}
+          </button>
+        </div>
+        <p className="caption">
+          {t("图表显示当前预览数据，完整记录可通过产物下载。")}
+        </p>
+      </details>
+    </article>
+  );
 }

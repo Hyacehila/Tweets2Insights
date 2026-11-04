@@ -18,10 +18,10 @@ DeerFlow 提供运行时分层参考，业务阶段独立设计；论坛以本�
 
 | 层 | 实际位置 | 职责 |
 |---|---|---|
-| 前端 | `frontend/src` | 会话、上传、结构化配置、SSE 状态、任务及产物 |
+| 前端 | `frontend/src` | Tremor 工作台、数据集、研究配置、SSE 状态、任务报告与 API 设置 |
 | 应用层 | `backend/src/gateway` | HTTP 协议、生命周期、事件范围、会话执行 |
 | Agent Runtime | `backend/src/agents`、`subagents` | LangGraph 图、上下文、检查点、有限专业评阅 |
-| 通用能力 | `backend/src/models`、`mcp`、`tools`、`skills`、`sandbox`、`config` | 模型和工具适配、技能、受限文件区、配置 |
+| 通用能力 | `backend/src/models`、`mcp`、`tools`、`skills`、`config` | 模型和工具适配、技能与配置 |
 | 领域核心 | `backend/src/domain/opinion_core` | 契约、确定性计划、弱标注、分析、实验模型和报告 |
 | 领域应用服务 | `backend/src/domain/opinion_gateway` | MCP、冻结请求、JobStore、预算、资产和独立 Worker |
 | 采集进程 | `backend/src/domain/crawler_worker` | 按需采集、限额、分页、去重和恢复 |

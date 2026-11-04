@@ -1,6 +1,14 @@
 # 项目实施记录
 
-更新：2026-11-03。开发分支：`refine`。最新功能提交：`1bbf000`。
+更新：2026-11-04。开发分支：`refine`。
+
+## Tremor 工作台与中英文界面
+
+采用 Tremor Overview 组件，重组概览、研究、数据集、结果和 API 设置；统一图表、主题、移动端导航与报告操作。顶部支持中英文切换，保留当前输入并记住语言选择。
+删除 Docker/K8s、旧外接 Agent 脚手架、独立 LangGraph 启动入口和仅创建空目录的线程工作区。领域存储隔离、MCP、技能、检查点和分析工具继续使用。
+修复 MCP 自动输出模型丢失动态字典字段的问题，Gateway 改为读取完整结构化结果。新增真实 MCP 传输回归，覆盖任务、嵌套产物和分析工具目录。
+本轮后端回归 71 项通过；结构检查覆盖 109 个后端 Python 源文件。前端语言检查 3 项通过，类型检查与生产构建通过。浏览器检查覆盖语言记忆、切换时输入保留、API 设置、移动端导航、报告图表与来源表分页；图表使用独立预览目录中的合成数据。
+14 份本轮修改文档的 99 个本地文件链接及代码块检查通过。
 
 ## 文档整理
 
@@ -53,16 +61,15 @@ uv run --project backend pytest backend/tests tests/unit/core/test_glm_label_pro
 | 浏览器与运行时 | 验证前端到 Worker 的完整流程、会话隔离、图检查点、取消重连、角色限制、上传及产物访问 |
 | 弱标注 Demo | 建立 600 条人工金标准，按 200/400 划分校准与独立测试集，评估逐字段质量、覆盖率、基线差异与成本 |
 | 预测与情景 | 数值验证、滚动回测、预测区间覆盖、模型基线、措施效果与多模态消融 |
-| 部署 | 启动并检查 Docker Compose 与 Kubernetes 环境 |
 
-真实模型质量、预测效果和部署结果将在完成对应检查后更新。Demo 采用[预登记协议](testing/weak-label-demo-protocol.md)，正式数据处理自动标注后进入分析。
+真实模型质量与预测效果将在完成对应检查后更新。Demo 采用[预登记协议](testing/weak-label-demo-protocol.md)，正式数据处理自动标注后进入分析。
 
 ## 架构与文档迁移
 
 | 提交 | 变更 | 当时的检查 |
 |---|---|---|
 | `8d3564a` | 重写 README，组织核心能力、快速开始、首次分析、架构、配置和文档导航 | 本地链接、页内锚点、代码块与示例语法检查 |
-| `e073bd2` | 引入 backend/frontend/skills/docker 分层；LangGraph Leader、FastAPI 六组路由、Next.js 工作台、检查点与 SSE | 后端语法、配置解析、导入、Ruff、wheel 及前端 TypeScript 检查 |
+| `e073bd2` | 引入 backend/frontend/skills 分层；LangGraph Leader、FastAPI 六组路由、Next.js 工作台、检查点与 SSE | 后端语法、配置解析、导入、Ruff、wheel 及前端 TypeScript 检查 |
 | `7bb678f` | 领域架构重写，迁移可复用算法、任务、预算、报告与连接器；根目录旧包保留兼容转发 | 58 个新增/修改 Python 文件 AST 解析、关键导入及依赖方向检查 |
 
 新应用使用 `backend/src/domain` 中的领域实现。原 PocketFlow 入口、Streamlit 专项图表和 PDF 导出保留兼容路径，见[项目目录](project-structure.md)和[运行手册](modules/domain-application.md)。

@@ -77,7 +77,7 @@ TAVILY_API_KEY=your-tavily-api-key
 
 若选择 DeepSeek Search，则填写 `DEEPSEEK_API_KEY`，并在工作台或运行请求中选择 `deepseek`。每次运行只使用一个搜索供应商。模型名称在 [`config.yaml`](config.yaml) 中设置，默认 Agent 模型为 `glm-4.5-air`；单次领域标注模型由运行请求的 `labels.model` 指定。
 
-也可在工作台“模型与数据 API 配置”保存本机凭据；密钥只写入忽略文件 `.provider-secrets.json`，读取接口只返回是否已配置。Jev 使用 `TYPESAFE_API_KEY`；阿里使用 `DASHSCOPE_API_KEY` 和业务空间 `ALIYUN_DECISION_ENDPOINT`；X 使用 `X_BEARER_TOKEN`。环境变量和界面配置二选一即可，详见[配置说明](doc/configuration.md)。
+也可在工作台“API 设置”保存本机凭据；密钥只写入忽略文件 `.provider-secrets.json`，读取接口只返回是否已配置。Jev 使用 `TYPESAFE_API_KEY`；阿里使用 `DASHSCOPE_API_KEY` 和业务空间 `ALIYUN_DECISION_ENDPOINT`；X 使用 `X_BEARER_TOKEN`。环境变量和界面配置二选一即可，详见[配置说明](doc/configuration.md)。
 
 ### 3. 启动工作台
 
@@ -114,15 +114,17 @@ uv run --project backend python scripts/dev.py stop
 
 1. **新建事件会话**：使用 `rain` 等事件 ID。同一事件的多个会话共享该事件的数据和领域任务。
 2. **选择输入与阶段**：上传标准 JSON 或选择关键词采集；设置时间范围、复盘/预测/情景、论坛角色、模型及调用预算。
-3. **生成计划**：点击“将阶段与参数写入运行配置”，检查 JSON，再生成计划。也可清空配置后自然语言规划。生成式模型和决策模型分别设置。
-4. **提交执行**：Worker 按阶段完成搜索、标注和分析，任务面板显示状态及停止原因。
-5. **查看产物**：选择任务中的分析或报告产物，查看有界数据和报告预览，并下载结果。
+3. **生成计划**：点击“应用研究配置”，再让 Leader 生成计划；也可在高级运行配置中改用自然语言规划。
+4. **提交执行**：点击“开始执行”，在“分析与报告”中跟踪任务进度。
+5. **查看结果**：打开已完成的任务，浏览交互图表、论坛讨论与章节报告，并下载结果。
 
 例如，可以在选定数据后描述：
 
 > 使用已上传的数据和 Tavily 搜索，分析 2026 年 10 月 1 日至 8 日的城市暴雨讨论。按天统计主题、情绪和立场分布，保留缺失情况与来源引用，本次只做事件复盘。
 
-编辑器中已有结构化请求时，系统优先使用该请求；需要重新由 Agent 规划时，先点击“清空配置，重新由 Agent 规划”。“停止 Agent”只停止当前会话运行，已提交的领域任务需在任务卡片中另行取消。
+顶部“中文 / EN”按钮切换界面语言并记住选择。API 设置中可配置模型、标注、搜索与采集服务。
+
+点击“停止”结束当前 Agent 运行；已提交的任务可在“分析与报告”中取消。
 
 <details>
 <summary>上传数据格式</summary>
@@ -190,7 +192,6 @@ Tweets2Insights/
 ├── extensions_config.json      # MCP 与技能配置
 ├── backend/
 │   ├── pyproject.toml          # UV 后端环境
-│   ├── langgraph.json          # 图入口
 │   ├── src/
 │   │   ├── agents/             # Leader、中间件、记忆、检查点
 │   │   ├── gateway/            # FastAPI 与 6 组 API 路由
@@ -199,7 +200,6 @@ Tweets2Insights/
 │   │   ├── mcp/                # MCP 客户端
 │   │   ├── tools/              # 领域工具、CLI 与 Worker 入口
 │   │   ├── skills/             # 技能加载
-│   │   ├── sandbox/            # 受限线程文件区
 │   │   ├── config/             # 配置加载
 │   │   └── domain/             # 标注、证据、分析、预测、情景、报告
 │   └── tests/                  # 后端单元与集成测试
@@ -209,7 +209,6 @@ Tweets2Insights/
 │   ├── hooks/                  # SSE 事件流
 │   └── lib/                    # API 客户端与类型
 ├── skills/                     # public 项目技能与 custom 扩展
-├── docker/                     # Dockerfile、Compose、Nginx、K8s
 ├── scripts/                    # 启动、停止与静态检查
 ├── configs/                    # 运行请求与连接器示例
 ├── doc/                        # 使用、设计与研究文档
@@ -231,16 +230,6 @@ Tweets2Insights/
 
 当前 Agent 模型工厂使用 GLM SDK；弱标注可选择 GLM、Jev、阿里 decision 或自定义连接器；搜索提供 Tavily/DeepSeek。采集内置 X 官方接口，并保留其他平台扩展。单次领域任务的模型/搜索预算、采集分页上限和 Agent 会话调用上限分别记录，详见[配置说明](doc/configuration.md)。
 
-### Docker 与 Kubernetes
-
-仓库提供 Gateway、Worker、前端及 Nginx 的部署模板。配置 `.env` 后，可使用开发 Compose：
-
-```bash
-docker compose -f docker/docker-compose-dev.yaml up --build
-```
-
-默认入口为 `http://127.0.0.1:2026`。Compose 与 Kubernetes 配置见[部署说明](doc/deployment.md)和 [K8s 快速开始](K8S_QUICK_START.md)。服务面向本机单用户，访问控制与凭据管理见 [SECURITY.md](SECURITY.md)。
-
 <a id="documentation"></a>
 ## 文档导航
 
@@ -252,7 +241,7 @@ docker compose -f docker/docker-compose-dev.yaml up --build
 | Leader、检查点、MCP 与子 Agent | [Agent Runtime](doc/modules/agent-runtime-architecture.md) |
 | 模型、环境变量与连接器 | [配置](doc/configuration.md) · [连接器协议](doc/modules/architecture-rewrite.md) |
 | 数据契约与弱标注 | [契约](doc/modules/opinion-contracts.md) · [自动标注](doc/modules/automatic-labeling.md) |
-| 前端与部署 | [前端说明](doc/frontend-guide.md) · [部署说明](doc/deployment.md) |
+| 前端与本机运行 | [前端说明](doc/frontend-guide.md) · [本机运行](doc/deployment.md) |
 
 ## 反馈与贡献
 
@@ -260,6 +249,7 @@ docker compose -f docker/docker-compose-dev.yaml up --build
 
 ## 参考项目
 
+- [Tremor Templates](https://blocks.tremor.so/templates)：研究工作台的布局与组件基础；复用 Overview 的 Card、Badge 和样式工具，许可证见 [Tremor MIT License](frontend/TREMOR_LICENSE)。
 - [DeerFlow](https://github.com/bytedance/deer-flow)：Agent Runtime 分层的架构参考，其 README 的快速开始与配置导航也用于本页组织参考。
 - [BettaFish](https://github.com/666ghj/BettaFish)：参考其舆情分析项目的能力说明、流程介绍和目录呈现方式。
 - [Tweets2Insights 原第二阶段](doc/modules/stage2_analysis.md)：论坛能力的直接设计来源，保留并改进工具选择、图表补全、补搜、反思与收敛机制；角色按任务启用。

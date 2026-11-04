@@ -27,11 +27,8 @@ MCP 不接收任意文件路径；本地操作者在启动时设置资产根目�
 
 ## Agent Runtime
 
-配置与 Insight/Query 定义见 [agent_runtime_extension](../../agent_runtime_extension/README.md)。
-上游参考固定在 `1dd6d056278536af1cb4fc60347f4ca40fcb629b`；样例核对了官方
-[MCP 配置](https://github.com/bytedance/deer-flow/blob/1dd6d056278536af1cb4fc60347f4ca40fcb629b/extensions_config.example.json)
-和 [custom_agents 注册](https://github.com/bytedance/deer-flow/blob/1dd6d056278536af1cb4fc60347f4ca40fcb629b/backend/packages/harness/deerflow/subagents/registry.py)。
-角色白名单使用运行时发现的完整工具名，包含实际服务前缀。
+Leader 与 Insight/Query 角色由 `backend/src/agents` 和 `backend/src/subagents` 提供，配置与调用路径见 [Agent Runtime](agent-runtime-architecture.md)。
+工具白名单使用运行时发现的完整名称，包含实际服务前缀。
 
 ## 测试与存储
 

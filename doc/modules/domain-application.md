@@ -54,11 +54,7 @@ retry 为失败/取消/部分完成建立后继；resume 仅恢复 waiting_for_a
 领域 MCP 提供 19 个工具；主路径为 register_dataset → preview_plan → submit_run → job_status/read_job_artifact。
 新增 analysis_tool_catalog 返回 41 个领域分析入口；submit_analysis_tool 基于已完成任务的冻结标签提交独立补充分析。
 分页读取工具 read_domain_artifact 限制返回记录并隐藏虚拟粒子数组。
-默认 Runtime 自动读取根 extensions_config.json 并发现工具；外部工具绑定仍可使用兼容命令：
-
-```powershell
-uv run python -m agent_runtime_extension.bind_tools --discovery tools.json --output bound-roles.json
-```
+默认 Runtime 自动读取根 extensions_config.json，并在本机发现和调用领域 MCP 工具。
 
 唯一匹配失败时拒绝调用，不放宽为所有工具。参考上游版本与适配范围见 [Agent Runtime](agent-runtime-architecture.md)。
 生成式 Agent 使用 GLM_API_KEY；弱标注可独立选择 Jev（TYPESAFE_API_KEY）、阿里（DASHSCOPE_API_KEY）或 GLM。

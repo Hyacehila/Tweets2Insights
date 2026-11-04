@@ -11,7 +11,7 @@
 | CLI、任务管理、导出与兼容入口 | [运行手册](modules/domain-application.md) |
 | 模型、环境变量、连接器和预算 | [应用配置](configuration.md) |
 | 页面、会话与产物交互 | [前端说明](frontend-guide.md) |
-| Docker、Nginx 与 Kubernetes | [部署说明](deployment.md) · [K8s 快速开始](../K8S_QUICK_START.md) |
+| 本机启动、停止与日志 | [运行说明](deployment.md) |
 
 ## 理解架构与扩展
 

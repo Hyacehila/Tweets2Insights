@@ -22,14 +22,12 @@ for path in (ROOT / "backend/src").rglob("*.py"):
                 errors.append(str(path) + ": harness imports app")
 for path in [
     ROOT / "extensions_config.json",
-    ROOT / "backend/langgraph.json",
     ROOT / "frontend/package.json",
 ]:
     json.loads(path.read_text(encoding="utf-8"))
 for path in [
     ROOT / "config.yaml",
     ROOT / "config.example.yaml",
-    *sorted((ROOT / "docker").rglob("*.yaml")),
 ]:
     list(yaml.safe_load_all(path.read_text(encoding="utf-8")))
 for path in [ROOT / "scripts/dev.py", ROOT / "scripts/check_structure.py"]:

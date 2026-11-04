@@ -25,7 +25,7 @@ async def lifespan(app):
 
 def create_app():
     app = FastAPI(title="Tweets2Insights Gateway", version="0.2.0", lifespan=lifespan)
-    # Same-origin through Next/nginx by default; local development has one explicit origin.
+    # Same-origin through the Next.js API proxy; local development has one explicit origin.
     settings = load_settings()
     app.add_middleware(
         CORSMiddleware,

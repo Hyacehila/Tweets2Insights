@@ -1,26 +1,45 @@
-# 前端说明
+# 前端工作台
 
-更新：2026-11-03。新默认界面位于 `frontend/src`，使用 Next.js App Router、React 和 TypeScript。
+前端基于 Next.js App Router、React、TypeScript、Tailwind CSS 和 Recharts，采用 [Tremor Templates](https://blocks.tremor.so/templates) 的数据工作台布局。Card、Badge 和样式工具来自 Overview 模板，许可保存在 `frontend/TREMOR_LICENSE`。
 
-- `app/workspace`：研究工作区；`app/workspace/chats/[threadId]`：事件会话。
-- `components/workspace.tsx`：会话列表、聊天、JSON 上传、数据选择、唯一搜索供应商和 RunRequest 编辑。
-- `components/workflow-builder.tsx`：数据/关键词路径、阶段、UTC 时间范围、论坛角色、决策模型、情景参数；本机写入式 API 凭据配置。
-- `components/job-panel.tsx`：领域任务轮询、取消、重试、登录等待恢复和产物选择。
-- `components/artifact-viewer.tsx`：有界产物读取、报告预览、JSON/Markdown/HTML/ZIP 下载。
-- `components/analysis-chart.tsx`：柱、线、热图、网络、饼图、词云的交互显示；序列筛选、悬停、来源表翻页。
-- `components/forum-view.tsx`：逐轮专业意见、主持共识/分歧、补充行动及停止原因。
-- `components/report-view.tsx`：受约束布局驱动的章节报告，区分观测/预测/模拟/解释，并显示证据引用。
-- `hooks/use-thread-stream.ts`：EventSource 事件，使用持久事件游标重连。
-- `lib`：API 客户端与 TypeScript 类型。
+## 页面与操作
 
-生成计划使用 `execute=false`；提交执行才创建领域 Job。若编辑器保留结构化请求，使用该请求；
-清空后由 Leader 根据自然语言和现有数据列表规划。上传标准 JSON 不触发采集。
-修改阶段表单后须点击“将阶段与参数写入运行配置”；未应用时提交会明确提示，避免执行旧配置。
-任务完成后可选工具再次分析冻结数据和标签，创建独立 analysis_tool 作业，保留原报告版本。
-Agent 停止按钮停止当前图运行；已经提交的领域任务需要在任务卡片另行取消。
-会话按事件隔离，同一事件的多个会话共享该事件数据和领域任务。
+| 入口 | 用途 |
+|---|---|
+| 研究概览 | 查看研究会话、事件数量和当前事件的任务统计；搜索并继续研究 |
+| 研究工作台 | 上传或选择数据、填写关键词、配置复盘/预测/情景/回测，与 Leader Agent 对话并执行 |
+| 数据集 | 上传标准帖子 JSON 数组、筛选数据版本、选择本次研究的数据 |
+| 分析与报告 | 按状态筛选任务，取消/重试/恢复，查看图表、论坛、报告及下载产物 |
+| API 设置 | 配置 GLM、Jev、阿里 Decision、Tavily、DeepSeek 和 X 的本机凭据 |
 
-Next 代理 `/api`，容器由 Nginx 提供同源路由；配置后的密钥不回传前端，密码输入提交成功即清空。
-图表展示有界预览，完整源表通过 JSON 导出；时间均值缺测使用 null，不绘制为零。
-旧 Streamlit 的 PDF 导出等兼容交互继续保留。
-`npm --prefix frontend run check` 先运行 Next typegen，再运行 TypeScript；新克隆无需依赖先前构建留下的路由类型文件。
+点击“新建研究”，填写研究名称与事件标识。同一事件标识下的会话共享该事件的数据和任务。
+API 设置可在创建研究前直接使用。界面支持明暗主题，窄屏通过顶部导航按钮打开侧栏。
+顶部“中文 / EN”按钮切换导航、配置表单、任务状态、API 设置及图表和报告操作的显示语言。语言选择保存在本机浏览器，刷新后继续使用；切换时保留研究参数、当前会话和表单输入。事件名称、帖子、Agent 回复与报告正文保持其原始语言。
+
+选择数据和阶段后点击“应用研究配置”，再由 Leader 生成计划或开始执行。需要自然语言规划时，在高级运行配置中选择“改用自然语言规划”。高级配置保留 JSON 编辑入口。
+上传数据只进行校验与登记；使用关键词采集时，配置平台及时间范围。预测参数标明 PCA + HK 实验模型。
+
+“停止”结束当前 Agent 运行；已提交的领域任务在“分析与报告”中单独取消。任务完成后，可在产物区域选择工具，对冻结标签补充分析。
+
+## 数据与图表
+
+所有统计读取实际会话、数据集和任务。未选择事件时，事件内任务指标显示“—”；没有研究结果时显示空状态。
+柱图、折线图、区间和环形图使用 Recharts，支持悬停、序列筛选和源数据表。仅在结果页显示时挂载图表，避免隐藏页面的零尺寸绘图。热图、词云和网络保留领域专用绘图。
+时间序列缺失值保持 null，折线不跨越缺口。图表使用当前分页预览，完整数据通过 JSON 下载。
+报告按章节展示观测、预测、模拟与解释，并提供证据来源和 Markdown/HTML/JSON/ZIP 导出。
+
+## 代码位置
+
+- `components/workspace.tsx`：导航、概览、会话、数据输入、研究配置与 Leader 交互。
+- `components/tremor/`、`lib/utils.ts`：复用的 Tremor 组件与样式工具。
+- `components/provider-settings.tsx`：独立 API 配置页，成功保存后清空密钥输入。
+- `components/workflow-builder.tsx`：阶段、标注、论坛、预测及情景参数。
+- `components/job-panel.tsx`：任务筛选、操作、产物切换及补充分析。
+- `components/analysis-chart.tsx`、`specialty-chart.tsx`：通用数据图表与专用分析图。
+- `components/artifact-viewer.tsx`、`report-view.tsx`、`forum-view.tsx`：产物、章节报告和论坛过程。
+- `components/theme-provider.tsx`、`ui.tsx`：主题、对话框、状态与空状态。
+- `components/language-provider.tsx`、`lib/i18n.ts`：语言上下文、偏好存储、中英文文案和插值。
+- `hooks/use-thread-stream.ts`：带持久游标的 SSE 事件续读。
+
+Next.js 将 `/api` 代理到本机 FastAPI。工作台入口为 `/workspace`，事件会话地址为 `/workspace/chats/[threadId]`。
+语言转换检查使用 `npm --prefix frontend test`。开发检查使用 `npm --prefix frontend run check`，生产构建使用 `npm --prefix frontend run build`。

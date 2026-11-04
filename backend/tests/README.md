@@ -14,5 +14,7 @@ uv run --project backend pytest backend/tests -q
 ```
 
 Existing domain and legacy tests live in `tests/` and `dashboard/tests/`.
+`test_mcp_payloads.py` checks that the real MCP transport preserves job records,
+nested artifact fields and analysis tool names through gateway serialization.
 See the [testing guide](../../doc/testing/testing_workflow.md) for commands and
 [implementation record](../../doc/upgrade-status.md) for results and planned coverage.

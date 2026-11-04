@@ -50,6 +50,13 @@ class DomainToolClient:
             if len(matches) != 1:
                 raise ValueError("missing or ambiguous MCP tool: " + logical)
             response = await client.call_tool(matches[0], arguments)
+            # Preserve dynamic dictionary fields instead of the SDK's generated
+            # output models, which can drop keys from list[dict] / dict schemas.
+            if response.structured_content is not None:
+                tool = next(tool for tool in tools if tool.name == matches[0])
+                if (tool.outputSchema or {}).get("x-fastmcp-wrap-result"):
+                    return response.structured_content["result"]
+                return response.structured_content
             return response.data
 
     async def discover(self):
