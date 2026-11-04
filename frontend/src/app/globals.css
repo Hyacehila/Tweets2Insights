@@ -434,38 +434,6 @@ code {
   color: var(--muted);
   padding: 7px 12px;
 }
-.sidebar-bottom {
-  margin-top: auto;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  padding: 18px 2px;
-  border-top: 1px solid var(--border);
-}
-.sidebar-bottom strong {
-  display: block;
-  font-size: 11px;
-  font-weight: 550;
-}
-.sidebar-bottom small {
-  display: block;
-  color: var(--muted);
-  font-size: 10px;
-  margin-top: 1px;
-}
-.sidebar-bottom button {
-  margin-left: auto;
-}
-.local-avatar {
-  display: grid;
-  place-items: center;
-  background: var(--subtle);
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  width: 30px;
-  height: 30px;
-  font-size: 11px;
-}
 .app-main {
   margin-left: 240px;
   min-height: 100vh;

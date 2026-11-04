@@ -437,20 +437,6 @@ export function Workspace({ threadId }: { threadId?: string }) {
             <p className="sidebar-empty">{t("你的事件研究会出现在这里")}</p>
           )}
         </nav>
-        <div className="sidebar-bottom">
-          <div className="local-avatar">{t("研")}</div>
-          <div>
-            <strong>{t("本地研究空间")}</strong>
-            <small>{t("复盘 · 预测 · 情景模拟")}</small>
-          </div>
-          <button
-            className="icon-button"
-            aria-label={t("打开 API 设置")}
-            onClick={() => nav("settings")}
-          >
-            <Settings2 size={16} />
-          </button>
-        </div>
       </aside>
       <div className="app-main">
         <header className="topbar">
