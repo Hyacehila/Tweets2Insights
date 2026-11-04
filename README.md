@@ -85,7 +85,16 @@ TAVILY_API_KEY=your-tavily-api-key
 uv run --project backend python scripts/dev.py start
 ```
 
-启动器同时启动 Gateway、领域 Worker 和 Next.js 开发服务器，等待工作台页面就绪后自动打开系统默认浏览器。只需后台启动时，在命令末尾加上 `--no-browser`。默认地址：
+启动器同时启动 Gateway、领域 Worker 和 Next.js 开发服务器，等待工作台页面就绪后自动打开系统默认浏览器，并在终端显示：
+
+```text
+前端已启动成功！
+正在自动打开系统默认浏览器……
+若浏览器未自动打开，请使用以下网址打开：
+http://127.0.0.1:3000/workspace
+```
+
+服务已运行时，重复执行启动命令会重新打开工作台。只需后台启动时，在命令末尾加上 `--no-browser`。默认地址：
 
 | 入口 | 地址 |
 |---|---|
