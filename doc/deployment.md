@@ -12,8 +12,15 @@ uv run --project backend python scripts/dev.py stop
 ```
 
 启动器管理 Gateway、领域 Worker、Next.js 开发服务器；默认前端 127.0.0.1:3000、Gateway 127.0.0.1:8001。
+启动后等待工作台页面就绪，再自动用系统默认浏览器打开 `http://127.0.0.1:3000/workspace`。仅启动后台服务可使用：
+
+```powershell
+uv run --project backend python scripts/dev.py start --no-browser
+```
+
+页面就绪最多等待 60 秒；超时或浏览器无法打开时，终端会显示访问地址与提示，服务继续运行。
 日志和进程记录位于 `.app-state`；停止前核对 PID、创建时间及命令，只停止本启动器拥有的进程。
-Windows 进程以无窗口方式启动。只运行一个 Gateway 进程，不使用多副本共享 SQLite 会话状态。
+Windows 后台服务以无窗口方式启动，浏览器正常显示。只运行一个 Gateway 进程，不使用多副本共享 SQLite 会话状态。
 主配置中的 Gateway host/port 同时用于启动器和前端代理；前端开发端口固定为 3000。
 
 ## Compose
