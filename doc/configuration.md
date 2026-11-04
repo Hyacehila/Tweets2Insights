@@ -1,10 +1,10 @@
 # 应用配置
 
-更新：2026-11-03。
+更新：2026-11-04。
 
 | 文件/变量 | 用途 |
 |---|---|
-| `config.yaml` | Gateway 地址、状态/资产目录、GLM 模型、上下文与调用上限 |
+| `config.yaml` | Gateway 地址、状态/资产目录、Agent 模型、上下文与调用上限 |
 | `config.example.yaml` | 不含密钥的主应用模板 |
 | `extensions_config.json` | 启用的本地 stdio MCP 服务、传递的变量名称、项目技能 |
 | `.env` | 本机 API Key、连接器与价格文件位置；不提交 |
@@ -15,12 +15,43 @@
 | `T2I_CONNECTORS_FILE` / `T2I_PRICING_FILE` | 操作者维护的真实连接器、调用价格上界配置 |
 | `RunRequest` | 冻结某次运行的数据、唯一搜索供应商、标注、观测、预测、情景和预算 |
 
-`.env` 使用 dotenv 加载，已有进程环境优先。Agent 使用 `models.default.api_key_env` 指定的变量，
-领域推理使用 `RunRequest.agent_model`；弱标注模型为 `labels.provider/model`，相互独立。搜索密钥为 `TAVILY_API_KEY` 或 `DEEPSEEK_API_KEY`。
-不要将密钥写入聊天、线程记忆、RunRequest 或版本库。
+`.env` 使用 dotenv 加载，已有进程环境优先。搜索密钥为 `TAVILY_API_KEY` 或 `DEEPSEEK_API_KEY`。
+
+## Agent 模型
+
+“API 设置 → Agent 模型”用于配置 Leader、标签设计、论坛和报告 Agent。默认推荐 `qwen3.8-max`，另提供 `glm-5.3`；也可填写任意兼容服务的 Base URL、Model ID 和 API Key。Qwen 预设关闭思考输出，GLM-5.3 预设使用开启思考及 low 推理强度，兼顾结构化任务与响应时间。按服务商文档在高级参数中调整。
+
+模型要求：文本生成/指令模型，支持 `POST /chat/completions`、`system/user` 消息及 `response_format: {type: json_object}`，能根据证据完成多步骤分析。建议至少 32K 上下文，长报告优先 128K；当前工具由 JSON 指令调度，原生 Function Calling 是扩展能力。Embedding、重排、图像生成与专用决策模型用于各自任务，不作为主 Agent。
+
+```yaml
+models:
+  default:
+    provider: qwen                 # qwen / glm / openai_compatible
+    model: qwen3.8-max
+    base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+    max_tokens: 8192
+    timeout_seconds: 120
+    extra_body:
+      enable_thinking: false
+```
+
+界面保存配置优先于 YAML。`GET /api/agent-model` 返回当前公开参数、凭据状态和推荐配置；`POST /api/agent-model` 先发送一次简短 JSON 请求，检查连接、格式与简单指令遵循，通过后原子保存。检测计入服务商用量；研究效果通过项目 Demo 评测。失败时保留原配置。
+
+API Key 按 Base URL 分别保存，切换厂商不会把原密钥发送到新地址；同地址留空可复用密钥。官方 Qwen 中国内地端点可读取 `QWEN_API_KEY` 或 `DASHSCOPE_API_KEY`，官方 GLM 端点读取 `GLM_API_KEY`。其他地域及自定义端点在页面输入对应密钥。本机 `localhost/127.0.0.1/::1` 可使用 HTTP 和免鉴权服务。
+
+任务在提交时把公开模型参数冻结到 `RunRequest.agent_config`，密钥在执行时按接口地址读取；切换配置只影响后续新任务。旧的显式 `agent_model` 字段仍兼容，GLM 名称指向官方 GLM 端点。弱标注使用独立的 `labels.provider/model`。
+
+依据：[Qwen 模型列表](https://help.aliyun.com/zh/model-studio/models)、[GLM-5.3](https://docs.bigmodel.cn/cn/guide/models/text/glm-5.3)。
+
+## 标注与外部服务
+
+新任务默认选择 **OpenAI Decisions / `gpt-6-luna`**，通过 `POST https://api.openai.com/v1/decisions` 调用。一条帖子提出五个命名 choice 问题，接收完整类别概率和单独的 confidence，保留 unknown 与拒答状态；每条帖子一次调用进入持久预算。缺失、重复答案或无效概率会记录为失败；拒答字段记为弃权，其余字段继续处理。模型当前只支持 `gpt-6-luna`，本项目适配器使用 `batch_size=1`，文本输入。原有任务保留其显式指定的供应商。
+
+在“API 设置 → OpenAI Decisions”输入 API Key，或设置 `OPENAI_API_KEY`。[官方 Decisions 指南](https://developers.openai.com/api/docs/guides/decisions)与[请求/响应定义](https://developers.openai.com/api/reference/resources/decisions/methods/create)。
 
 | 标注服务 | 模型示例 | 凭据 | 端点 / 批次 |
 |---|---|---|---|
+| `openai_decisions`（默认） | `gpt-6-luna` | `OPENAI_API_KEY` | 固定 `https://api.openai.com/v1/decisions`；batch_size=1，每帖五个 choice 问题 |
 | `jev` | `jev-latest` | `TYPESAFE_API_KEY` | 固定 `https://api.typesafe.ai/v1/systemone`；batch_size=1，每帖五个 choice 问题 |
 | `aliyun_decision` | `decision-model-preview` | `DASHSCOPE_API_KEY` | `ALIYUN_DECISION_ENDPOINT` 为业务空间域名，见下文；batch_size=1 |
 | `glm` | `glm-4.5-air` | `GLM_API_KEY` | 既有 GLM JSON 协议 |

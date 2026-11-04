@@ -16,7 +16,7 @@ flowchart TB
         DATA["数据接入<br/>上传 / 已有数据<br/>关键词与时间范围采集"]
         SAMPLE["高阅读量池<br/>随机抽样"]
         SCHEMA["Schema Agent<br/>样本 + 检索证据<br/>冻结标签与立场命题"]
-        LABEL["全部输入自动弱标注<br/>Jev / 阿里 decision<br/>GLM / 自定义连接器"]
+        LABEL["全部输入自动弱标注<br/>OpenAI / Jev / 阿里<br/>GLM / 自定义连接器"]
         OBS["固定窗口观测<br/>分布摘要 · 源表 · 覆盖率<br/>Tavily / DeepSeek 背景证据"]
         DATA --> SAMPLE --> SCHEMA -->|标签定义| LABEL --> OBS
         DATA -->|全部输入| LABEL

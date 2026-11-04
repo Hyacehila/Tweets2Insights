@@ -10,14 +10,17 @@
 | 研究工作台 | 上传或选择数据、填写关键词、配置复盘/预测/情景/回测，与 Leader Agent 对话并执行 |
 | 数据集 | 上传标准帖子 JSON 数组、筛选数据版本、选择本次研究的数据 |
 | 分析与报告 | 按状态筛选任务，取消/重试/恢复，查看图表、论坛、报告及下载产物 |
-| API 设置 | 配置 GLM、Jev、阿里 Decision、Tavily、DeepSeek 和 X 的本机凭据 |
+| API 设置 | 选择通用 Agent 模型，配置 OpenAI Decisions、Jev、阿里 Decision、GLM 标注、Tavily、DeepSeek 和 X |
 
 点击“新建研究”，填写研究名称与事件标识。同一事件标识下的会话共享该事件的数据和任务。
 API 设置可在创建研究前直接使用。界面支持明暗主题，窄屏通过顶部导航按钮打开侧栏。
+“Agent 模型”提供 Qwen3.8-Max、GLM-5.3 预设以及自定义 OpenAI 兼容服务。页面说明模型能力要求，支持输入 Base URL、Model ID、API Key，并调整输出长度、超时及生成参数。“检测并保存”通过一次简短请求检查接口与 JSON 输出，成功后清空密钥输入。详见[模型配置](configuration.md#agent-模型)。
+侧栏底部“本地研究空间”和设置按钮属于项目导航。Next.js 开发工具的黑色 N 浮标由 `next.config.ts` 中的 `devIndicators: false` 关闭；需要调试时可改为 `{ position: "bottom-right" }`。框架编译与运行错误仍正常提示。
 顶部“中文 / EN”按钮切换导航、配置表单、任务状态、API 设置及图表和报告操作的显示语言。语言选择保存在本机浏览器，刷新后继续使用；切换时保留研究参数、当前会话和表单输入。事件名称、帖子、Agent 回复与报告正文保持其原始语言。
 
 选择数据和阶段后点击“应用研究配置”，再由 Leader 生成计划或开始执行。需要自然语言规划时，在高级运行配置中选择“改用自然语言规划”。高级配置保留 JSON 编辑入口。
 上传数据只进行校验与登记；使用关键词采集时，配置平台及时间范围。预测参数标明 PCA + HK 实验模型。
+标注模型按 OpenAI Decisions、TypeSafe Jev、阿里 Decision、GLM 排列，默认选择 OpenAI Decisions 的 `gpt-6-luna`。API 设置中保留独立 OpenAI 凭据入口，支持中英文说明。
 
 “停止”结束当前 Agent 运行；已提交的领域任务在“分析与报告”中单独取消。任务完成后，可在产物区域选择工具，对冻结标签补充分析。
 
@@ -33,6 +36,7 @@ API 设置可在创建研究前直接使用。界面支持明暗主题，窄屏�
 - `components/workspace.tsx`：导航、概览、会话、数据输入、研究配置与 Leader 交互。
 - `components/tremor/`、`lib/utils.ts`：复用的 Tremor 组件与样式工具。
 - `components/provider-settings.tsx`：独立 API 配置页，成功保存后清空密钥输入。
+- `components/agent-model-settings.tsx`：Agent 模型推荐、自定义接口、能力说明与兼容性检测。
 - `components/workflow-builder.tsx`：阶段、标注、论坛、预测及情景参数。
 - `components/job-panel.tsx`：任务筛选、操作、产物切换及补充分析。
 - `components/analysis-chart.tsx`、`specialty-chart.tsx`：通用数据图表与专用分析图。

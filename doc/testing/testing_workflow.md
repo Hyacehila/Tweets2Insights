@@ -1,11 +1,12 @@
 # 测试工作流指南
 
-> **Last Updated**: 2026-11-03  
+> **Last Updated**: 2026-11-04
 > **关联源码**: `tests/` 目录  
 > **上级文档**: [系统设计总览](../architecture.md)
 
 新应用测试位于 `backend/tests`；领域契约与历史模块测试位于 `tests`，旧 Dashboard 测试位于 `dashboard/tests`。
 本文列出测试分层、执行命令与重构规则，检查结果统一记录在[实施记录](../upgrade-status.md)。
+旧版真实 E2E 的配置从 `legacy/config.yaml` 读取；运行配置辅助器的单元测试使用独立临时 YAML 和 `tests/fixtures/sample_enhanced.json`，不依赖新应用配置或本机密钥。
 
 ## 1. 测试架构（分层 + 按域分组）
 

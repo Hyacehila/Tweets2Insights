@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import pytest
 import yaml
+from pathlib import Path
 
 from tests.e2e.cli._e2e_config_runtime import (
     assert_full_pipeline_artifacts,
@@ -15,6 +16,15 @@ from tests.e2e.cli._e2e_config_runtime import (
     build_runtime_env,
     load_yaml,
 )
+
+
+@pytest.fixture(autouse=True)
+def isolated_legacy_configuration(tmp_path, monkeypatch):
+    """Unit checks use checked-in data, independently of either application config."""
+    path = tmp_path / "legacy-fixture.yaml"
+    sample = Path(__file__).resolve().parents[2] / "fixtures" / "sample_enhanced.json"
+    path.write_text(yaml.safe_dump({"data": {"output_path": str(sample)}, "pipeline": {"start_stage": 1}}), encoding="utf-8")
+    monkeypatch.setattr("tests.e2e.cli._e2e_config_runtime.RESERVED_CONFIG_PATH", path)
 
 
 def test_build_runtime_config_applies_balanced_stage2_loop_caps(tmp_path, monkeypatch):

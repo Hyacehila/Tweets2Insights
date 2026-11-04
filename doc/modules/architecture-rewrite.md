@@ -42,7 +42,7 @@ LangGraph Leader 将自然语言需求转换为 RunRequest，领域编译器据�
 
 ## 外部服务接入
 
-Jev 和阿里 decision 已依据官方 System One 文档实现原生适配，X 已依据官方归档搜索 API 实现分页适配。
+OpenAI Decisions 使用官方 `/v1/decisions` 原生协议，作为默认决策标注；Jev 和阿里 decision 使用 System One 原生适配，X 使用官方归档搜索 API 分页适配。
 其他社交平台及多模态通过连接器接入。
 操作者通过 `T2I_CONNECTORS_FILE` 指向本机配置，Agent 只能选择连接器 ID，不能提交命令或任意文件路径。
 连接器是 operator 安装的可执行程序，以 stdin/stdout JSON 通信；stderr 不写入任务产物。
@@ -55,7 +55,7 @@ Jev 和阿里 decision 已依据官方 System One 文档实现原生适配，X �
 - label：输入 operation=label、mode、schema、posts；输出 records（post_id/fields）、usage、cost。接口字段与 WeakLabeler 相同。
 - media/default：输入指定 post_id/media_ref；输出 items（post_id、media_ref、ocr、interpretation）、usage、cost。
 - 未登录可返回 `{"status":"waiting_for_auth"}`。会话内容由连接器从本机环境/会话存储解析，不进入请求清单。
-- Schema、论坛和报告生成使用独立的 GLM agent_model；标签阶段原生支持 Jev/阿里/GLM，也可使用 label 连接器。
+- Schema、论坛和报告生成共用独立的 OpenAI 兼容 Agent 模型配置，默认 Qwen3.8-Max；标签阶段默认 OpenAI Decisions / gpt-6-luna，也支持 Jev/阿里/GLM 或 label 连接器。
 
 调用账本记录预留、返回或不确定状态。设置金额上限时，每次调用必须有操作者提供的上界价格：
 `T2I_PRICING_FILE` 指向 provider-version → 单次上界费用的 JSON；未知价格时停止付费请求。

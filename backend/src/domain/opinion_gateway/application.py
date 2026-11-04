@@ -26,7 +26,9 @@ class ApplicationService(DomainService):
 
     def submit_run(self, request: dict) -> dict:
         """Submit the complete event workflow and return immediately; no arbitrary paths or commands."""
-        req = RunRequest.model_validate(request)
+        from .agent_models import resolve_request
+
+        req = resolve_request(RunRequest.model_validate(request))
         if not req.event.requires_collection:
             self.repo.read(req.event.event_id, req.event.dataset_ref)
         canonical = json.dumps(

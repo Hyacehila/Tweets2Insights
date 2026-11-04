@@ -8,6 +8,7 @@ import threading
 
 LOCK = threading.Lock()
 KEYS = {
+    "openai_decisions": "OPENAI_API_KEY",
     "glm": "GLM_API_KEY",
     "jev": "TYPESAFE_API_KEY",
     "aliyun_decision": "DASHSCOPE_API_KEY",
@@ -48,8 +49,8 @@ def save(provider, api_key, endpoint=None):
         validate_endpoint(provider, endpoint)
     if provider == "aliyun_decision" and not endpoint:
         raise ValueError("Alibaba workspace System One endpoint is required")
-    with LOCK:
-        data = read()
+
+    def change(data):
         data[KEYS[provider]] = api_key
         if endpoint:
             data[
@@ -57,6 +58,15 @@ def save(provider, api_key, endpoint=None):
                 if provider == "aliyun_decision"
                 else "TYPESAFE_ENDPOINT"
             ] = endpoint
+
+    update(change)
+    return {"provider": provider, "configured": True}
+
+
+def update(change):
+    with LOCK:
+        data = read()
+        change(data)
         destination = path()
         handle, temp = tempfile.mkstemp(prefix=".credential-", dir=destination.parent)
         try:
@@ -67,7 +77,6 @@ def save(provider, api_key, endpoint=None):
         finally:
             if os.path.exists(temp):
                 os.unlink(temp)
-    return {"provider": provider, "configured": True}
 
 
 def status():

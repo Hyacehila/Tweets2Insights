@@ -3,6 +3,8 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict, Field
 from dotenv import load_dotenv
 import yaml
+from opinion_core.schemas.agent_model import AgentModelConfig
+from opinion_gateway.agent_models import defaults
 
 
 class Settings(BaseModel):
@@ -10,8 +12,8 @@ class Settings(BaseModel):
     repository_root: Path
     state_root: Path
     asset_root: Path
-    model: str = "glm-4.5-air"
-    model_api_key_env: str = "GLM_API_KEY"
+    agent_model_config: AgentModelConfig = Field(default_factory=AgentModelConfig)
+    model: str = "qwen3.8-max"
     gateway_host: str = "127.0.0.1"
     gateway_port: int = Field(default=8001, ge=1, le=65535)
     max_agent_calls: int = Field(default=4, ge=1, le=100)
@@ -38,9 +40,7 @@ def load_settings():
     raw = yaml.safe_load(path.read_text(encoding="utf-8")) if path.exists() else {}
     app = (raw or {}).get("application", {})
     runtime = (raw or {}).get("agent_runtime", {})
-    model = (raw or {}).get("models", {}).get("default", {})
-    if model.get("provider", "glm") != "glm":
-        raise ValueError("the configured Agent model provider is not implemented")
+    agent_config = defaults()
     settings = Settings(
         repository_root=root,
         state_root=rooted(
@@ -49,8 +49,8 @@ def load_settings():
         asset_root=rooted(
             os.environ.get("T2I_ASSET_ROOT", app.get("asset_dir", ".opinion-assets"))
         ),
-        model=model.get("model", "glm-4.5-air"),
-        model_api_key_env=model.get("api_key_env", "GLM_API_KEY"),
+        model=agent_config.model,
+        agent_model_config=agent_config,
         gateway_host=app.get("host", "127.0.0.1"),
         gateway_port=app.get("port", 8001),
         max_agent_calls=runtime.get("max_model_calls", 4),

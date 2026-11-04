@@ -39,8 +39,8 @@ export function WorkflowBuilder({
     new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 16),
   );
   const [end, setEnd] = useState(new Date().toISOString().slice(0, 16));
-  const [labelProvider, setLabelProvider] = useState("jev");
-  const [model, setModel] = useState("jev-latest");
+  const [labelProvider, setLabelProvider] = useState("openai_decisions");
+  const [model, setModel] = useState("gpt-6-luna");
   const [platforms, setPlatforms] = useState("x");
   const [rounds, setRounds] = useState(3);
   const [horizon, setHorizon] = useState(7);
@@ -101,7 +101,6 @@ export function WorkflowBuilder({
           confidence_threshold: 0.7,
           probability_margin: 0.1,
         },
-        agent_model: "glm-4.5-air",
         observations: {
           start: begin.toISOString(),
           end: finish.toISOString(),
@@ -127,6 +126,7 @@ export function WorkflowBuilder({
         scenarios: phases.includes("scenario")
           ? [
               {
+                openai_decisions: "gpt-6-luna",
                 scenario_id: "measure-1",
                 measure: measure ?? t("信息澄清情景"),
                 mechanism,
@@ -232,6 +232,7 @@ export function WorkflowBuilder({
             );
           }}
         >
+          <option value="openai_decisions">{t("OpenAI Decisions（默认）")}</option>
           <option value="jev">TypeSafe Jev</option>
           <option value="aliyun_decision">{t("阿里 decision")}</option>
           <option value="glm">GLM JSON</option>
@@ -239,7 +240,8 @@ export function WorkflowBuilder({
       </label>
       <label>
         {t("模型 ID")}
-        <input value={model} onChange={(e) => setModel(e.target.value)} />
+        <input value={model} readOnly={labelProvider === "openai_decisions"} onChange={(e) => setModel(e.target.value)} />
+        {labelProvider === "openai_decisions" && <small>{t("使用 gpt-6-luna 的 Decisions API，返回五个标注字段及类别概率。")}</small>}
       </label>
       <label>
         {t("标注调用上限")}

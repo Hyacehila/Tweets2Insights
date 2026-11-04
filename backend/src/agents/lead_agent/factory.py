@@ -1,5 +1,6 @@
 from langgraph.graph import StateGraph, START, END
 from opinion_core.schemas.workflow import RunRequest
+from opinion_gateway.agent_models import active_config, resolve_request
 from src.agents.thread_state import ThreadState
 from src.agents.middlewares import prepare_context, validate_request
 from src.subagents import SubagentExecutor
@@ -40,7 +41,17 @@ def make_lead_agent(settings, models, tools, skills, checkpointer=None):
                     "model_calls": count,
                     "model_usage": usage,
                 }
+            # The operator selects the endpoint; generated plans only choose research parameters.
+            selected = active_config(settings.agent_model_config)
+            request = {
+                **request,
+                "agent_config": selected.model_dump(),
+                "agent_model": selected.model,
+            }
         request = validate_request(state, request)
+        request = resolve_request(RunRequest.model_validate(request)).model_dump(
+            mode="json"
+        )
         plan = await tools.plan(state, request)
         return {
             "run_request": request,

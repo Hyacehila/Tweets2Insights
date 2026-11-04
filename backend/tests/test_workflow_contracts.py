@@ -96,8 +96,9 @@ def request(case, objectives=None):
 
 def test_selected_stages_and_scenario_dependencies(case):
     from opinion_core.schemas.workflow import LabelOptions
-    defaults=LabelOptions.model_validate({'provider':'jev'})
-    assert defaults.model=='jev-latest' and defaults.batch_size==1
+
+    defaults = LabelOptions.model_validate({"provider": "jev"})
+    assert defaults.model == "jev-latest" and defaults.batch_size == 1
     raw = request(case, ["forecast"])
     raw["model"] = {"training_cutoff": raw["observations"]["end"]}
     plan = compile_plan(raw)
@@ -211,6 +212,142 @@ def test_native_system_one_schema_probabilities_and_margin(case, tmp_path, monke
         rejected.status == "abstained"
         and rejected.reason == "ambiguous_probability_margin"
     )
+
+
+def test_openai_is_default_label_provider_with_legacy_choices_preserved():
+    from opinion_core.schemas.workflow import LabelOptions
+
+    default = LabelOptions()
+    assert (default.provider, default.model, default.batch_size) == (
+        "openai_decisions",
+        "gpt-6-luna",
+        1,
+    )
+    assert LabelOptions(provider="glm").model == "glm-4.5-air"
+    assert LabelOptions(provider="glm").batch_size == 10
+    assert LabelOptions(provider="jev").model == "jev-latest"
+    with pytest.raises(ValueError):
+        LabelOptions(provider="openai_decisions", model="unsupported")
+    with pytest.raises(ValueError):
+        LabelOptions(provider="openai_decisions", batch_size=2)
+
+
+def test_worker_uses_default_openai_label_adapter(case, tmp_path, monkeypatch):
+    from opinion_gateway.application import ApplicationService
+    from opinion_gateway.runtime import Execution
+    from opinion_core.labeling.openai_decisions import OpenAIDecisionsProvider
+
+    monkeypatch.setenv("T2I_PROJECT_ROOT", str(tmp_path))
+    monkeypatch.setenv("OPENAI_API_KEY", "synthetic-key")
+    called = []
+
+    def predict(self, posts, schema):
+        called.append(self.model)
+        return {
+            "records": [
+                {
+                    "post_id": p.post_id,
+                    "fields": {
+                        k: {"refusal": True}
+                        for k in (
+                            "topic",
+                            "publisher",
+                            "emotion",
+                            "sentiment",
+                            "stance",
+                        )
+                    },
+                }
+                for p in posts
+            ]
+        }
+
+    monkeypatch.setattr(OpenAIDecisionsProvider, "predict", predict)
+    execution = Execution(ApplicationService(tmp_path), request(case), lambda: None)
+    execution.values["schema"] = {"schema": case[2]}
+    monkeypatch.setattr(execution, "posts", lambda: case[0][:1])
+    result = execution.execute("label")
+    assert called == ["gpt-6-luna"]
+    assert result["annotations"][0]["topic"]["reason"] == "provider_refusal"
+
+
+@pytest.mark.parametrize(
+    "mode",
+    ["valid", "refusal", "missing", "duplicate", "bad_probability", "http_error"],
+)
+def test_openai_decisions_native_protocol(case, tmp_path, monkeypatch, mode):
+    from types import SimpleNamespace
+    from opinion_core.labeling.openai_decisions import OpenAIDecisionsProvider
+
+    posts, _, schema, _ = case
+    ledger = CallLedger(tmp_path, mode, 1)
+    captured = []
+
+    def send(url, **kwargs):
+        assert url == "https://api.openai.com/v1/decisions"
+        assert kwargs["allow_redirects"] is False
+        assert kwargs["headers"]["Authorization"] == "Bearer synthetic-key"
+        body = kwargs["json"]
+        captured.append(body)
+        assert body["model"] == "gpt-6-luna"
+        assert json.loads(body["input"])["post_id"] == posts[0]["post_id"]
+        assert len(body["questions"]) == 5
+        answers = []
+        for question in body["questions"]:
+            choices = question["choices"]
+            assert choices[-1]["value"] == "unknown"
+            assert all("description" in choice for choice in choices)
+            answers.append(
+                {
+                    "type": "choice",
+                    "name": question["name"],
+                    "choice": choices[0]["value"],
+                    "confidence": 0.9,
+                    "probabilities": [
+                        {
+                            "value": c["value"],
+                            "probability": 0.95 if i == 0 else 0.05 if i == 1 else 0,
+                        }
+                        for i, c in enumerate(choices)
+                    ],
+                }
+            )
+        if mode == "refusal":
+            answers[0] = {"type": "refusal", "name": "topic"}
+        if mode == "missing":
+            answers.pop()
+        if mode == "duplicate":
+            answers[1] = answers[0]
+        if mode == "bad_probability":
+            answers[0]["probabilities"][0]["probability"] = float("nan")
+        return SimpleNamespace(
+            status_code=401 if mode == "http_error" else 200,
+            json=lambda: {
+                "model": "gpt-6-luna",
+                "answers": answers,
+                "usage": {"input_tokens": 25, "output_tokens": 0},
+            },
+        )
+
+    monkeypatch.setattr("opinion_core.labeling.openai_decisions.requests.post", send)
+    provider = OpenAIDecisionsProvider("gpt-6-luna", "synthetic-key", ledger)
+    labeler = WeakLabeler(tmp_path, provider, prompt_version="test", batch_size=1)
+    result = labeler.label(posts[:1], schema, budget=LabelBudget(1))
+    assert len(captured) == 1 and ledger.summary()["calls"] == 1
+    ann = result["annotations"][0]
+    if mode in {"valid", "refusal"}:
+        assert result["status"] == "completed"
+        assert ann["sentiment"]["value"] == -1.0
+        assert result["usage"]["input_tokens"] == 25
+        assert (
+            ann["topic"]["reason"] == "provider_refusal"
+            if mode == "refusal"
+            else ann["topic"]["probability"] == 0.95
+        )
+        assert ann["publisher"]["status"] == "accepted"
+    else:
+        assert result["status"] == "partial"
+        assert ann["topic"]["status"] == "failed"
 
 
 def test_latent_training_cutoff_decoding_and_paired_noop(case):

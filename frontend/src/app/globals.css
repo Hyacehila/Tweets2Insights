@@ -1601,3 +1601,38 @@ tbody tr.selected-row {
     white-space: normal;
   }
 }
+.model-fields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+  display: grid;
+  gap: 20px;
+}
+.model-presets, .model-input-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.model-presets { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.model-preset {
+  text-align: left;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: grid;
+  gap: 6px;
+}
+.model-preset.active { border-color: var(--blue); background: var(--blue-soft); }
+.model-preset small { color: var(--muted); font-size: 12px; }
+.model-scope { margin: 0; }
+.model-requirements ul { padding-left: 20px; margin: 12px 0; display: grid; gap: 8px; }
+.model-source-links { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 12px; }
+.model-source-links a { display: inline-flex; gap: 5px; align-items: center; color: var(--blue); font-size: 13px; }
+.model-advanced summary { cursor: pointer; margin-bottom: 14px; }
+.model-advanced > label { margin-top: 16px; }
+.model-advanced textarea { font-family: var(--font-mono), monospace; }
+.agent-model-form > .error, .agent-model-form > .success-text { margin-top: 18px; }
+@media (max-width: 760px) {
+  .model-presets, .model-input-grid { grid-template-columns: minmax(0, 1fr); }
+}

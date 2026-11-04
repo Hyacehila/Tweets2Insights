@@ -46,3 +46,9 @@ test("invalid or missing saved preferences fall back to Chinese", () => {
   assert.equal(normalizeLocale(null), "zh-CN");
   assert.equal(normalizeLocale("unknown"), "zh-CN");
 });
+
+test("model settings explain compatibility and recommended models in English", () => {
+  assert.equal(translate("en-US", "Agent 模型"), "Agent model");
+  assert.equal(translate("en-US", "检测并保存"), "Check & save");
+  assert.equal(translate("en-US", "自定义服务"), "Custom service");
+});

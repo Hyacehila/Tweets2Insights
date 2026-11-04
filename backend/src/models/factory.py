@@ -1,6 +1,6 @@
 import asyncio
-from opinion_gateway.credentials import get
-from opinion_core.labeling.glm_provider import GLMJsonProvider
+from opinion_gateway.agent_models import active_config, api_key_for, is_local
+from opinion_core.labeling.openai_provider import OpenAIJsonProvider
 
 
 class ModelFactory:
@@ -8,12 +8,13 @@ class ModelFactory:
         self.settings = settings
 
     async def request(self, instruction, payload):
-        key = get(self.settings.model_api_key_env)
-        if not key:
+        config = active_config(self.settings.agent_model_config)
+        key = api_key_for(config)
+        if not key and not is_local(config):
             raise EnvironmentError("configured Agent model credential is missing")
 
         def invoke():
-            provider = GLMJsonProvider(api_key=key, model=self.settings.model)
+            provider = OpenAIJsonProvider(config, key)
             try:
                 return provider.request(instruction, payload)
             finally:

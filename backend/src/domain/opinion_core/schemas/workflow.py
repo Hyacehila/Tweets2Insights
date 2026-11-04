@@ -4,34 +4,46 @@ from typing import Literal
 from pydantic import Field, model_validator
 from .base import Contract, Identifier, UTCDateTime
 from .event import EventSpec
+from .agent_model import AgentModelConfig
 
 
 class LabelOptions(Contract):
     @model_validator(mode="before")
     @classmethod
     def provider_defaults(cls, value):
-        if isinstance(value, dict) and value.get("provider") in {
-            "jev",
-            "aliyun_decision",
-        }:
+        if isinstance(value, dict):
             value = dict(value)
-            value.setdefault(
-                "model",
-                "jev-latest"
-                if value["provider"] == "jev"
-                else "decision-model-preview",
-            )
-            value.setdefault("batch_size", 1)
+            defaults = {
+                "openai_decisions": ("gpt-6-luna", 1),
+                "jev": ("jev-latest", 1),
+                "aliyun_decision": ("decision-model-preview", 1),
+                "glm": ("glm-4.5-air", 10),
+            }
+            provider = value.get("provider", "openai_decisions")
+            if provider in defaults:
+                model, batch = defaults[provider]
+                value.setdefault("model", model)
+                value.setdefault("batch_size", batch)
         return value
 
-    model: str = "glm-4.5-air"
-    provider: Literal["glm", "jev", "aliyun_decision", "connector"] = "glm"
+    model: str = "gpt-6-luna"
+    provider: Literal[
+        "openai_decisions", "glm", "jev", "aliyun_decision", "connector"
+    ] = "openai_decisions"
     connector: Identifier | None = None
     confidence_threshold: float = Field(default=0.7, ge=0, le=1)
-    batch_size: int = Field(default=10, ge=1, le=100)
+    batch_size: int = Field(default=1, ge=1, le=100)
     max_calls: int = Field(default=100, ge=1)
     max_schema_calls: int = Field(default=4, ge=2)
     probability_margin: float = Field(default=0.10, ge=0, le=1)
+
+    @model_validator(mode="after")
+    def decision_protocol(self):
+        if self.provider == "openai_decisions" and (
+            self.model != "gpt-6-luna" or self.batch_size != 1
+        ):
+            raise ValueError("OpenAI Decisions requires gpt-6-luna and batch_size=1")
+        return self
 
 
 class SamplingSpec(Contract):
@@ -145,7 +157,8 @@ class RunRequest(Contract):
     event: EventSpec
     run_id: Identifier
     labels: LabelOptions = Field(default_factory=LabelOptions)
-    agent_model: str = Field(default="glm-4.5-air", min_length=1, max_length=120)
+    agent_model: str | None = Field(default=None, min_length=1, max_length=160)
+    agent_config: AgentModelConfig | None = None
     crawl: CrawlSpec | None = None
     observations: ObservationSpec
     sampling: SamplingSpec = Field(default_factory=SamplingSpec)

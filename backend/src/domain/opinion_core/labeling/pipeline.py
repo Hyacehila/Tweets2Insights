@@ -93,6 +93,8 @@ class WeakLabeler:
     def _field(self, name, raw, schema):
         if not isinstance(raw, dict):
             return FieldAnnotation(reason="provider_field_missing")
+        if raw.get("refusal") is True:
+            return FieldAnnotation(status="abstained", reason="provider_refusal")
         value, confidence = raw.get("value"), raw.get("confidence")
         allowed = {
             "topic": [v.id for v in schema.topics],

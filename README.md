@@ -18,7 +18,7 @@ Tweets2Insights 将一次事件研究组织为可追溯的工作流：导入帖�
 | 能力 | 项目中的实现 |
 |---|---|
 | **事件驱动的数据接入** | 上传标准 JSON、选择已有数据；内置 X 官方归档搜索，其他平台由本机连接器扩展。 |
-| **自动弱标注** | 高阅读量随机抽样 → Schema Agent → Jev / 阿里 decision / GLM；完整类别概率、自动拒判、覆盖率与版本缓存。 |
+| **自动弱标注** | 高阅读量随机抽样 → Schema Agent → OpenAI Decisions（默认）/ Jev / 阿里 decision / GLM；完整类别概率、自动拒判、覆盖率与版本缓存。 |
 | **分布与证据分析** | 41 个保留工具入口覆盖情绪、话题、地区、互动和 NLP；继承本项目第二阶段选工具、补数据、补搜索、补图的反馈机制。 |
 | **预测与条件情景** | 训练截止点内拟合 PCA 和 HK 参数；隐空间同化、解码预测、六种模型/基线滚动诊断；相同起点与随机流下比较措施及资源成本。 |
 | **可追溯报告** | 内容整理 Agent → 社科解释 Agent → 页面组织 Agent；交互图表、证据和来源表，支持 Markdown、HTML、JSON、ZIP。 |
@@ -26,7 +26,7 @@ Tweets2Insights 将一次事件研究组织为可追溯的工作流：导入帖�
 
 **生产流程使用模型弱标注，标注后自动进入分析，不逐条安排人工复核。** 人工标注仅用于独立 Demo 的方案评测。自动校验、字段拒判、失败记录、预算和版本追溯仍保留；缺失或失败不会被填成“中性”。
 
-Jev 与阿里 decision 使用原生 System One 适配器。GLM 负责生成式 Agent 推理，与弱标注模型独立配置。视觉及其他平台通过[连接器](doc/modules/architecture-rewrite.md#外部服务接入)扩展。阶段流程、论坛角色和工具说明见[完整工作流](doc/modules/full-workflow.md)。
+自动标注默认采用 OpenAI Decisions API 的 `gpt-6-luna`，也支持 Jev 与阿里 decision 的原生 System One 接口。生成式 Agent 支持各厂商的 OpenAI 兼容接口，与弱标注模型独立配置。视觉及其他平台通过[连接器](doc/modules/architecture-rewrite.md#外部服务接入)扩展。阶段流程、论坛角色和工具说明见[完整工作流](doc/modules/full-workflow.md)。
 
 <a id="quickstart"></a>
 ## 快速开始
@@ -38,7 +38,7 @@ Jev 与阿里 decision 使用原生 System One 适配器。GLM 负责生成式 A
 | Python | 3.12 或更高版本，依赖由 UV 管理 |
 | Node.js | 22 或更高版本，前端使用 npm |
 | Git | 用于获取仓库与更新代码 |
-| 服务凭据 | 执行模型流程需要 GLM，以及所选搜索服务的 API Key |
+| 服务凭据 | 所选 Agent 模型、标注与搜索服务的 API Key |
 
 ```bash
 git clone --branch refine https://github.com/Hyacehila/Tweets2Insights.git
@@ -71,13 +71,16 @@ test -f .env || cp .env.example .env
 在 `.env` 中填写本机凭据。以下以 Tavily 为例；占位文本需替换为实际密钥：
 
 ```dotenv
-GLM_API_KEY=your-glm-api-key
+QWEN_API_KEY=your-qwen-api-key
+OPENAI_API_KEY=your-openai-api-key
 TAVILY_API_KEY=your-tavily-api-key
 ```
 
-若选择 DeepSeek Search，则填写 `DEEPSEEK_API_KEY`，并在工作台或运行请求中选择 `deepseek`。每次运行只使用一个搜索供应商。模型名称在 [`config.yaml`](config.yaml) 中设置，默认 Agent 模型为 `glm-4.5-air`；单次领域标注模型由运行请求的 `labels.model` 指定。
+若选择 DeepSeek Search，则填写 `DEEPSEEK_API_KEY`，并在工作台或运行请求中选择 `deepseek`。每次运行只使用一个搜索供应商。Agent 默认使用 `qwen3.8-max`，另提供 `glm-5.3` 推荐配置；可在“API 设置 → Agent 模型”填写其他服务的 Base URL、Model ID 和 API Key。模型需支持 Chat Completions、指令遵循和 JSON Object 输出。点击“检测并保存”发送一次简短兼容性请求，通过后供后续 Agent 任务使用。
 
-也可在工作台“API 设置”保存本机凭据；密钥只写入忽略文件 `.provider-secrets.json`，读取接口只返回是否已配置。Jev 使用 `TYPESAFE_API_KEY`；阿里使用 `DASHSCOPE_API_KEY` 和业务空间 `ALIYUN_DECISION_ENDPOINT`；X 使用 `X_BEARER_TOKEN`。环境变量和界面配置二选一即可，详见[配置说明](doc/configuration.md)。
+默认配置位于 [`config.yaml`](config.yaml)，前端保存的设置优先。推荐依据见 [Qwen 模型文档](https://help.aliyun.com/zh/model-studio/models)与 [GLM-5.3 文档](https://docs.bigmodel.cn/cn/guide/models/text/glm-5.3)。按账号可用模型和地域调整接口地址。单次领域标注模型由 `labels.provider/model` 独立指定。
+
+也可在工作台“API 设置”保存本机凭据；密钥只写入忽略文件 `.provider-secrets.json`，读取接口只返回公开模型参数和配置状态。默认决策标注在“OpenAI Decisions”中输入 Key，或设置 `OPENAI_API_KEY`。Jev 使用 `TYPESAFE_API_KEY`；阿里使用 `DASHSCOPE_API_KEY` 和业务空间 `ALIYUN_DECISION_ENDPOINT`；X 使用 `X_BEARER_TOKEN`。环境变量和界面配置二选一即可，详见[配置说明](doc/configuration.md)。
 
 ### 3. 启动工作台
 
@@ -228,7 +231,7 @@ Tweets2Insights/
 | [`RunRequest`](backend/src/domain/opinion_core/schemas/workflow.py) | 每次任务的数据、时间窗口、唯一搜索供应商、标注、数值模型和预算 |
 | [`skills/public`](skills/public) / `skills/custom` | 内置与本机自定义技能；自定义技能需在扩展配置中启用 |
 
-当前 Agent 模型工厂使用 GLM SDK；弱标注可选择 GLM、Jev、阿里 decision 或自定义连接器；搜索提供 Tavily/DeepSeek。采集内置 X 官方接口，并保留其他平台扩展。单次领域任务的模型/搜索预算、采集分页上限和 Agent 会话调用上限分别记录，详见[配置说明](doc/configuration.md)。
+Agent 模型工厂通过 OpenAI 兼容 Chat Completions 接口调用所选模型；弱标注默认使用 OpenAI Decisions，也可选择 Jev、阿里 decision、GLM 或自定义连接器；搜索提供 Tavily/DeepSeek。采集内置 X 官方接口，并保留其他平台扩展。单次领域任务的模型/搜索预算、采集分页上限和 Agent 会话调用上限分别记录，详见[配置说明](doc/configuration.md)。
 
 <a id="documentation"></a>
 ## 文档导航

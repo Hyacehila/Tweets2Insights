@@ -32,15 +32,18 @@ Tweets2Insights/
 │   │   ├── subagents/               # 专业角色注册与受限执行
 │   │   ├── tools/                   # 领域工具入口、CLI 与 Worker 启动
 │   │   ├── mcp/                     # MCP 配置、发现和调用客户端
-│   │   ├── models/                  # 模型工厂与 SDK 适配
+│   │   ├── models/                  # 通用 OpenAI 兼容 Agent 模型工厂
 │   │   ├── skills/                  # 项目技能加载
 │   │   ├── config/                  # YAML/环境变量加载与类型化配置
 │   │   └── domain/                  # 迁入的新旧可复用领域实现
 │   │       ├── opinion_core/
 │   │       │   ├── schemas/         # 事件、标签、请求、任务、产物契约
+│   │       │   │   └── agent_model.py # 模型接口与生成参数契约
 │   │       │   ├── ingestion/       # 历史数据无损迁移
 │   │       │   ├── labeling/        # 事件 Schema、自动弱标注、词表
 │   │       │   │   ├── sampling.py  # 高阅读量池随机抽样，仅用于标签发现
+│   │       │   │   ├── openai_provider.py # 通用 Chat Completions JSON 适配
+│   │       │   │   ├── openai_decisions.py # OpenAI 原生决策标注与类别概率
 │   │       │   │   └── system_one.py # Jev / 阿里 decision 原生协议
 │   │       │   ├── evidence/        # 搜索适配、证据卡、论坛、多模态接口
 │   │       │   ├── analytics/       # 分布观测、图表、复用 NLP
@@ -53,6 +56,7 @@ Tweets2Insights/
 │   │       │   ├── evaluation/      # Demo 与消融脚本，后置评测
 │   │       │   └── orchestration.py # 确定性领域计划编译
 │   │       ├── opinion_gateway/     # MCP 服务、应用服务、资产、预算、Job/Worker
+│   │       │   └── agent_models.py  # 推荐模型、配置保存与端点凭据解析
 │   │       └── crawler_worker/      # 独立采集执行器、X 官方 API、连接器协议
 │   └── tests/                       # 离线工程契约与 Worker 集成检查
 │
@@ -70,6 +74,7 @@ Tweets2Insights/
 │       │   ├── workflow-builder.tsx # 输入、阶段、角色和模型参数
 │       │   ├── tremor/              # Tremor Card / Badge
 │       │   ├── provider-settings.tsx # 独立 API 设置页
+│       │   ├── agent-model-settings.tsx # 模型推荐、参数与兼容性检测
 │       │   ├── language-provider.tsx # 中英文切换与本机语言记忆
 │       │   ├── specialty-chart.tsx   # 热图、网络与词云
 │       │   ├── forum-view.tsx       # 讨论、补充行动、分歧与停止原因

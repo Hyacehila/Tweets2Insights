@@ -15,7 +15,7 @@ Agent 会话状态使用 LangGraph SQLite checkpointer；领域任务继续使�
 SSE 事件持久保存并提供游标续读；Agent 被取消与已提交的领域 Job 取消是两个明确操作。
 Gateway 重启会将未结束的 Agent execution 标为 interrupted；在途模型请求的执行和费用状态记为未知。
 
-graph 为 context → leader → subagents → dispatch。结构化请求直接校验；自然语言请求通过真实 GLM 模型工厂
+graph 为 context → leader → subagents → dispatch。结构化请求直接校验；自然语言请求通过所选 OpenAI 兼容模型
 编译为 RunRequest。缺参数时返回 needs_input。默认专业评阅角色为 Insight/Query，有调用数量上限；
 这是规划层评阅。业务论坛由同一领域 Worker 内的 `evidence/forum.py` 驱动，不能另开第二个任务调度器。
 
@@ -34,7 +34,7 @@ graph 为 context → leader → subagents → dispatch。结构化请求直接�
 - memory：显式编辑的线程事实存储；外部资料不会自动写入长期记忆。
 - checkpointer：AsyncSqliteSaver，持久化图状态。
 - mcp：加载 extensions_config.json，发现并精确匹配工具名；Gateway 读取 MCP 结构化结果，保留任务和产物中的动态字段。
-- models：生成式 Agent 使用 GLM；决策标注模型独立配置为 GLM/Jev/阿里/连接器，密钥来自本机配置或环境。
+- models：生成式 Agent 共用 OpenAI 兼容 JSON 适配器，默认 Qwen3.8-Max、备选 GLM-5.3，支持自定义接口。Leader 规划使用操作者选择的配置，任务提交后冻结公开模型参数。决策标注默认 OpenAI Decisions / gpt-6-luna，并支持 Jev/阿里/GLM/连接器；密钥从本机配置或环境读取。
 - skills：加载已启用的 public/custom SKILL.md；内置 3 个项目技能。
 - subagents：角色注册和受限评阅执行；不开放嵌套委派。
 

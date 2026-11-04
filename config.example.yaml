@@ -7,9 +7,13 @@ application:
   asset_dir: .opinion-assets
 models:
   default:
-    provider: glm
-    model: glm-4.5-air
-    api_key_env: GLM_API_KEY
+    provider: qwen
+    model: qwen3.8-max
+    base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+    max_tokens: 8192
+    timeout_seconds: 120
+    extra_body:
+      enable_thinking: false
 agent_runtime:
   max_model_calls: 4
   max_subagents: 2

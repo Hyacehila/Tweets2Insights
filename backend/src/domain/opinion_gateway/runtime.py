@@ -13,6 +13,7 @@ from opinion_core.labeling.event_preparation import EventPreparation
 from opinion_core.labeling.pipeline import WeakLabeler
 from opinion_core.labeling.sampling import sample_for_schema
 from opinion_core.labeling.system_one import SystemOneProvider
+from opinion_core.labeling.openai_decisions import OpenAIDecisionsProvider
 from opinion_core.analytics.toolbox import AnalysisToolbox, chart_svg
 from opinion_core.analytics.observations import build_observations, summarize
 from opinion_core.analytics.charts import build_charts
@@ -46,11 +47,29 @@ from .budget import CallLedger
 from .label_workflow import DurableLabelBudget
 from .dataset_repository import storage_id
 from . import credentials
+from .agent_models import resolve_request, api_key_for, is_local
+from opinion_core.labeling.openai_provider import OpenAIJsonProvider
 
 
 class MeteredGLM(GLMJsonProvider):
     def __init__(self, ledger, **kwargs):
         super().__init__(**kwargs)
+        self.ledger, self.stage = ledger, "model"
+
+    def request(self, instruction, payload):
+        call = self.ledger.reserve(self.stage, self.version)
+        try:
+            result, usage = super().request(instruction, payload)
+            self.ledger.settle(call, usage)
+            return result, usage
+        except Exception:
+            self.ledger.settle(call, status="uncertain")
+            raise
+
+
+class MeteredAgent(OpenAIJsonProvider):
+    def __init__(self, ledger, config, api_key):
+        super().__init__(config, api_key)
         self.ledger, self.stage = ledger, "model"
 
     def request(self, instruction, payload):
@@ -71,7 +90,7 @@ class IncompleteStage(RuntimeError):
 class Execution:
     def __init__(self, service, request, check_cancel):
         self.service = service
-        self.req = RunRequest.model_validate(request)
+        self.req = resolve_request(RunRequest.model_validate(request))
         self.check_cancel = check_cancel
         self.values, self.refs = {}, {}
         self.scope = hashlib.sha256(
@@ -86,11 +105,11 @@ class Execution:
     @property
     def model(self):
         if self._model is None:
-            self._model = MeteredGLM(
-                self.ledger,
-                model=self.req.agent_model,
-                api_key=credentials.get("GLM_API_KEY"),
-            )
+            config = self.req.agent_config
+            key = api_key_for(config)
+            if not key and not is_local(config):
+                raise WaitingForAuthentication("Agent model credential required")
+            self._model = MeteredAgent(self.ledger, config, key)
         return self._model
 
     @property
@@ -260,6 +279,13 @@ class Execution:
                 provider = DecisionConnector(
                     req.labels.connector, req.media_mode, self.ledger
                 )
+            elif req.labels.provider == "openai_decisions":
+                key = credentials.get("OPENAI_API_KEY")
+                if not key:
+                    raise WaitingForAuthentication(
+                        "OpenAI Decisions credential required"
+                    )
+                provider = OpenAIDecisionsProvider(req.labels.model, key, self.ledger)
             elif req.labels.provider in {"jev", "aliyun_decision"}:
                 provider = SystemOneProvider(
                     req.labels.provider,

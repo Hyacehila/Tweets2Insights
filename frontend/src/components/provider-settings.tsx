@@ -5,9 +5,11 @@ import { Check, KeyRound, RefreshCw, Save } from "lucide-react";
 import { api, post } from "@/lib/api";
 import { Card } from "./tremor/Card";
 import { Badge } from "./tremor/Badge";
+import { AgentModelSettings } from "./agent-model-settings";
 
 const providers = [
-  { id: "glm", name: "GLM", purpose: "Agent 推理与报告生成", mark: "GL" },
+  { id: "agent", name: "Agent 模型", purpose: "规划、分析与报告", mark: "AI" },
+  { id: "openai_decisions", name: "OpenAI Decisions", purpose: "默认决策标注 · gpt-6-luna", mark: "O" },
   { id: "jev", name: "TypeSafe Jev", purpose: "舆情数据决策标注", mark: "J" },
   {
     id: "aliyun_decision",
@@ -15,6 +17,7 @@ const providers = [
     purpose: "舆情数据决策标注",
     mark: "A",
   },
+  { id: "glm", name: "GLM", purpose: "GLM 弱标注服务", mark: "GL" },
   { id: "tavily", name: "Tavily", purpose: "事件检索与外部补证", mark: "T" },
   { id: "deepseek", name: "DeepSeek", purpose: "事件搜索服务", mark: "D" },
   { id: "x", name: "X API", purpose: "历史帖子采集", mark: "X" },
@@ -22,7 +25,8 @@ const providers = [
 type ProviderState = { provider: string; configured: boolean };
 export function ProviderSettings() {
   const { t } = useI18n();
-  const [selected, setSelected] = useState("glm");
+  const [selected, setSelected] = useState("agent");
+  const [refreshVersion, setRefreshVersion] = useState(0);
   const [states, setStates] = useState<ProviderState[]>([]);
   const [apiKey, setApiKey] = useState("");
   const [endpoint, setEndpoint] = useState("");
@@ -34,7 +38,11 @@ export function ProviderSettings() {
   async function refresh() {
     setLoading(true);
     try {
-      setStates(await api<ProviderState[]>("/providers"));
+      const [providers, agent] = await Promise.all([
+        api<ProviderState[]>("/providers"),
+        api<{ configured: boolean }>("/agent-model"),
+      ]);
+      setStates([...providers, { provider: "agent", configured: agent.configured }]);
       setError("");
     } catch (e) {
       setError((e as Error).message);
@@ -72,7 +80,7 @@ export function ProviderSettings() {
           <h2>{t("服务供应商")}</h2>
           <button
             className="icon-button"
-            onClick={refresh}
+            onClick={() => { void refresh(); setRefreshVersion((value) => value + 1); }}
             aria-label={t("刷新 API 配置状态")}
           >
             <RefreshCw size={15} />
@@ -102,7 +110,7 @@ export function ProviderSettings() {
           </button>
         ))}
       </Card>
-      <Card className="surface provider-form">
+      {selected === "agent" ? <AgentModelSettings key={refreshVersion} onConfigured={() => void refresh()} /> : <Card className="surface provider-form">
         <div className="section-heading">
           <div className="agent-heading">
             <span className="settings-key">
@@ -159,9 +167,11 @@ export function ProviderSettings() {
           <div className="settings-description">
             <h3>{t("如何使用")}</h3>
             <p>
-              {selected === "glm"
+              {selected === "openai_decisions"
+                ? t("使用 OpenAI Decisions 原生接口完成话题、发布者、情绪、情感与立场标注，返回类别概率；默认模型为 gpt-6-luna。")
+                : selected === "glm"
                 ? t(
-                    "Leader Agent、分析论坛和报告 Agent 使用 GLM 组织研究与解读结果。",
+                    "在研究工作台选择 GLM 标注时使用此凭据；主 Agent 模型在“Agent 模型”中配置。",
                   )
                 : selected === "jev" || selected === "aliyun_decision"
                   ? t(
@@ -176,6 +186,7 @@ export function ProviderSettings() {
                       )}
             </p>
             <p>{t("配置保存在当前电脑，供本地研究任务使用。")}</p>
+            {selected === "openai_decisions" && <p><a href="https://developers.openai.com/api/docs/guides/decisions" target="_blank" rel="noreferrer">{t("OpenAI Decisions 官方说明")}</a></p>}
           </div>
           {error && (
             <p className="error" role="alert">
@@ -199,7 +210,7 @@ export function ProviderSettings() {
             {busy ? t("正在保存…") : t("保存配置")}
           </button>
         </form>
-      </Card>
+      </Card>}
     </div>
   );
 }

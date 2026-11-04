@@ -15,7 +15,7 @@ import pytest
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-RESERVED_CONFIG_PATH = REPO_ROOT / "config.yaml"
+RESERVED_CONFIG_PATH = REPO_ROOT / "legacy" / "config.yaml"
 DATA_PATH_KEYS = (
     "input_path",
     "topics_path",
@@ -90,7 +90,7 @@ def build_runtime_config(
     overrides: dict[str, Any] | None = None,
 ) -> Path:
     """
-    Build a temporary config derived from reserved config.yaml.
+    Build a temporary config derived from legacy/config.yaml.
     Keeps stage/pipeline settings, redirects outputs, and optionally overrides runtime.
     """
     config_dict = copy.deepcopy(load_reserved_config())
@@ -120,7 +120,7 @@ def build_runtime_config(
     start_stage = int(pipeline_cfg.get("start_stage", 1))
 
     if start_stage >= 2:
-        if not source_enhanced_path.exists():
+        if not source_enhanced_path.is_file():
             pytest.fail(f"Missing reserved enhanced data for stage>=2 runs: {source_enhanced_path}")
         shutil.copy2(source_enhanced_path, output_path)
 
