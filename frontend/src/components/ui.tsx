@@ -5,6 +5,9 @@ import { X, Inbox } from "lucide-react";
 import { Badge } from "./tremor/Badge";
 
 export const statusLabels: Record<string, string> = {
+  pending: "等待执行",
+  frozen: "已完成",
+  diagnosing: "正在分析错误",
   queued: "等待执行",
   running: "执行中",
   waiting_for_auth: "等待授权",
@@ -18,7 +21,7 @@ export const statusLabels: Record<string, string> = {
 export function StatusBadge({ status }: { status?: string }) {
   const { t } = useI18n();
   const variant =
-    status === "completed"
+    status === "completed" || status === "frozen"
       ? "success"
       : status === "failed"
         ? "error"

@@ -36,7 +36,9 @@ import { importDatasetFiles } from "@/lib/dataset-import";
 import { workflowState } from "@/lib/workflow-state";
 import type { Thread, Dataset, Job } from "@/lib/types";
 import { useThreadStream } from "@/hooks/use-thread-stream";
-import { JobPanel } from "./job-panel";
+import { ResearchDashboard, DatasetOverview } from "./research-dashboard";
+import { ResearchProgress } from "./research-progress";
+import { ReportLibrary } from "./report-library";
 import { WorkflowBuilder } from "./workflow-builder";
 import { ProviderSettings } from "./provider-settings";
 import { RecentResearch } from "./recent-research";
@@ -45,12 +47,11 @@ import { Card } from "./tremor/Card";
 import { Badge } from "./tremor/Badge";
 import { EmptyState, Modal, StatusBadge, statusLabels, formatDate } from "./ui";
 
-type View = "overview" | "research" | "datasets" | "results" | "settings";
+type View = "overview" | "research" | "settings";
+type ResearchTab = "configure" | "progress" | "reports" | "datasets";
 const views = [
   { id: "overview" as const, label: "研究概览", icon: LayoutDashboard },
   { id: "research" as const, label: "研究工作台", icon: MessageSquare },
-  { id: "datasets" as const, label: "数据集", icon: Database },
-  { id: "results" as const, label: "分析与报告", icon: FileChartColumn },
   { id: "settings" as const, label: "API 设置", icon: Settings2 },
 ];
 
@@ -60,6 +61,7 @@ export function Workspace({ threadId }: { threadId?: string }) {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [view, setView] = useState<View>(threadId ? "research" : "overview");
+  const [researchTab, setResearchTab] = useState<ResearchTab>("configure");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -131,6 +133,7 @@ export function Workspace({ threadId }: { threadId?: string }) {
     setExecution("");
     setImportedCount(null);
     setView(threadId ? "research" : "overview");
+    setResearchTab("configure");
     if (!threadId) return;
     let live = true;
     api<Thread>(`/threads/${threadId}`)
@@ -200,7 +203,7 @@ export function Workspace({ threadId }: { threadId?: string }) {
     }
     if (["completed", "failed", "cancelled"].includes(latest.status ?? "")) {
       setBusy(false);
-      if (latest.error_type) setError(`运行失败：${latest.error_type}`);
+      if (latest.error_type) setError(latest.message ?? `运行失败：${latest.error_type}`);
       if (threadId)
         api<Thread>(`/threads/${threadId}`)
           .then(setThread)
@@ -434,7 +437,7 @@ export function Workspace({ threadId }: { threadId?: string }) {
             >
               <Icon size={17} />
               {t(label)}
-              {id === "results" && activeJobs.length > 0 && (
+              {id === "research" && activeJobs.length > 0 && (
                 <span className="nav-count">{activeJobs.length}</span>
               )}
             </button>
@@ -444,7 +447,10 @@ export function Workspace({ threadId }: { threadId?: string }) {
           <p className="nav-label">{t("最近研究")}</p>
           <span>{threads.length}</span>
         </div>
-        <RecentResearch threads={threads} threadId={threadId} onDeleted={(eventId, ids) => {
+        <RecentResearch threads={threads} threadId={threadId} onRenamed={(renamed) => {
+          setThreads(items => items.map(item => item.thread_id === renamed.thread_id ? { ...item, title: renamed.title } : item));
+          setThread(item => item?.thread_id === renamed.thread_id ? { ...item, title: renamed.title } : item);
+        }} onDeleted={(eventId, ids) => {
           setThreads((items) => items.filter((item) => item.event_id !== eventId));
           if (threadId && ids.includes(threadId)) router.replace("/workspace");
           else setRefreshKey((key) => key + 1);
@@ -516,27 +522,7 @@ export function Workspace({ threadId }: { threadId?: string }) {
           </div>
         </header>
         <main id="main-content" className="page-content">
-          <div className="page-heading">
-            <div>
-              <div className="eyebrow">
-                {thread ? thread.event_id : "TWEETS2INSIGHTS"}
-              </div>
-              <h1>
-                {view === "settings"
-                  ? t("模型与 API 设置")
-                  : (thread?.title ?? t("研究概览"))}
-              </h1>
-              <p>
-                {view === "settings"
-                  ? t("配置分析、标注、搜索与采集服务。")
-                  : t("连接事件数据、Agent 协作与研究洞察。")}
-              </p>
-            </div>
-            <button className="primary" onClick={() => setCreateOpen(true)}>
-              <Plus size={16} />
-              {t("新建研究")}
-            </button>
-          </div>
+          {view !== "overview" && <div className="workspace-heading"><h1>{view === "settings" ? t("模型与 API 设置") : thread?.title ?? t("研究工作台")}</h1></div>}
           {error && (
             <div className="error" role="alert">
               <span>{t(error)}</span>
@@ -552,132 +538,7 @@ export function Workspace({ threadId }: { threadId?: string }) {
           {
             <>
               {view === "settings" && <ProviderSettings />}
-              {view === "overview" && (
-                <>
-                  <div className="metric-grid">
-                    {[
-                      {
-                        title: thread ? t("数据版本") : t("研究会话"),
-                        value: loading
-                          ? "—"
-                          : thread
-                            ? datasets.length
-                            : threads.length,
-                        detail: thread
-                          ? t("当前事件的数据集")
-                          : t("所有已创建的研究"),
-                        icon: FolderOpen,
-                      },
-                      {
-                        title: thread ? t("数据记录") : t("研究事件"),
-                        value: loading
-                          ? "—"
-                          : thread
-                            ? datasets
-                                .reduce((sum, item) => sum + item.count, 0)
-                                .toLocaleString(locale)
-                            : new Set(threads.map((item) => item.event_id))
-                                .size,
-                        detail: thread
-                          ? t("各数据版本记录数之和")
-                          : t("按事件标识汇总"),
-                        icon: Database,
-                      },
-                      {
-                        title: t("进行中任务"),
-                        value: thread ? activeJobs.length : "—",
-                        detail: thread
-                          ? t("排队与正在执行")
-                          : t("选择事件后查看"),
-                        icon: Activity,
-                      },
-                      {
-                        title: t("已完成任务"),
-                        value: thread ? completeJobs.length : "—",
-                        detail: thread
-                          ? t("结果已保存，可随时查看")
-                          : t("选择事件后查看"),
-                        icon: Check,
-                      },
-                    ].map(({ title, value, detail, icon: Icon }) => (
-                      <Card className="surface metric-card" key={title}>
-                        <div className="metric-label">
-                          {title}
-                          <Icon size={16} />
-                        </div>
-                        <div className="metric-value">{value}</div>
-                        <p>{detail}</p>
-                      </Card>
-                    ))}
-                  </div>
-                  <Card className="surface journey-card">
-                    <div>
-                      <Badge variant="neutral">{t("研究流程")}</Badge>
-                      <h2>{t("从事件数据，到可解释的研究结论")}</h2>
-                      <p>
-                        {t("按研究目标选择阶段，由 Leader Agent 组织执行。")}
-                      </p>
-                      <button
-                        className="text-link"
-                        onClick={() =>
-                          threadId ? nav("research") : setCreateOpen(true)
-                        }
-                      >
-                        {t("开始研究")}
-                        <ArrowRight size={16} />
-                      </button>
-                    </div>
-                    <div className="journey-steps">
-                      {[
-                        {
-                          icon: Database,
-                          name: t("数据与标注"),
-                          note: t("上传数据 / 关键词采集"),
-                        },
-                        {
-                          icon: BarChart3,
-                          name: t("复盘与预测"),
-                          note: t("Agent 分析 / 意见动力学"),
-                        },
-                        {
-                          icon: FileChartColumn,
-                          name: t("模拟与报告"),
-                          note: t("情景比较 / 结果解读"),
-                        },
-                      ].map(({ icon: Icon, name, note }, index) => (
-                        <div key={name}>
-                          <span className="step-icon">
-                            <Icon size={20} />
-                          </span>
-                          <small>0{index + 1}</small>
-                          <strong>{name}</strong>
-                          <p>{note}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </Card>
-                  <Card className="surface section-card">
-                    <div className="section-heading">
-                      <div>
-                        <h2>{t("事件研究")}</h2>
-                        <p className="muted">
-                          {t("继续已有研究，或创建新的事件会话。")}
-                        </p>
-                      </div>
-                      <div className="search-field">
-                        <Search size={16} />
-                        <input
-                          aria-label={t("搜索研究事件")}
-                          placeholder={t("搜索事件…")}
-                          value={search}
-                          onChange={(e) => setSearch(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                    {sessionTable}
-                  </Card>
-                </>
-              )}
+              {view === "overview" && <ResearchDashboard threads={threads} refreshKey={refreshKey} />}
               {view !== "overview" && view !== "settings" && !threadId && (
                 <Card className="surface section-card">
                   <div className="section-heading">
@@ -694,16 +555,10 @@ export function Workspace({ threadId }: { threadId?: string }) {
               {threadId && (
                 <>
                   <div hidden={view !== "research"}>
-                    <div className="research-tabs">
-                      <span className="selected">{t("研究配置与执行")}</span>
-                      <button onClick={() => nav("results")}>
-                        {t("分析与报告")}
-                        {jobs.length > 0 && <span>{jobs.length}</span>}
-                      </button>
-                      <button onClick={() => nav("datasets")}>
-                        {t("输入数据")}
-                      </button>
+                    <div className="research-tabs" role="tablist" aria-label={t("研究工作台")}>
+                      {([["configure", "研究配置与执行"], ["progress", "研究进程追踪"], ["reports", "分析与报告"], ["datasets", "数据集概览"]] as const).map(([key, label]) => <button key={key} id={`research-tab-${key}`} role="tab" aria-selected={researchTab === key} aria-controls={`research-panel-${key}`} className={researchTab === key ? "selected" : ""} onClick={() => setResearchTab(key)}>{t(label)}</button>)}
                     </div>
+                    <div id="research-panel-configure" role="tabpanel" aria-labelledby="research-tab-configure" hidden={researchTab !== "configure"}>
                     <div className="research-grid">
                       <div className="research-settings">
                         <Card className="surface">
@@ -760,23 +615,13 @@ export function Workspace({ threadId }: { threadId?: string }) {
                               </select>
                             </label>
                           </div>
-                          <label>
-                            {t("事件关键词")}
-                            <input
-                              value={keywords}
-                              onChange={(e) => {
-                                setKeywords(e.target.value);
-                                setRequestDirty(true);
-                              }}
-                              placeholder={t("例如：城市暴雨、交通出行")}
-                            />
-                          </label>
                           {thread && (
                             <WorkflowBuilder
                               key={threadId}
                               eventId={thread.event_id}
                               dataset={dataset}
                               keywords={keywords}
+                              onKeywordsChange={value => { setKeywords(value); setRequestDirty(true); }}
                               searchProvider={provider}
                               savedRequest={savedRequest}
                               onDirty={onDirty}
@@ -923,7 +768,7 @@ export function Workspace({ threadId }: { threadId?: string }) {
                             <h2>{t("执行动态")}</h2>
                             <button
                               className="text-link"
-                              onClick={() => nav("results")}
+                              onClick={() => setResearchTab("progress")}
                             >
                               {t("查看全部")}
                               <ArrowRight size={14} />
@@ -957,27 +802,9 @@ export function Workspace({ threadId }: { threadId?: string }) {
                       </div>
                     </div>
                   </div>
-                  {view === "datasets" && (
-                    <div className="datasets-grid">
-                      <Card className="surface">
-                        <h2>{t("导入事件数据")}</h2>
-                        <p className="muted">
-                          {t("支持标准帖子记录 JSON 数组。")}
-                        </p>
-                        {uploadInput}
-                        {uploadNotice && (
-                          <p className="success-text">{uploadNotice}</p>
-                        )}
-                        <p className="caption">
-                          {t(
-                            "也可以在研究工作台选择“关键词采集”，按时间范围获取事件数据。",
-                          )}
-                        </p>
-                        <button onClick={() => nav("research")}>
-                          {t("配置关键词采集")}
-                          <ArrowRight size={15} />
-                        </button>
-                      </Card>
+                  </div>
+                  {view === "research" && researchTab === "datasets" && (
+                    <div id="research-panel-datasets" role="tabpanel" aria-labelledby="research-tab-datasets" className="dataset-overview-layout">
                       <Card className="surface section-card">
                         <div className="section-heading">
                           <h2>
@@ -1022,7 +849,7 @@ export function Workspace({ threadId }: { threadId?: string }) {
                                       onClick={() => {
                                         setDataset(item.dataset_id);
                                         setRequestDirty(true);
-                                        nav("research");
+
                                       }}
                                     >
                                       {dataset === item.dataset_id
@@ -1048,23 +875,17 @@ export function Workspace({ threadId }: { threadId?: string }) {
                           )}
                         </div>
                       </Card>
+                      <DatasetOverview threadId={threadId} datasetId={dataset || datasets[0]?.dataset_id || ""} />
                     </div>
                   )}
-                  <div hidden={view !== "results"}>
-                    <JobPanel
-                      active={view === "results"}
-                      threadId={threadId}
-                      jobs={jobs}
-                      onRefresh={() => setRefreshKey((key) => key + 1)}
-                    />
-                  </div>
+                  {view === "research" && researchTab === "progress" && <div id="research-panel-progress" role="tabpanel" aria-labelledby="research-tab-progress"><ResearchProgress threadId={threadId} jobs={jobs} updates={updates} onRefresh={() => setRefreshKey(key => key + 1)} /></div>}
+                  {view === "research" && researchTab === "reports" && <div id="research-panel-reports" role="tabpanel" aria-labelledby="research-tab-reports"><ReportLibrary threadId={threadId} jobs={jobs} /></div>}
                 </>
               )}
             </>
           }
           <footer className="page-footer">
             <span>Tweets2Insights</span>
-            <span>{t("事件复盘 · 意见预测 · 情景分析")}</span>
           </footer>
         </main>
       </div>

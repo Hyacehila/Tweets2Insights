@@ -7,7 +7,7 @@ CollectTools → DecisionTools → ExecuteTools → ProcessResult → EnsureChar
 ## 功能概览
 
 1. 前端选择数据/关键词输入与复盘、训练预测、情景建议；Leader 生成运行请求，领域服务编译依赖，Worker 按阶段执行。
-2. 随机抽取高阅读量候选记录，由 Schema Agent 结合搜索选择标签；抽样不截断后续分析数据。
+2. 随机抽取高阅读量候选记录，已有数据先由 Schema Agent 提取事件关键词，再结合搜索选择标签；抽样不截断后续分析数据。
 3. 默认用 OpenAI Decisions / gpt-6-luna 标注，也支持 TypeSafe Jev、阿里 decision 与自定义决策连接器；用户在本机配置 API 凭据。
    OpenAI Decisions 与 Jev 联合分析正文和配图，每帖默认取前 3 张，可设 1–9 张；纯文本决策模型自动忽略图片并提示。图片通过原生标注步骤进入统计、论坛与报告，不另行要求媒体连接器。
 4. 41 个保留分析工具迁移到新契约；独立工具目录、参数验证、结果/图表/来源资产。
@@ -57,7 +57,7 @@ CollectTools → DecisionTools → ExecuteTools → ProcessResult → EnsureChar
 
 入口名称沿用原工具注册表，部分统计与可视化入口共享计算函数。
 全部名称和参数可通过 `GET /api/analysis-tools` 或 MCP `analysis_tool_catalog` 获取。
-复盘后可以调用 MCP `submit_analysis_tool`，或在任务面板选择工具，创建基于冻结输入/标签的独立补充作业。
+复盘后可以调用 MCP `submit_analysis_tool`，创建基于冻结输入/标签的独立补充作业。
 
 迁移中的实质变化：
 
@@ -114,3 +114,5 @@ ReportUIAgent 只生成标题、章节与既有块引用；程序校验每个块
 `backend/tests/test_workflow_contracts.py` 使用合成数据和模拟供应商响应，覆盖 41 个工具入口、
 阶段依赖、采样人口隔离、供应商协议、概率拒判、PCA 截止点、配对空措施、论坛补调用及 Worker 资产链。
 执行命令、结果与后续任务见[实施记录](../upgrade-status.md)。
+
+工作台的研究进程追踪页每两秒读取阶段检查点和运行事件，展示角色、模型、工具、耗时、异常正文与调用栈；分析与报告页专门展示最终报告。

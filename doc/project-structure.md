@@ -59,11 +59,14 @@ Tweets2Insights/
 │   │       │   ├── evaluation/      # Demo 与消融脚本，后置评测
 │   │       │   └── orchestration.py # 确定性领域计划编译
 │   │       ├── opinion_gateway/     # MCP 服务、应用服务、资产、预算、Job/Worker
+│   │       │   ├── supervisor.py    # 实时监控、角色状态与错误诊断 Agent
+│   │       │   ├── diagnostics.py   # 异常正文、调用栈与凭据脱敏
+│   │       │   ├── workspace_views.py # 概览统计、运行进度与用量接口
 │   │       │   ├── media_assets.py  # 数据集配图原文件存储与事件隔离
 │   │       │   ├── demo_preparation.py # 本地 Demo 图片整理、登记与运行配置
 │   │       │   ├── agent_models.py  # 推荐模型、配置保存与端点凭据解析
 │   │       │   └── label_providers.py # Worker/CLI 共用决策标注适配器
-│   │       └── crawler_worker/      # 独立采集执行器、X 官方 API、连接器协议
+│   │       └── crawler_worker/      # MediaCrawler 隔离执行、平台适配、配图与限额
 │   └── tests/                       # 离线工程契约与 Worker 集成检查
 │
 ├── frontend/                        # Next.js + React + Tremor + TypeScript
@@ -77,8 +80,13 @@ Tweets2Insights/
 │   └── src/
 │       ├── app/                     # App Router、布局、工作区和聊天页
 │       ├── components/              # 工作台、任务面板、产物查看器
+│       │   ├── launch-page.tsx      # 独立启动页
+│       │   ├── research-dashboard.tsx # 分析看板与数据统计
+│       │   ├── research-progress.tsx # 监控汇报、Agent 状态、日志与错误分析
+│       │   ├── report-library.tsx   # 最终分析报告
+│       │   ├── crawler-settings.tsx # MediaCrawler 平台登录
 │       │   ├── workflow-builder.tsx # 输入、阶段、角色和模型参数
-│       │   ├── recent-research.tsx  # 最近研究、右键菜单及事件删除
+│       │   ├── recent-research.tsx  # 最近研究、重命名、右键删除
 │       │   ├── tremor/              # Tremor Card / Badge
 │       │   ├── provider-settings.tsx # 独立 API 设置页
 │       │   ├── agent-model-settings.tsx # 模型推荐、参数与兼容性检测

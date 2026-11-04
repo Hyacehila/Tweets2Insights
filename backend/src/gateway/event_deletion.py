@@ -157,6 +157,7 @@ def delete_event_research(store, asset_root, thread_id):
             for table, column in (
                 ("batches", "job"),
                 ("job_results", "job"),
+                ("job_events", "job"),
                 ("jobs", "id"),
             ):
                 remove("jobs_db", table, column, [j["job_id"] for j in jobs])

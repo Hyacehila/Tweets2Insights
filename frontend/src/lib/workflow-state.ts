@@ -22,6 +22,7 @@ export function workflowState(request: unknown) {
     start: date(observations.start), end: date(observations.end), labelProvider: text(labels.provider), model: text(labels.model),
     mediaMode: text(r.media_mode), maxImages: number(labels.max_images_per_post), maxCalls: number(labels.max_calls),
     rounds: number(r.forum_rounds), horizon: number(model.horizon), maxPosts: number(crawl.max_posts), platforms: strings(crawl.platforms)?.join(","),
+    maxComments: number(crawl.max_comments), maxPages: number(crawl.max_pages), collectImages: typeof crawl.collect_images === "boolean" ? crawl.collect_images : undefined,
     instruction: text(analysis.instruction), mechanism: text(scenario.mechanism), measure: text(scenario.measure),
     magnitude: number(scenario.parameter_value) ?? number(scenario.shift), cost: number(scenario.resource_cost),
     assumption: strings(scenario.assumptions)?.join("；"),

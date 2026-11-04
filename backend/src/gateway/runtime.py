@@ -4,6 +4,7 @@ from src.models import ModelFactory
 from src.mcp import DomainToolClient
 from src.tools import DomainTools
 from src.skills import SkillLoader
+from opinion_gateway.diagnostics import exception_details
 
 
 class RunManager:
@@ -99,7 +100,7 @@ class RunManager:
                 {
                     "execution_id": key,
                     "status": "failed",
-                    "error_type": type(exc).__name__,
+                    **exception_details(exc, stage="leader"),
                 },
             )
         finally:

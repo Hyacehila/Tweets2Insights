@@ -1,5 +1,7 @@
 flowchart TB
-    UI["研究工作台 · Next.js<br/>上传数据 / 关键词与时间范围<br/>选择复盘、预测、情景及论坛角色"]
+    ENTRY["项目启动页 → 开始研究"]
+    UI["研究工作台 · Next.js<br/>分析看板 · 研究配置 · 进程追踪<br/>最终报告 · 数据集概览 · API 设置"]
+    ENTRY --> UI
 
     subgraph ORCHESTRATION["应用与 Agent 编排"]
         direction LR
@@ -7,13 +9,16 @@ flowchart TB
         LEADER["Leader Agent · LangGraph<br/>解析目标 · 生成运行请求"]
         SERVICE["MCP 领域服务<br/>编译阶段依赖 · 持久任务"]
         WORKER["DomainWorker<br/>按所选阶段顺序执行<br/>检查点 · 取消 · 恢复"]
+        MONITOR["SupervisorAgent<br/>实时角色状态 · 阶段交接汇报<br/>异常分析 · 修复建议"]
         API --> LEADER --> SERVICE --> WORKER
+        WORKER -.执行事件.-> MONITOR
     end
     UI --> ORCHESTRATION
+    MONITOR -.持久进度与诊断.-> UI
 
     subgraph PREP["共享数据准备"]
         direction LR
-        DATA["数据接入<br/>上传 / 已有数据<br/>关键词与时间范围采集"]
+        DATA["数据接入<br/>上传 / 已有图文数据<br/>MediaCrawler 七平台关键词采集"]
         SAMPLE["高阅读量池<br/>随机抽样"]
         SCHEMA["Schema Agent<br/>样本 + 检索证据<br/>冻结标签与立场命题"]
         LABEL["全部输入自动弱标注<br/>OpenAI / Jev / 阿里<br/>决策模型连接器"]
@@ -49,7 +54,7 @@ flowchart TB
     classDef model fill:#f1edff,stroke:#8b71c6,color:#483477,stroke-width:1.4px
     classDef scenario fill:#fff4df,stroke:#bd9035,color:#705018,stroke-width:1.4px
     classDef report fill:#eef5fa,stroke:#668ca5,color:#25485e,stroke-width:1.4px
-    class UI,API,LEADER,SERVICE,WORKER entry
+    class ENTRY,UI,API,LEADER,SERVICE,WORKER,MONITOR entry
     class DATA,SAMPLE,SCHEMA,LABEL,OBS prep
     class ANALYSIS analysis
     class FORECAST model

@@ -13,7 +13,6 @@ KEYS = {
     "aliyun_decision": "DASHSCOPE_API_KEY",
     "tavily": "TAVILY_API_KEY",
     "deepseek": "DEEPSEEK_API_KEY",
-    "x": "X_BEARER_TOKEN",
 }
 
 

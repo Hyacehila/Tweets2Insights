@@ -6,6 +6,7 @@ import { api, post } from "@/lib/api";
 import { Card } from "./tremor/Card";
 import { Badge } from "./tremor/Badge";
 import { AgentModelSettings } from "./agent-model-settings";
+import { CrawlerSettings } from "./crawler-settings";
 
 const providers = [
   { id: "agent", name: "Agent 模型", purpose: "规划、分析与报告", mark: "AI" },
@@ -19,7 +20,7 @@ const providers = [
   },
   { id: "tavily", name: "Tavily", purpose: "事件检索与外部补证", mark: "T" },
   { id: "deepseek", name: "DeepSeek", purpose: "事件搜索服务", mark: "D" },
-  { id: "x", name: "X API", purpose: "历史帖子采集", mark: "X" },
+  { id: "mediacrawler", name: "MediaCrawler", purpose: "平台登录与关键词采集", mark: "MC" },
 ];
 type ProviderState = { provider: string; configured: boolean };
 export function ProviderSettings() {
@@ -109,7 +110,7 @@ export function ProviderSettings() {
           </button>
         ))}
       </Card>
-      {selected === "agent" ? <AgentModelSettings key={refreshVersion} onConfigured={() => void refresh()} /> : <Card className="surface provider-form">
+      {selected === "agent" ? <AgentModelSettings key={refreshVersion} onConfigured={() => void refresh()} /> : selected === "mediacrawler" ? <CrawlerSettings key={refreshVersion} /> : <Card className="surface provider-form">
         <div className="section-heading">
           <div className="agent-heading">
             <span className="settings-key">
@@ -172,11 +173,7 @@ export function ProviderSettings() {
                   ? t(
                       "在研究工作台的“标注模型”中选择此服务，即可用于自动标注。",
                     )
-                  : selected === "x"
-                    ? t(
-                        "在研究工作台选择“关键词采集”，设置关键词和时间范围后使用。",
-                      )
-                    : t(
+                  : t(
                         "在研究工作台的“搜索服务”中选择此供应商，用于事件检索与分析补证。",
                       )}
             </p>

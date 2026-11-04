@@ -74,13 +74,17 @@ class AnalysisOptions(Contract):
 
 
 class CrawlSpec(Contract):
-    platforms: list[Identifier] = Field(min_length=1)
+    platforms: list[Literal['wb', 'xhs', 'dy', 'ks', 'bili', 'tieba', 'zhihu']] = Field(min_length=1, max_length=7)
     max_posts: int = Field(default=500, ge=1, le=100000)
     max_comments: int = Field(default=0, ge=0, le=100000)
     max_pages: int = Field(default=100, ge=1, le=10000)
     interval_seconds: float = Field(default=2, ge=0, le=3600)
     max_retries: int = Field(default=2, ge=0, le=2)
     session_ref: Identifier | None = None
+    collect_images: bool = True
+    max_images_per_post: int = Field(default=3, ge=1, le=9)
+    max_comments_per_post: int = Field(default=20, ge=1, le=1000)
+    include_sub_comments: bool = False
 
 
 class ObservationSpec(Contract):
@@ -172,8 +176,8 @@ class RunRequest(Contract):
 
     @model_validator(mode="after")
     def route(self):
-        if not any(k.strip() for k in self.event.keywords):
-            raise ValueError("event keywords required for automatic schema preparation")
+        if self.event.requires_collection and not any(k.strip() for k in self.event.keywords):
+            raise ValueError("keyword collection requires search keywords")
         if self.labels.provider == "connector" and not self.labels.connector:
             raise ValueError("label connector ID required")
         if (

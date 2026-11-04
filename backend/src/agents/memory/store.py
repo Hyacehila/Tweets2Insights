@@ -62,6 +62,15 @@ class ThreadStore:
                 )
             ]
 
+    def rename(self, key, title):
+        title = title.strip()
+        if not title or len(title) > 120:
+            raise ValueError('title must contain 1 to 120 characters')
+        with sqlite3.connect(self.path) as db:
+            if not db.execute('UPDATE threads SET title=? WHERE id=?', (title, key)).rowcount:
+                raise KeyError(key)
+        return self.get(key)
+
     def append(self, key, role, text):
         self.get(key)
         with sqlite3.connect(self.path) as db:
@@ -87,7 +96,7 @@ class ThreadStore:
                 (
                     key,
                     kind,
-                    json.dumps(payload, ensure_ascii=False, allow_nan=False),
+                    json.dumps({"timestamp": datetime.now(UTC).isoformat(), **payload}, ensure_ascii=False, allow_nan=False),
                     key,
                 ),
             )
@@ -102,6 +111,12 @@ class ThreadStore:
                     (key, after),
                 )
             ]
+
+    def recent_events(self, key):
+        self.get(key)
+        with sqlite3.connect(self.path) as db:
+            rows = db.execute('SELECT id,kind,payload FROM events WHERE thread=? ORDER BY id DESC LIMIT 100', (key,)).fetchall()
+        return [{'id': i, 'event': k, 'data': json.loads(p)} for i, k, p in reversed(rows)]
 
     def begin_execution(self, thread):
         key = uuid.uuid4().hex

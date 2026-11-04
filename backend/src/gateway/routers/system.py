@@ -15,9 +15,29 @@ from opinion_core.analytics.toolbox import catalog
 from opinion_core.labeling.media import MediaPolicy
 from typing import Literal
 from fastapi import Query
-from ..dependencies import settings, runtime
+from ..dependencies import settings, runtime, store
+from opinion_gateway.crawler_settings import CrawlerSettings
 
 router = APIRouter(tags=["system"])
+
+
+@router.get('/api/crawler-settings')
+def crawler_settings():
+    from opinion_gateway.crawler_settings import status
+    return status()
+
+
+@router.put('/api/crawler-settings')
+def save_crawler_settings(body: CrawlerSettings, request: Request, value=Depends(settings)):
+    from opinion_gateway.crawler_settings import save
+    require_local(request, value)
+    return save(body)
+
+
+@router.get('/api/overview')
+def overview(thread_id: str | None = None, db=Depends(store), config=Depends(settings)):
+    from opinion_gateway.workspace_views import overview as summarize
+    return summarize(config.asset_root, db.list(), thread_id)
 
 
 @router.get("/api/health")

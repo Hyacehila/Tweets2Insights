@@ -59,7 +59,15 @@ API Key 按 Base URL 分别保存，切换厂商不会把原密钥发送到新�
 阿里端点为 `https://{WorkspaceId}.cn-beijing.maas.aliyuncs.com/compatible-mode/v1/systemone`，
 或同路径的新加坡 `ap-southeast-1` 域名。配置接口仅接受官方 HTTPS 域名，禁止重定向。
 依据：[TypeSafe](https://docs.typesafe.ai/api/system-one)、[阿里云](https://help.aliyun.com/zh/model-studio/decision-model-api)。
-X 归档采集需要 `X_BEARER_TOKEN` 和账号对应的接口权限；其他平台仍需配置连接器。
+关键词采集使用 [MediaCrawler](https://github.com/NanmiCoder/MediaCrawler)，支持 `wb`（微博）、`xhs`（小红书）、`dy`（抖音）、`ks`（快手）、`bili`（哔哩哔哩）、`tieba`（贴吧）、`zhihu`（知乎）。安装：
+
+```powershell
+uv run --project backend python scripts/setup_mediacrawler.py
+```
+
+首次安装固定上游提交 `d172fc8369d8479c96793a5b1e4d89fac43914c2`，依赖放在 `.integrations/MediaCrawler/.venv`。`--check` 检查环境和 Chromium。上游代码保留自己的许可证。
+在“API 设置 → MediaCrawler”按平台选择扫码或 Cookie 登录。扫码采集会打开独立浏览器完成验证，登录状态保存到 `.app-state/mediacrawler/sessions`。Cookie 只保存到本机凭据文件，接口只返回是否已配置。
+工作台设置帖子、评论和搜索页数上限，配图按每帖上限下载并关联到数据集。采集结果按事件时间范围过滤；不同平台的搜索覆盖取决于平台返回。取消任务会关闭对应采集进程和浏览器。自定义安装位置可用 `MEDIACRAWLER_ROOT`。
 
 `GET /api/providers` 只显示配置状态；`POST /api/providers` 只允许本机客户端及配置的前端 Origin。
 凭据以明文保存在本机，受操作系统账户权限保护。

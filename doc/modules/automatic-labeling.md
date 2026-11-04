@@ -97,3 +97,5 @@ manifest 保存事件、数据引用、源码 SHA256、词库指纹、模型/提
 - Worker 与独立标注 CLI 共用模型能力判断、图片上限和原生协议适配。
 
 相关验证：test_event_preparation、test_weak_labeling、test_label_providers、test_automatic_label_workflow。
+
+已有数据的 `event.keywords` 可留空。Schema Agent 从高阅读量抽样帖子中提取 1–5 个关键词，再检索证据和选择标签；关键词提取计入标签准备及运行调用预算。关键词采集仍须提供搜索词。

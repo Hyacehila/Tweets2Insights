@@ -23,6 +23,7 @@ export function WorkflowBuilder({
   eventId,
   dataset,
   keywords,
+  onKeywordsChange,
   searchProvider,
   savedRequest,
   onBuild,
@@ -31,6 +32,7 @@ export function WorkflowBuilder({
   eventId: string;
   dataset: string;
   keywords: string;
+  onKeywordsChange: (value: string) => void;
   searchProvider: string;
   savedRequest?: unknown;
   onBuild: (text: string) => void;
@@ -60,7 +62,10 @@ export function WorkflowBuilder({
       .catch(() => { if (current) setCapabilityError("暂时无法读取模型图片能力，请检查服务连接。"); });
     return () => { current = false; };
   }, [labelProvider, model, mediaMode, maxImages]);
-  const [platforms, setPlatforms] = useState("x");
+  const [platforms, setPlatforms] = useState("wb");
+  const [maxComments, setMaxComments] = useState(0);
+  const [maxPages, setMaxPages] = useState(20);
+  const [collectImages, setCollectImages] = useState(true);
   const [rounds, setRounds] = useState(3);
   const [horizon, setHorizon] = useState(7);
   const [maxPosts, setMaxPosts] = useState(500);
@@ -88,6 +93,9 @@ export function WorkflowBuilder({
     if (state.rounds !== undefined) setRounds(state.rounds);
     if (state.horizon !== undefined) setHorizon(state.horizon);
     if (state.maxPosts !== undefined) setMaxPosts(state.maxPosts);
+    if (state.maxComments !== undefined) setMaxComments(state.maxComments);
+    if (state.maxPages !== undefined) setMaxPages(state.maxPages);
+    if (state.collectImages !== undefined) setCollectImages(state.collectImages);
     if (state.platforms !== undefined) setPlatforms(state.platforms);
     if (state.instruction !== undefined) setInstruction(state.instruction);
     if (state.mechanism !== undefined) setMechanism(state.mechanism);
@@ -100,15 +108,16 @@ export function WorkflowBuilder({
     try {
       if (
         !phases.length ||
-        !keywords.trim() ||
+        (input === "keywords" && !keywords.trim()) ||
         (input === "existing" && !dataset)
       )
-        throw new Error("请选择阶段，并填写关键词及输入数据。");
+        throw new Error("请选择阶段和输入数据；关键词采集时须填写关键词。");
       const begin = new Date(start + "Z"),
         finish = new Date(end + "Z");
       if (!(begin < finish) || finish > new Date())
         throw new Error("时间范围须有效，结束时间不得晚于当前时间。");
       const numeric = phases.some((p) => p !== "retrospective");
+      if (input === "keywords" && !platforms) throw new Error("请选择至少一个采集平台。");
       if (!Number.isInteger(maxImages) || maxImages < 1 || maxImages > 9)
         throw new Error("每帖配图上限必须是 1–9 的整数。");
       const request = {
@@ -116,7 +125,7 @@ export function WorkflowBuilder({
           event_id: eventId,
           input_mode: input,
           dataset_ref: input === "existing" ? dataset : null,
-          keywords: keywords
+          keywords: (input === "keywords" ? keywords : "")
             .split(/[,，]/)
             .map((s) => s.trim())
             .filter(Boolean),
@@ -135,7 +144,10 @@ export function WorkflowBuilder({
                   .map((s) => s.trim())
                   .filter(Boolean),
                 max_posts: maxPosts,
-                max_comments: 0,
+                max_comments: maxComments,
+                max_pages: maxPages,
+                collect_images: collectImages,
+                max_images_per_post: maxImages,
               }
             : null,
         labels: {
@@ -202,23 +214,15 @@ export function WorkflowBuilder({
     <div className="workflow-builder" onChangeCapture={onDirty}>
       <label>
         {t("输入方式")}
-        <select value={input} onChange={(e) => setInput(e.target.value)}>
+        <select aria-label={t("输入方式")} value={input} onChange={(e) => setInput(e.target.value)}>
           <option value="existing">{t("上传 / 已有数据")}</option>
           <option value="keywords">{t("关键词与时间范围采集")}</option>
         </select>
       </label>
       {input === "keywords" && (
         <>
-          <label>
-            {t("平台 ID")}
-            <input
-              value={platforms}
-              onChange={(e) => setPlatforms(e.target.value)}
-            />
-          </label>
-          <p className="caption">
-            {t("内置 X 官方归档搜索；其他平台使用本机安装的采集连接器。")}
-          </p>
+          <label>{t("事件关键词")}<input value={keywords} onChange={e => onKeywordsChange(e.target.value)} placeholder={t("例如：城市暴雨、交通出行")} /></label>
+          <fieldset className="phase-options"><legend>MediaCrawler · {t("采集平台")}</legend>{Object.entries({ wb: "微博", xhs: "小红书", dy: "抖音", ks: "快手", bili: "哔哩哔哩", tieba: "百度贴吧", zhihu: "知乎" }).map(([id, name]) => <label className="check-label" key={id}><input type="checkbox" checked={platforms.split(",").includes(id)} onChange={() => setPlatforms(toggle(platforms.split(",").filter(Boolean), id).join(","))} />{t(name)}</label>)}</fieldset>
           <label>
             {t("采集上限")}
             <input
@@ -229,8 +233,12 @@ export function WorkflowBuilder({
               onChange={(e) => setMaxPosts(+e.target.value)}
             />
           </label>
+          <div className="field-grid"><label>{t("评论总上限")}<input type="number" min={0} max={100000} value={maxComments} onChange={e => setMaxComments(+e.target.value)} /></label><label>{t("每个平台最多搜索页数")}<input type="number" min={1} max={10000} value={maxPages} onChange={e => setMaxPages(+e.target.value)} /></label></div>
+          <label className="check-label"><input type="checkbox" checked={collectImages} onChange={e => setCollectImages(e.target.checked)} />{t("同时采集帖子配图")}</label>
+          <p className="caption">{t("平台登录与 Cookie 在 API 设置中的 MediaCrawler 配置。")}</p>
         </>
       )}
+      {input === "existing" && <p className="caption">{t("事件关键词将由智能体从抽样帖子中提取。")}</p>}
       <fieldset className="phase-options">
         <legend>{t("执行阶段")}</legend>
         {Object.entries(phaseLabels).map(([key, label]) => (

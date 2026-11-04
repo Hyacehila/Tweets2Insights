@@ -3,21 +3,36 @@
 import { useState } from "react";
 import Link from "next/link";
 import * as ContextMenu from "@radix-ui/react-context-menu";
-import { Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import type { Thread } from "@/lib/types";
 import { useI18n } from "./language-provider";
 import { Modal } from "./ui";
 
-export function RecentResearch({ threads, threadId, onDeleted }: {
+export function RecentResearch({ threads, threadId, onDeleted, onRenamed }: {
   threads: Thread[];
   threadId?: string;
   onDeleted: (eventId: string, threadIds: string[]) => void;
+  onRenamed: (thread: Thread) => void;
 }) {
   const { t } = useI18n();
   const [selected, setSelected] = useState<Thread>();
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
+  const [renaming, setRenaming] = useState<Thread>();
+  const [newTitle, setNewTitle] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function rename(e: React.FormEvent) {
+    e.preventDefault();
+    if (!renaming || !newTitle.trim() || saving) return;
+    setSaving(true); setError("");
+    try {
+      const result = await api<Thread>(`/threads/${renaming.thread_id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: newTitle.trim() }) });
+      onRenamed(result); setRenaming(undefined);
+    } catch (e) { setError((e as Error).message); }
+    finally { setSaving(false); }
+  }
 
   async function deleteEvent() {
     if (!selected || deleting) return;
@@ -53,6 +68,9 @@ export function RecentResearch({ threads, threadId, onDeleted }: {
           <ContextMenu.Portal>
             <ContextMenu.Content className="research-context-menu" collisionPadding={12}>
               <ContextMenu.Label className="research-context-label">{item.title}</ContextMenu.Label>
+              <ContextMenu.Item className="research-context-item" onSelect={() => {
+                setError(""); setRenaming(item); setNewTitle(item.title);
+              }}><Pencil size={15} />{t("重命名")}</ContextMenu.Item>
               <ContextMenu.Item className="research-context-delete" onSelect={() => {
                 setError(""); setSelected(item);
               }}>
@@ -64,6 +82,12 @@ export function RecentResearch({ threads, threadId, onDeleted }: {
       ))}
       {!threads.length && <p className="sidebar-empty">{t("你的事件研究会出现在这里")}</p>}
     </nav>
+    <Modal open={!!renaming} onOpenChange={open => { if (!open && !saving) setRenaming(undefined); }} title={t("重命名研究")} description="">
+      <form onSubmit={rename}><label>{t("研究名称")}<input autoFocus required maxLength={120} value={newTitle} onFocus={e => e.target.select()} onChange={e => setNewTitle(e.target.value)} /></label>
+        {error && <p className="error" role="alert">{error}</p>}
+        <div className="modal-actions"><button type="button" disabled={saving} onClick={() => setRenaming(undefined)}>{t("取消")}</button><button className="primary" disabled={saving || !newTitle.trim()}>{t(saving ? "正在保存…" : "保存")}</button></div>
+      </form>
+    </Modal>
     <Modal open={!!selected} onOpenChange={(open) => {
       if (!open && !deleting) setSelected(undefined);
     }} title={t("删除事件")}

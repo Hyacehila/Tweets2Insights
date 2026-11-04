@@ -3,8 +3,10 @@
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
+import time
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -47,24 +49,46 @@ from .connectors import (
     invoke_connector,
 )
 from .dataset_repository import storage_id
+from .diagnostics import exception_details
 from .label_providers import make_label_provider, media_policy_for
-from .media_assets import MediaAssets
 from .label_workflow import DurableLabelBudget
+from .media_assets import MediaAssets
 
 
 class MeteredAgent(OpenAIJsonProvider):
     def __init__(self, ledger, config, api_key):
         super().__init__(config, api_key)
         self.ledger, self.stage = ledger, "model"
+        self.trace = lambda kind, value: None
 
     def request(self, instruction, payload):
         call = self.ledger.reserve(self.stage, self.version)
+        started = time.monotonic()
+        role = re.search(r"Role:\s*([\w-]+)", instruction)
+        detail = {
+            "stage": self.stage,
+            "role": role.group(1) if role else self.stage,
+            "model": self.config.model if hasattr(self, "config") else self.version,
+        }
+        self.trace("model_started", detail)
         try:
             result, usage = super().request(instruction, payload)
             self.ledger.settle(call, usage)
+            self.trace(
+                "model_finished",
+                {
+                    **detail,
+                    "duration_seconds": round(time.monotonic() - started, 2),
+                    "usage": usage,
+                },
+            )
             return result, usage
-        except Exception:
-            self.ledger.settle(call, status="uncertain")
+        except Exception as exc:
+            usage = getattr(exc, "usage", None)
+            self.ledger.settle(call, usage, status="failed" if usage else "uncertain")
+            self.trace(
+                "model_failed", {**detail, **exception_details(exc, stage=self.stage)}
+            )
             raise
 
 
@@ -86,6 +110,18 @@ class Execution:
         )
         self._model = None
         self._toolbox = None
+        self.trace = lambda kind, value: None
+
+    def diagnostic_model(self):
+        config = self.req.agent_config.model_copy(
+            update={
+                "max_tokens": 1500,
+                "timeout_seconds": min(60, self.req.agent_config.timeout_seconds),
+            }
+        )
+        model = MeteredAgent(self.ledger, config, api_key_for(config))
+        model.stage = "supervisor_diagnosis"
+        return model
 
     @property
     def model(self):
@@ -95,6 +131,7 @@ class Execution:
             if not key and not is_local(config):
                 raise WaitingForAuthentication("Agent model credential required")
             self._model = MeteredAgent(self.ledger, config, key)
+            self._model.trace = lambda kind, value: self.trace(kind, value)
         return self._model
 
     @property
@@ -112,6 +149,22 @@ class Execution:
                 self._toolbox.results[value["tool_id"]] = value
             for value in self.values.get("forum", {}).get("tool_results", []):
                 self._toolbox.results[value["tool_id"]] = value
+            execute = self._toolbox.execute
+
+            def traced_tool(name, parameters=None):
+                self.trace("tool_started", {"tool": name})
+                value = execute(name, parameters)
+                self.trace(
+                    "tool_finished",
+                    {
+                        "tool": name,
+                        "status": value.get("status"),
+                        "source_rows": len(value.get("table", [])),
+                    },
+                )
+                return value
+
+            self._toolbox.execute = traced_tool
         return self._toolbox
 
     def search(self, query, **options):
@@ -150,6 +203,7 @@ class Execution:
                 "event": self.req.event.model_dump(mode="json"),
                 "crawl": self.req.crawl.model_dump(mode="json"),
                 "_checkpoint_path": str(checkpoint),
+                "_asset_root": str(self.service.repo.root),
             },
             ensure_ascii=False,
         )
@@ -175,9 +229,19 @@ class Execution:
                 raise RuntimeError("isolated crawler failed")
             result = json.loads(output)
             if result["status"] == "waiting_for_auth":
-                raise WaitingForAuthentication("collection needs local session")
+                raise WaitingForAuthentication(
+                    result.get("error", "collection needs local session")
+                )
             if result["status"] == "connector_unavailable":
-                raise ConnectorUnavailable("configure a platform connector")
+                raise ConnectorUnavailable(
+                    result.get("error", "configure MediaCrawler")
+                )
+            if result["status"] == "failed":
+                raise RuntimeError(
+                    result.get("message", "MediaCrawler failed")
+                    + "\n"
+                    + result.get("traceback", "")
+                )
             if not result.get("records"):
                 raise IncompleteStage(
                     "collection returned no records; coverage is incomplete"
@@ -193,7 +257,9 @@ class Execution:
             }
         finally:
             if process.poll() is None:
-                process.kill()
+                from crawler_worker.mediacrawler import stop_process_tree
+
+                stop_process_tree(process)
                 process.communicate()
 
     def posts(self):
@@ -250,11 +316,15 @@ class Execution:
                     "dataset_ref": self.values["input"]["dataset_id"],
                 }
             )
+            builder = SchemaBuilder(self.model, research_focus=req.analysis.instruction)
             result = EventPreparation(
                 self.service.repo.root,
                 search=self.search,
-                builder=SchemaBuilder(self.model),
-                builder_version=SchemaBuilder(self.model).version,
+                builder=builder,
+                builder_version=builder.version,
+                on_error=lambda exc: self.trace(
+                    "stage_error", exception_details(exc, stage="schema")
+                ),
             ).prepare(
                 event,
                 library,
@@ -280,18 +350,60 @@ class Execution:
                 confidence_threshold=req.labels.confidence_threshold,
                 batch_size=req.labels.batch_size,
                 probability_margin=req.labels.probability_margin,
+                on_progress=lambda value: self.trace(
+                    "label_progress", {"stage": "labels", **value}
+                ),
+                on_error=lambda exc, ids: self.trace(
+                    "label_error",
+                    {**exception_details(exc, stage="labels"), "post_ids": ids},
+                ),
             )
             budget = DurableLabelBudget(
                 self.service.repo.root / "label-budget.sqlite",
                 self.scope,
                 req.labels.max_calls,
             )
-            return labeler.label(
-                self.posts(),
-                self.values["schema"]["schema"],
-                budget=budget,
-                check_cancel=self.check_cancel,
-            )
+            calls, uncertain, usage = 0, 0, {"input_tokens": 0, "output_tokens": 0}
+            for attempt in range(3):
+                result = labeler.label(
+                    self.posts(),
+                    self.values["schema"]["schema"],
+                    budget=budget,
+                    check_cancel=self.check_cancel,
+                )
+                calls += result["calls"]
+                uncertain += result["uncertain_calls"]
+                for key in usage:
+                    usage[key] += result.get("usage", {}).get(key, 0)
+                transient = any(
+                    ann["topic"].get("reason")
+                    in {
+                        "ConnectionError",
+                        "ConnectTimeout",
+                        "ReadTimeout",
+                        "Timeout",
+                        "TimeoutError",
+                    }
+                    for ann in result["annotations"]
+                )
+                if not transient or not result["calls"] or attempt == 2:
+                    break
+                self.trace(
+                    "retry_scheduled",
+                    {
+                        "stage": "labels",
+                        "message": "重试连接失败的帖子，已完成的标注从缓存复用。",
+                    },
+                )
+                self.check_cancel()
+                time.sleep(1)
+            return {
+                **result,
+                "calls": calls,
+                "uncertain_calls": uncertain,
+                "usage": usage,
+                "attempts": attempt + 1,
+            }
         if operation == "observations":
             return build_observations(
                 self.posts(),
@@ -440,8 +552,6 @@ class Execution:
         if operation == "forum":
             self.model.stage = "forum"
             context = summarize(self.values["observations"])
-            context["window_total"] = len(context["windows"])
-            context["windows"] = context["windows"][-30:]
             return discuss(
                 context,
                 self.values["evidence"]["cards"]

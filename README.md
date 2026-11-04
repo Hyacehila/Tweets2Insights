@@ -17,8 +17,9 @@ Tweets2Insights 将一次事件研究组织为可追溯的工作流：导入帖�
 
 | 能力 | 项目中的实现 |
 |---|---|
-| **事件驱动的数据接入** | 上传标准帖子 JSON 及配图、选择已有数据；内置 X 官方归档搜索，其他平台由本机连接器扩展。 |
+| **事件驱动的数据接入** | 上传标准帖子 JSON 及配图、选择已有数据；关键词采集使用 MediaCrawler，支持微博、小红书、抖音、快手、哔哩哔哩、贴吧和知乎。 |
 | **图文联合分析** | OpenAI Decisions / Jev 按模型协议接收正文与配图；每帖默认最多 3 张，可设为 1–9 张。纯文本模型自动忽略图片并提示。 |
+| **实时研究追踪** | SupervisorAgent 汇报各阶段与 Agent 状态，记录模型和工具调用；出错时展示原始错误、原因分析和处理建议。 |
 | **自动弱标注** | 高阅读量随机抽样 → Schema Agent → OpenAI Decisions（默认）/ Jev / 阿里 decision；完整类别概率、自动拒判、覆盖率与版本缓存。 |
 | **分布与证据分析** | 41 个保留工具入口覆盖情绪、话题、地区、互动和 NLP；继承本项目第二阶段选工具、补数据、补搜索、补图的反馈机制。 |
 | **预测与条件情景** | 训练截止点内拟合 PCA 和 HK 参数；隐空间同化、解码预测、六种模型/基线滚动诊断；相同起点与随机流下比较措施及资源成本。 |
@@ -81,7 +82,7 @@ TAVILY_API_KEY=your-tavily-api-key
 
 默认配置位于 [`config.yaml`](config.yaml)，前端保存的设置优先。推荐依据见 [Qwen 模型文档](https://help.aliyun.com/zh/model-studio/models)与 [GLM-5.3 文档](https://docs.bigmodel.cn/cn/guide/models/text/glm-5.3)。按账号可用模型和地域调整接口地址。单次领域标注模型由 `labels.provider/model` 独立指定。
 
-也可在工作台“API 设置”保存本机凭据；密钥只写入忽略文件 `.provider-secrets.json`，读取接口只返回公开模型参数和配置状态。默认决策标注在“OpenAI Decisions”中输入 Key，或设置 `OPENAI_API_KEY`。Jev 使用 `TYPESAFE_API_KEY`；阿里使用 `DASHSCOPE_API_KEY` 和业务空间 `ALIYUN_DECISION_ENDPOINT`；X 使用 `X_BEARER_TOKEN`。环境变量和界面配置二选一即可，详见[配置说明](doc/configuration.md)。
+也可在工作台“API 设置”保存本机凭据；密钥只写入忽略文件 `.provider-secrets.json`，读取接口只返回公开模型参数和配置状态。默认决策标注在“OpenAI Decisions”中输入 Key，或设置 `OPENAI_API_KEY`。Jev 使用 `TYPESAFE_API_KEY`；阿里使用 `DASHSCOPE_API_KEY` 和业务空间 `ALIYUN_DECISION_ENDPOINT`。环境变量和界面配置二选一即可，详见[配置说明](doc/configuration.md)。
 
 ### 3. 启动工作台
 
@@ -89,19 +90,20 @@ TAVILY_API_KEY=your-tavily-api-key
 uv run --project backend python scripts/dev.py start
 ```
 
-启动器同时启动 Gateway、领域 Worker 和 Next.js 开发服务器，等待工作台页面就绪后自动打开系统默认浏览器，并在终端显示：
+启动器同时启动 Gateway、领域 Worker 和 Next.js 开发服务器，等待启动页就绪后自动打开系统默认浏览器，并在终端显示：
 
 ```text
 前端已启动成功！
 正在自动打开系统默认浏览器……
 若浏览器未自动打开，请使用以下网址打开：
-http://127.0.0.1:3000/workspace
+http://127.0.0.1:3000/
 ```
 
-服务已运行时，重复执行启动命令会重新打开工作台。只需后台启动时，在命令末尾加上 `--no-browser`。默认地址：
+服务已运行时，重复执行启动命令会重新打开启动页。只需后台启动时，在命令末尾加上 `--no-browser`。默认地址：
 
 | 入口 | 地址 |
 |---|---|
+| 项目启动页 | [http://127.0.0.1:3000/](http://127.0.0.1:3000/) |
 | 研究工作台 | [http://127.0.0.1:3000/workspace](http://127.0.0.1:3000/workspace) |
 | Gateway API 文档 | [http://127.0.0.1:8001/docs](http://127.0.0.1:8001/docs) |
 
@@ -118,11 +120,13 @@ uv run --project backend python scripts/dev.py stop
 
 也可以先使用[本地事件 Demo](doc/testing/event-demo-datasets.md)：300 条图文成本试用集，以及按每日互动热度筛选的正式文本／图文数据集。任务结果提供分阶段 Token 用量，便于核对费用。
 
+打开网页先进入启动页，点击“开始研究”进入分析看板。已有数据自动提取事件关键词。
+
 1. **新建事件会话**：使用 `rain` 等事件 ID。同一事件的多个会话共享该事件的数据和领域任务。
 2. **选择输入与阶段**：上传标准 JSON 及配图，或选择关键词采集；设置时间范围、研究阶段、模型、每帖图片上限及调用预算。
 3. **生成计划**：点击“应用研究配置”，再让 Leader 生成计划；也可在高级运行配置中改用自然语言规划。
-4. **提交执行**：点击“开始执行”，在“分析与报告”中跟踪任务进度。
-5. **查看结果**：打开已完成的任务，浏览交互图表、论坛讨论与章节报告，并下载结果。
+4. **提交执行**：点击“开始执行”，在“研究进程追踪”中查看阶段、日志和失败详情。
+5. **查看结果**：在概览查看分析看板，在“分析与报告”查看最终报告并下载结果。
 
 在侧栏“最近研究”中右键选择“删除事件”，可清理该事件的全部会话和研究产物。数据集保留，使用相同事件 ID 新建研究后可继续使用。
 
@@ -238,7 +242,7 @@ Tweets2Insights/
 | [`RunRequest`](backend/src/domain/opinion_core/schemas/workflow.py) | 每次任务的数据、时间窗口、唯一搜索供应商、标注、数值模型和预算 |
 | [`skills/public`](skills/public) / `skills/custom` | 内置与本机自定义技能；自定义技能需在扩展配置中启用 |
 
-Agent 模型工厂通过 OpenAI 兼容 Chat Completions 接口调用所选模型；弱标注默认使用 OpenAI Decisions，也可选择 Jev、阿里 decision 或自定义决策连接器；搜索提供 Tavily/DeepSeek。采集内置 X 官方接口，并保留其他平台扩展。单次领域任务的模型/搜索预算、采集分页上限和 Agent 会话调用上限分别记录，详见[配置说明](doc/configuration.md)。
+Agent 模型工厂通过 OpenAI 兼容 Chat Completions 接口调用所选模型；弱标注默认使用 OpenAI Decisions，也可选择 Jev、阿里 decision 或自定义决策连接器；搜索提供 Tavily/DeepSeek。采集使用独立 UV 环境中的 MediaCrawler，并在 API 设置中按平台保存登录方式。单次领域任务的模型/搜索预算、采集分页上限和 Agent 会话调用上限分别记录，详见[配置说明](doc/configuration.md)。
 
 <a id="documentation"></a>
 ## 文档导航

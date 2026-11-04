@@ -5,9 +5,10 @@ import json
 import sqlite3
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from opinion_core.schemas.event import EventSpec, EventSchema, LabelDefinition
+
+from opinion_core.schemas.event import EventSchema, EventSpec, LabelDefinition
 
 
 def canonical(value):
@@ -15,10 +16,11 @@ def canonical(value):
 
 
 class EventPreparation:
-    def __init__(self, root, *, search, builder, builder_version):
+    def __init__(self, root, *, search, builder, builder_version, on_error=lambda exc: None):
         self.path = Path(root) / 'event-preparation.sqlite'
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.search, self.builder, self.builder_version = search, builder, builder_version
+        self.on_error = on_error
         with sqlite3.connect(self.path) as db:
             db.execute('CREATE TABLE IF NOT EXISTS preparations (id TEXT PRIMARY KEY, payload TEXT)')
 
@@ -39,10 +41,11 @@ class EventPreparation:
 
     def prepare(self, event, library, *, max_total_calls=4, search_api_key=None, sample=None):
         event = EventSpec.model_validate(event)
-        if not event.keywords or not ' '.join(event.keywords).strip():
-            raise ValueError('schema preparation requires event keywords')
-        if max_total_calls < 2:
-            raise ValueError('budget must permit search and schema generation')
+        auto_keywords = not any(word.strip() for word in event.keywords)
+        if auto_keywords and (not sample or not hasattr(self.builder, 'discover_keywords')):
+            raise ValueError('automatic event keywords require sampled posts and a keyword Agent')
+        if max_total_calls < (3 if auto_keywords else 2):
+            raise ValueError('budget must permit keyword discovery, search and schema generation')
         library = {name: [LabelDefinition.model_validate(v).model_dump(mode='json') for v in library[name]]
                    for name in ('topics', 'publishers', 'emotions')}
         for name, minimum in (('topics', 5), ('publishers', 5), ('emotions', 10)):
@@ -50,7 +53,10 @@ class EventPreparation:
             if len(ids) < minimum or len(set(ids)) != len(ids):
                 raise ValueError('fixed vocabulary needs enough unique labels')
         spec = event.model_dump(mode='json', exclude={'dataset_ref', 'input_mode'})
-        key = hashlib.sha256(canonical([spec, library, self.builder_version, sample]).encode()).hexdigest()
+        cache_inputs = [spec, library, self.builder_version, sample]
+        if auto_keywords:
+            cache_inputs.append(getattr(self.builder, 'keyword_version', self.builder_version))
+        key = hashlib.sha256(canonical(cache_inputs).encode()).hexdigest()
         token = uuid.uuid4().hex
         def claim(old):
             if old and (old['status'] == 'frozen' or old.get('lease_until', 0) > time.time()):
@@ -73,9 +79,17 @@ class EventPreparation:
             self._change(key, update)
         error_type, schema, evidence = 'search_failed', None, None
         builder_usage = {}
+        keyword_usage = {}
+        keywords = event.keywords
         try:
+            if auto_keywords:
+                error_type = 'keyword_discovery_failed'
+                reserve()
+                keywords = self.builder.discover_keywords(copy.deepcopy(sample))
+                keyword_usage = copy.deepcopy(getattr(self.builder, 'last_usage', {}))
+            error_type = 'search_failed'
             reserve()
-            evidence = self.search(' '.join(event.keywords), provider=event.search_provider, api_key=search_api_key,
+            evidence = self.search(' '.join(keywords), provider=event.search_provider, api_key=search_api_key,
                                     max_results=5, timeout_seconds=20)
             if evidence.get('error') or evidence.get('provider') != event.search_provider or not evidence.get('results'):
                 raise ValueError('search_failed')
@@ -84,7 +98,7 @@ class EventPreparation:
                 date = card.get('date')
                 if date:
                     try:
-                        published = datetime.fromisoformat(date.replace('Z', '+00:00'))
+                        published = datetime.fromisoformat(date)
                         if published.tzinfo is None:
                             raise ValueError('unknown timezone')
                         if published > event.as_of:
@@ -94,7 +108,7 @@ class EventPreparation:
                 else:
                     unknown += 1
                 retained.append(card)
-            evidence = {**evidence, 'results': retained, 'unknown_publication_dates': unknown, 'event_context': spec, 'sample': sample}
+            evidence = {**evidence, 'results': retained, 'unknown_publication_dates': unknown, 'event_context': {**spec, 'keywords': keywords}, 'sample': sample}
             if not retained:
                 raise ValueError('no_evidence_before_cutoff')
             error_type = 'schema_invalid'
@@ -111,7 +125,8 @@ class EventPreparation:
             if len(schema.targets) != 1:
                 raise ValueError('first release requires exactly one explicit stance target')
             error_type = ''
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - persist recoverable external provider failures
+            self.on_error(exc)
             if str(exc) == 'call_budget_exhausted':
                 error_type = 'call_budget_exhausted'
             schema = None
@@ -122,5 +137,7 @@ class EventPreparation:
                     'schema': schema.model_dump(mode='json') if schema else None,
                     'evidence': evidence, 'error_type': error_type, 'lease_until': 0,
                     'builder_usage': builder_usage,
-                    'prepared_at': datetime.now(timezone.utc).isoformat()}
+                    'keywords': keywords, 'keyword_source': 'sample_agent' if auto_keywords else 'provided',
+                    'keyword_usage': keyword_usage,
+                    'prepared_at': datetime.now(UTC).isoformat()}
         return self._change(key, publish)

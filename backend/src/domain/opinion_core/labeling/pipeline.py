@@ -52,6 +52,8 @@ class WeakLabeler:
         confidence_threshold=0.7,
         batch_size=10,
         probability_margin=0.1,
+        on_progress=lambda value: None,
+        on_error=lambda exc, post_ids: None,
     ):
         if not 0 <= confidence_threshold <= 1 or not 1 <= batch_size <= 100:
             raise ValueError("invalid threshold or batch size")
@@ -60,6 +62,7 @@ class WeakLabeler:
         self.provider, self.prompt_version = provider, prompt_version
         self.threshold, self.batch_size = confidence_threshold, batch_size
         self.probability_margin = probability_margin
+        self.on_progress, self.on_error = on_progress, on_error
         with sqlite3.connect(self.path) as db:
             db.execute(
                 "CREATE TABLE IF NOT EXISTS annotations (key TEXT PRIMARY KEY, payload TEXT)"
@@ -194,6 +197,8 @@ class WeakLabeler:
                 else:
                     batch.append(post)
             if not batch:
+                if len(results) % 10 == 0 or len(results) == len(posts):
+                    self.on_progress({'done': len(results), 'total': len(posts), 'cache_hits': hits, 'calls': calls})
                 continue
             if not budget.reserve():
                 for post in batch:
@@ -240,12 +245,15 @@ class WeakLabeler:
                         "INSERT OR IGNORE INTO annotations VALUES (?,?)", prepared
                     )
             except Exception as exc:  # noqa: BLE001 - preserve failures for each provider batch
+                self.on_error(exc, [post.post_id for post in batch])
                 uncertain += 1
                 cost_complete = False
                 for post in batch:
                     results[post.post_id] = self._empty(
                         post, schema, status="failed", reason=type(exc).__name__
                     )
+            if len(results) % 10 == 0 or len(results) == len(posts):
+                self.on_progress({'done': len(results), 'total': len(posts), 'cache_hits': hits, 'calls': calls})
         annotations = [results[post.post_id].model_dump(mode="json") for post in posts]
         incomplete = any(
             ann[name]["status"] in ("missing", "failed")

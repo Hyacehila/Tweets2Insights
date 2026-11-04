@@ -35,6 +35,7 @@ Gateway 可以调用 Runtime；Runtime 不导入 Gateway。领域核心不依赖
 | 位置 | 角色 | 输入与输出 |
 |---|---|---|
 | 规划 | Leader Agent；可选 Insight / Query 评阅 | 用户需求与数据引用 → RunRequest 与阶段计划 |
+| 全程监控 | SupervisorAgent | 阶段、模型和工具事件 → 实时状态、阶段交接汇报、错误分析与处理建议 |
 | 标签准备 | Schema Agent | 高阅读量样本、词库与检索证据 → 固定类别与立场命题 |
 | 复盘分析 | DataAgent | 研究目标、工具目录与标签 → 分析结果、图表及源表 |
 | 论坛 | data / search / visual / insight / methodology；ForumHost | 共享证据 → 专业意见、补充调用、共识与分歧 |
@@ -51,6 +52,9 @@ Gateway 可以调用 Runtime；Runtime 不导入 Gateway。领域核心不依赖
 Leader 生成或校验 RunRequest；领域 Worker 是唯一领域执行调度者。停止 Agent 与取消已提交 Job 分别操作。
 SSE 支持游标续读；Gateway 重启会将未结束的 Agent execution 标为 interrupted，不自动重发模型请求。
 
+SupervisorAgent 与领域 Worker 同生命周期运行，接收每次阶段交接、模型调用、分析工具执行和标注进度。Worker 推进依赖计划，Supervisor 汇总当前工作、下一阶段、各角色状态及已用时间，前端每两秒刷新。运行记录持久化，页面刷新后可继续查看。
+发生异常时，Supervisor 结合异常正文、调用栈和最近执行记录调用当前 Agent 模型进行一次诊断，输出原因、依据和建议；诊断计入原任务预算，最多输出 1500 Token、超时不超过 60 秒。模型不可用或预算不足时使用本地错误分类。正常监控不调用模型；标注连接失败最多补试两轮，已完成标注从缓存复用。
+
 ## 研究约束
 
 生产流程自动标注，人工真值用于独立 Demo 的质量与覆盖率评估。
@@ -65,3 +69,5 @@ SSE 支持游标续读；Gateway 重启会将未结束的 Agent execution 标为
 迁移明细见 [重写与复用清单](modules/architecture-rewrite.md)，启动见 [运行手册](modules/domain-application.md)。
 
 各阶段的执行流程见[完整工作流](modules/full-workflow.md)。
+
+启动页 `/` 进入 `/workspace` 的分析看板；事件工作台内设研究配置与执行、研究进程追踪、分析与报告、数据集概览四个子页。领域运行日志写入 JobStore，异常记录包含脱敏正文与调用栈；MediaCrawler 在独立 Python 环境运行并将结果归一化到 PostRecord。

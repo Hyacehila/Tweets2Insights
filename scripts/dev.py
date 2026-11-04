@@ -18,7 +18,7 @@ from src.config import load_settings
 ROOT = Path(__file__).resolve().parents[1]
 SETTINGS = load_settings()
 STATE = SETTINGS.state_root
-WORKSPACE_URL = "http://127.0.0.1:3000/workspace"
+WORKSPACE_URL = "http://127.0.0.1:3000/"
 
 
 def wait_for_workspace(timeout=60):
@@ -27,7 +27,9 @@ def wait_for_workspace(timeout=60):
         try:
             with urlopen(WORKSPACE_URL, timeout=min(3, remaining)) as response:
                 if response.status == 200:
-                    return True
+                    with urlopen(WORKSPACE_URL + 'api/health', timeout=min(3, remaining)) as health:
+                        if health.status == 200:
+                            return True
         except (URLError, OSError):
             pass
         time.sleep(min(0.5, max(0, deadline - time.monotonic())))
@@ -35,10 +37,10 @@ def wait_for_workspace(timeout=60):
 
 
 def open_workspace(open_browser=True):
-    print("正在等待前端页面就绪……", flush=True)
+    print("正在等待前端页面与研究服务就绪……", flush=True)
     if not wait_for_workspace():
         print(
-            "前端尚未就绪（已等待 60 秒）。\n"
+            "前端或研究服务尚未就绪（已等待 60 秒）。\n"
             f"请查看日志：{STATE / 'frontend.log'}\n"
             f"服务仍在后台运行，可稍后访问：{WORKSPACE_URL}"
         )

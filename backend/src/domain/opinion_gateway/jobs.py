@@ -4,6 +4,7 @@ import json
 import sqlite3
 import time
 import uuid
+from datetime import UTC, datetime
 from contextlib import contextmanager
 from pathlib import Path
 from opinion_core.schemas.job import JobRef
@@ -29,6 +30,22 @@ class JobStore:
             db.execute('CREATE TABLE IF NOT EXISTS jobs (id TEXT PRIMARY KEY, dedup TEXT UNIQUE, payload TEXT, parameters TEXT)')
             db.execute('CREATE TABLE IF NOT EXISTS batches (job TEXT, batch TEXT, payload TEXT, PRIMARY KEY(job,batch))')
             db.execute('CREATE TABLE IF NOT EXISTS job_results (job TEXT PRIMARY KEY, payload TEXT)')
+            db.execute('CREATE TABLE IF NOT EXISTS job_events (id INTEGER PRIMARY KEY AUTOINCREMENT, job TEXT, timestamp TEXT, kind TEXT, payload TEXT)')
+
+    def record_event(self, claimed, kind, payload):
+        from .diagnostics import safe_payload
+        payload = json.dumps(safe_payload(payload), ensure_ascii=False, allow_nan=False)
+        with self._db() as db:
+            self._owned(db, claimed.job_id, claimed.worker, claimed.lease_token, allow_cancel=True)
+            db.execute('INSERT INTO job_events(job,timestamp,kind,payload) VALUES (?,?,?,?)',
+                       (claimed.job_id, datetime.now(UTC).isoformat(), kind, payload))
+
+    def events(self, job_id, limit=200):
+        with self._db() as db:
+            self._get(db, job_id)
+            rows = db.execute('SELECT id,timestamp,kind,payload FROM job_events WHERE job=? ORDER BY id DESC LIMIT ?',
+                              (job_id, min(500, max(1, limit)))).fetchall()
+        return [{'id': row[0], 'timestamp': row[1], 'kind': row[2], **json.loads(row[3])} for row in reversed(rows)]
 
     @contextmanager
     def _db(self):

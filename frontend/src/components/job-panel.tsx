@@ -25,11 +25,15 @@ export function JobPanel({
   jobs,
   onRefresh,
   active,
+  controlsOnly = false,
+  onInspect,
 }: {
   threadId: string;
   jobs: Job[];
   onRefresh: () => void;
   active: boolean;
+  controlsOnly?: boolean;
+  onInspect?: (jobId: string) => void;
 }) {
   const { t, locale } = useI18n();
   const [selected, setSelected] = useState("");
@@ -58,7 +62,7 @@ export function JobPanel({
     setError("");
   }, [threadId]);
   useEffect(() => {
-    if (!selected) return;
+    if (!selected || controlsOnly) return;
     let live = true;
     setLoading(true);
     setError("");
@@ -84,7 +88,7 @@ export function JobPanel({
     return () => {
       live = false;
     };
-  }, [selected, selectedStatus, threadId]);
+  }, [selected, selectedStatus, threadId, controlsOnly]);
   async function action(job: Job, name: string) {
     setPending(job.job_id);
     setError("");
@@ -235,12 +239,12 @@ export function JobPanel({
                           {t("恢复")}
                         </button>
                       )}
-                      {["completed", "partial"].includes(job.status) && (
+                      {(controlsOnly || ["completed", "partial"].includes(job.status)) && (
                         <button
                           className="text-link"
-                          onClick={() => setSelected(job.job_id)}
+                          onClick={() => { setSelected(job.job_id); if (controlsOnly) onInspect?.(job.job_id); }}
                         >
-                          {t("查看结果")}
+                          {t(controlsOnly ? "查看进程" : "查看结果")}
                           <ArrowRight size={14} />
                         </button>
                       )}
@@ -264,7 +268,7 @@ export function JobPanel({
           )}
         </div>
       </Card>
-      {loading && (
+      {!controlsOnly && <>{loading && (
         <Card className="surface">
           <p className="loading-text">{t("正在读取研究产物…")}</p>
         </Card>
@@ -335,7 +339,7 @@ export function JobPanel({
             </details>
           )}
         </Card>
-      )}
+      )}</>}
     </div>
   );
 }

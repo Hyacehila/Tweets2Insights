@@ -11,6 +11,26 @@ from opinion_gateway.agent_models import (
 from opinion_core.labeling.openai_provider import OpenAIJsonProvider
 
 
+def test_provider_error_explains_failure_without_echoing_key(monkeypatch):
+    provider = OpenAIJsonProvider(AgentModelConfig(), "private-diagnostic-key")
+    monkeypatch.setattr(provider.client, 'post', lambda *args, **kwargs: SimpleNamespace(
+        status_code=429, json=lambda: {'error': {'code': 'rate_limit_exceeded', 'message': 'Too many requests private-diagnostic-key'}}))
+    with pytest.raises(ValueError) as result:
+        provider.request('JSON', {})
+    assert 'rate_limit_exceeded' in str(result.value)
+    assert 'private-diagnostic-key' not in str(result.value)
+
+
+def test_truncated_response_preserves_usage_and_finish_reason(monkeypatch):
+    provider = OpenAIJsonProvider(AgentModelConfig(), 'test-key')
+    monkeypatch.setattr(provider.client, 'post', lambda *args, **kwargs: SimpleNamespace(
+        status_code=200, json=lambda: {'choices': [{'message': {'content': '{'}, 'finish_reason': 'length'}], 'usage': {'prompt_tokens': 200, 'completion_tokens': 50}}))
+    with pytest.raises(ValueError) as result:
+        provider.request('JSON', {})
+    assert 'length' in str(result.value)
+    assert result.value.usage == {'input_tokens': 200, 'output_tokens': 50}
+
+
 def test_agent_settings_api_only_saves_after_successful_check(tmp_path, monkeypatch):
     from fastapi import FastAPI
     from fastapi.testclient import TestClient

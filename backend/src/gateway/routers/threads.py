@@ -13,6 +13,16 @@ class CreateThread(BaseModel):
     title: str = Field(default="新研究会话", max_length=120)
 
 
+class RenameThread(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    title: str = Field(min_length=1, max_length=120)
+
+
+@router.put("/{thread_id}")
+def rename(thread_id: str, body: RenameThread, db=Depends(store)):
+    return db.rename(thread_id, body.title)
+
+
 @router.post("")
 def create(body: CreateThread, db=Depends(store)):
     return db.create(body.event_id, body.title)
@@ -47,6 +57,12 @@ async def get_state(thread_id: str, db=Depends(store), manager=Depends(runtime))
         for k, v in snapshot.values.items()
         if k in {"run_request", "plan", "job", "status", "reply"}
     }
+
+
+@router.get('/{thread_id}/activity')
+def activity(thread_id: str, db=Depends(store)):
+    fields = {'node', 'status', 'reply', 'execution_id', 'error_type', 'message', 'traceback', 'timestamp'}
+    return [{key: value for key, value in item['data'].items() if key in fields} for item in db.recent_events(thread_id)]
 
 
 @router.put("/{thread_id}/memory")

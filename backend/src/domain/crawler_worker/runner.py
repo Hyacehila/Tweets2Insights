@@ -1,13 +1,15 @@
 import hashlib
 import time
+
+from opinion_core.schemas.event import EventSpec
 from opinion_core.schemas.records import PostRecord
 from opinion_core.schemas.workflow import CrawlSpec
-from opinion_core.schemas.event import EventSpec
-from opinion_gateway.connectors import invoke_connector, WaitingForAuthentication, ConnectorUnavailable
-from .x_api import fetch_page
+from opinion_gateway.connectors import ConnectorUnavailable, WaitingForAuthentication
+
+from .mediacrawler import fetch_page
 
 
-def collect(event, spec, *, check_cancel=lambda:None, checkpoint=None, save_checkpoint=lambda state:None):
+def collect(event, spec, *, check_cancel=lambda:None, checkpoint=None, save_checkpoint=lambda state:None, asset_root=None):
     event,spec = EventSpec.model_validate(event),CrawlSpec.model_validate(spec)
     if not event.requires_collection:
         raise ValueError('collection forbidden for uploaded/existing data')
@@ -43,7 +45,9 @@ def collect(event, spec, *, check_cancel=lambda:None, checkpoint=None, save_chec
                         'event':event.model_dump(mode='json'),'cursor':cursor,'session_ref':spec.session_ref,
                         'remaining_posts':spec.max_posts-totals['post'],
                         'remaining_comments':spec.max_comments-totals['comment']}
-                    response = fetch_page(payload) if platform=='x' else invoke_connector('crawl',platform,payload)
+                    payload['spec'] = spec.model_dump(mode='json')
+                    payload['_asset_root'] = str(asset_root) if asset_root else None
+                    response = fetch_page(platform, payload)
                     if response.get('partial'):
                         status='partial'
                     break
@@ -51,7 +55,7 @@ def collect(event, spec, *, check_cancel=lambda:None, checkpoint=None, save_chec
                     raise
                 except Exception:
                     if attempt == spec.max_retries:
-                        status='partial'
+                        raise
                     else:
                         time.sleep(spec.interval_seconds*(attempt+1))
             if response is None:

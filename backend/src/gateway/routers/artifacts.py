@@ -9,6 +9,12 @@ router = APIRouter(
 )
 
 
+@router.get('/jobs/{job_id}/progress')
+def progress(thread_id: str, job_id: str, db=Depends(store), config=Depends(settings)):
+    from opinion_gateway.workspace_views import job_progress
+    return job_progress(config.asset_root, db.get(thread_id)['event_id'], job_id)
+
+
 @router.post("/jobs/{job_id}/analysis-tools/{tool}")
 async def analytical_tool(
     thread_id: str,

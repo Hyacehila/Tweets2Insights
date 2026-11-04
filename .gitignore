@@ -44,6 +44,7 @@ report/images/
 .env
 .env.local
 .app-state/
+.integrations/
 /legacy/config.yaml
 skills/custom/*
 !skills/custom/.gitkeep

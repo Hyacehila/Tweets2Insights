@@ -8,6 +8,15 @@ from starlette.concurrency import run_in_threadpool
 router = APIRouter(prefix="/api/threads/{thread_id}/datasets", tags=["datasets"])
 
 
+@router.get('/{dataset_id}/overview')
+def overview(thread_id: str, dataset_id: str, db=Depends(store), config=Depends(settings)):
+    from opinion_gateway.workspace_views import dataset_overview
+    try:
+        return dataset_overview(str(config.asset_root), db.get(thread_id)['event_id'], dataset_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(404, 'not_found') from exc
+
+
 class Upload(BaseModel):
     records: list[dict] = Field(max_length=100000)
 
