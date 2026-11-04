@@ -1,25 +1,57 @@
 """Native OpenAI Decisions API adapter; one post and five choice questions per call."""
 
+import base64
 import json
 import math
+
 import requests
+
+from .media import DecisionInput, MediaPolicy
 from .system_one import choice_questions
 
 
 class OpenAIDecisionsProvider:
     endpoint = "https://api.openai.com/v1/decisions"
 
-    def __init__(self, model, api_key, ledger):
+    def __init__(
+        self,
+        model,
+        api_key,
+        ledger,
+        *,
+        media_mode="text_image",
+        max_images_per_post=3,
+        image_loader=None,
+    ):
         if model != "gpt-6-luna":
             raise ValueError("OpenAI Decisions currently requires gpt-6-luna")
         if not api_key:
             raise ValueError("OpenAI annotation credential is not configured")
         self.model, self.api_key, self.ledger = model, api_key, ledger
-        self.version = f"openai_decisions:{model}:choice-v1"
+        self.media_policy = MediaPolicy(
+            "openai_decisions", model, media_mode, max_images_per_post
+        )
+        self.inputs = DecisionInput(self.media_policy, image_loader)
+        self.version = f"openai_decisions:{model}:choice-v2:{self.media_policy.version}"
+
+    def prepare_input(self, post):
+        return self.inputs.prepare(post)
 
     def predict(self, posts, schema):
         if len(posts) != 1:
             raise ValueError("OpenAI Decisions adapter requires batch_size=1")
+        state, images = self.inputs.consume(posts[0])
+        content = [
+            {"type": "input_text", "text": json.dumps(state, ensure_ascii=False)}
+        ]
+        content.extend(
+            {
+                "type": "input_image",
+                "image_url": "data:image/jpeg;base64,"
+                + base64.b64encode(data).decode("ascii"),
+            }
+            for data in images
+        )
         definitions = choice_questions(schema)
         questions = [
             {
@@ -40,9 +72,7 @@ class OpenAIDecisionsProvider:
                 headers={"Authorization": "Bearer " + self.api_key},
                 json={
                     "model": self.model,
-                    "input": json.dumps(
-                        posts[0].model_dump(mode="json"), ensure_ascii=False
-                    ),
+                    "input": [{"role": "user", "content": content}],
                     "questions": questions,
                 },
                 timeout=(10, 90),

@@ -70,6 +70,7 @@ class DomainWorker:
                         store.commit_batch(job.job_id,job.worker,key,ref,lease_token=job.lease_token)
                 execution.values[key],execution.refs[key]=value,ref
             result={'event_id':job.event_id,'run_id':job.run_id,'artifacts':execution.refs,
+                    'media_input':execution.values.get('labels',{}).get('media_input',execution.values.get('input',{}).get('media_input')),
                     'plan':params['plan'],'usage':execution.ledger.summary(),'partial_stages':partial,
                     'code_version':params['code_version'],'human_review_required':False}
             store.finish(job,result,status='partial' if partial else 'completed')
@@ -80,7 +81,8 @@ class DomainWorker:
             try:
                 store.finish(job,{'event_id':job.event_id,'run_id':job.run_id,
                     'artifacts':execution.refs if execution else {},'reason':type(exc).__name__,
-                    'detail':str(exc),'usage':execution.ledger.summary() if execution else {}},status='partial')
+                    'detail':str(exc),'usage':execution.ledger.summary() if execution else {},
+                    'media_input':execution.values.get('labels',{}).get('media_input',execution.values.get('input',{}).get('media_input')) if execution else None},status='partial')
             except TransitionConflict: pass
         except Exception as exc:
             try: store.stop_owned(job,error_type=type(exc).__name__)

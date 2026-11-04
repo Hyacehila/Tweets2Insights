@@ -290,7 +290,7 @@ def test_openai_decisions_native_protocol(case, tmp_path, monkeypatch, mode):
         body = kwargs["json"]
         captured.append(body)
         assert body["model"] == "gpt-6-luna"
-        assert json.loads(body["input"])["post_id"] == posts[0]["post_id"]
+        assert json.loads(body["input"][0]["content"][0]["text"])["post_id"] == posts[0]["post_id"]
         assert len(body["questions"]) == 5
         answers = []
         for question in body["questions"]:

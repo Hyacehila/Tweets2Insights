@@ -12,6 +12,9 @@ from opinion_gateway.agent_models import (
 from opinion_core.schemas.agent_model import AgentModelConfig
 from opinion_core.labeling.openai_provider import OpenAIJsonProvider
 from opinion_core.analytics.toolbox import catalog
+from opinion_core.labeling.media import MediaPolicy
+from typing import Literal
+from fastapi import Query
 from ..dependencies import settings, runtime
 
 router = APIRouter(tags=["system"])
@@ -53,6 +56,18 @@ def analysis_tools():
 @router.get("/api/providers")
 def providers():
     return credentials.status()
+
+
+@router.get("/api/label-capabilities")
+def label_capabilities(
+    provider: Literal[
+        "openai_decisions", "jev", "aliyun_decision"
+    ] = "openai_decisions",
+    model: str = Query(default="gpt-6-luna", max_length=160),
+    media_mode: Literal["text_only", "text_image", "image_only"] = "text_image",
+    max_images_per_post: int = Query(default=3, ge=1, le=9),
+):
+    return MediaPolicy(provider, model, media_mode, max_images_per_post).summary([])
 
 
 class CredentialInput(BaseModel):

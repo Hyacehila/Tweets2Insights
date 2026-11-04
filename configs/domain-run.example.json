@@ -11,10 +11,10 @@
     "objectives": ["retrospective", "forecast", "scenario"]
   },
   "run_id": "run-1",
-  "labels": {"provider": "openai_decisions", "model": "gpt-6-luna", "batch_size": 1, "confidence_threshold": 0.7, "max_calls": 100},
+  "labels": {"provider": "openai_decisions", "model": "gpt-6-luna", "batch_size": 1, "confidence_threshold": 0.7, "max_calls": 100, "max_images_per_post": 3},
   "observations": {"start": "2026-10-01T00:00:00Z", "end": "2026-10-08T00:00:00Z", "window_seconds": 86400},
   "model": {"algorithm":"latent_hk_enkf", "latent_dimensions":6, "calibrate":true, "training_cutoff": "2026-10-08T00:00:00Z", "horizon": 7, "seed": 42},
   "scenarios": [{"scenario_id": "shift", "dimension": "stance", "shift": 0.1, "duration": 1, "assumptions": ["仅在首步统一偏移立场，其他参数固定"]}],
   "max_total_calls": 120,
-  "media_mode": "text_only"
+  "media_mode": "text_image"
 }

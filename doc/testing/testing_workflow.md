@@ -5,6 +5,7 @@
 > **上级文档**: [系统设计总览](../architecture.md)
 
 新应用测试位于 `backend/tests`；领域契约与历史模块测试位于 `tests`，旧 Dashboard 测试位于 `dashboard/tests`。
+`backend/tests/test_multimodal_labeling.py` 覆盖模型能力路由、图片上限、两种原生图片协议、纯文本降级、图片资产、内容缓存和标注到报告的集成链路；外部模型响应使用固定测试数据。前端 `dataset-import.test.mjs` 检查 JSON 与本地配图匹配及去重。
 本文列出测试分层、执行命令与重构规则，检查结果统一记录在[实施记录](../upgrade-status.md)。
 旧版真实 E2E 的配置从 `legacy/config.yaml` 读取；运行配置辅助器的单元测试使用独立临时 YAML 和 `tests/fixtures/sample_enhanced.json`，不依赖新应用配置或本机密钥。
 

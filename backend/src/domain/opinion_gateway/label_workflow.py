@@ -111,6 +111,8 @@ def run_label_workflow(
         "batch_size": batch_size,
         "confidence_threshold": confidence_threshold,
     }
+    if getattr(provider, "media_policy", None):
+        manifest["media_input"] = provider.media_policy.summary(records)
     run_key = hashlib.sha256(
         canonical([event.event_id, event.dataset_ref, run_id]).encode()
     ).hexdigest()
@@ -128,6 +130,8 @@ def run_label_workflow(
             "error_type": prepared["error_type"],
             "human_review_required": False,
         }
+        if "media_input" in manifest:
+            result["media_input"] = manifest["media_input"]
     else:
         # A run-level call counter persists across process restarts and concurrent callers.
         labeler = WeakLabeler(
@@ -175,6 +179,14 @@ def build_parser():
     parser.add_argument("--max-schema-calls", type=int, default=4)
     parser.add_argument("--batch-size", type=int, choices=[1], default=1)
     parser.add_argument("--confidence-threshold", type=float, default=0.7)
+    parser.add_argument(
+        "--media-mode",
+        choices=["text_only", "text_image", "image_only"],
+        default="text_image",
+    )
+    parser.add_argument(
+        "--max-images-per-post", type=int, choices=range(1, 10), default=3
+    )
     return parser
 
 
@@ -201,17 +213,25 @@ def main():
     from .agent_models import active_config, api_key_for, is_local
     from .budget import CallLedger
     from .label_providers import make_label_provider
+    from .media_assets import MediaAssets
 
     settings = load_settings()
     options = LabelOptions(
-        **{"provider": args.provider, **({"model": args.model} if args.model else {})}
+        **{
+            "provider": args.provider,
+            "max_images_per_post": args.max_images_per_post,
+            **({"model": args.model} if args.model else {}),
+        }
     )
     event = EventSpec.model_validate_json(Path(args.event).read_text(encoding="utf-8"))
     scope = hashlib.sha256(
         canonical([event.event_id, event.dataset_ref, args.run_id]).encode()
     ).hexdigest()
     provider = make_label_provider(
-        options, CallLedger(args.root, scope, args.max_label_calls)
+        options,
+        CallLedger(args.root, scope, args.max_label_calls),
+        args.media_mode,
+        image_loader=MediaAssets(args.root, event.event_id).load,
     )
     config = active_config(settings.agent_model_config)
     key = api_key_for(config)
@@ -246,6 +266,7 @@ def main():
                     "calls",
                     "cache_hits",
                     "error_type",
+                    "media_input",
                 )
             }
         )

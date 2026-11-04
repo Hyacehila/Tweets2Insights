@@ -15,7 +15,7 @@
    立场必须绑定 schema 的 target_id；情感为五档显示编码 -1/-0.5/0/0.5/1，不能推导立场。
 5. 每字段独立 accepted/abstained/failed/missing；未知标签、低置信度、错误命题分别拒判。
    接受字段保留 provider_confidence。决策接口返回的 probabilities、被选类别概率及首二项差距均保存；差距低于 probability_margin 自动拒判。概率与 confidence 分别保存，校准质量通过独立 Demo 评估。
-6. 缓存键含完整帖子、完整 schema、provider/model 版本、提示词版本、阈值与解析器版本。
+6. 缓存键含完整帖子、完整 schema、provider/model 版本、提示词版本、阈值与解析器版本；原生接口还纳入实际图片内容指纹、输入模态和每帖图片上限。
    完整校验后才原子提交一批缓存；调用失败、不完整响应不作为中性或成功缓存。
 7. 共享调用预算先预留再发请求。CLI 的标注预算在 SQLite 中跨进程/重启计数，同一运行的预算上限不可隐式增加。
    无后台重试。记录 token 用量、调用数、缓存命中、覆盖率与费用是否完整。
@@ -47,6 +47,24 @@ LabelProvider 支持 OpenAIDecisionsProvider（默认）、SystemOneProvider（J
 文档：[TypeSafe API](https://docs.typesafe.ai/api/system-one)、[Choice 概率](https://docs.typesafe.ai/primitives/choice)、[阿里决策模型](https://help.aliyun.com/zh/model-studio/decision-model-api)。
 OpenAI 使用 [Decisions API](https://developers.openai.com/api/docs/guides/decisions)。标签体系设计由 `schema_builder.py` 调用所选 Agent 模型，数据标注使用独立决策模型。
 
+## 帖子配图
+
+默认 `media_mode="text_image"`。`labels.max_images_per_post` 默认 3，可设置为 1–9 的整数。每帖按 `media_refs` 原始顺序取前 N 张，与正文一起标注；没有图片的帖子使用正文。截断只影响本次模型输入，不修改原数据。
+
+| 决策服务 | 实际输入 |
+|---|---|
+| OpenAI Decisions / gpt-6-luna | 用户消息中的 `input_text` 与 `input_image`，图片使用 JPEG Base64 data URL |
+| Jev / jev-latest、jev-preview、jev-1.13.0、jev-1.14.0 | `state` 引用 `assets` 图片，发送 `TypeSafe-Danger-Zone-Images: true` 请求头 |
+| 阿里 decision-model-preview、未登记图片能力的模型 | 只发送文本，不读取或发送图片引用与图片数据，并提示 `model_text_only` |
+
+Jev 图片接口为实验功能，格式与尺寸依据[官方图片文档](https://docs.typesafe.ai/images)。图片副本自动校正 EXIF 方向、处理透明背景、转为基线 JPEG，最长边缩至 1568 像素；不足 280 像素的边补白。支持静态 JPG、PNG、WebP，每张原图不超过 16 MiB、4000 万像素。原始上传文件保存在事件的 `datasets/images/`，随数据集保留，转换只用于模型输入。
+
+`media_refs` 可填写公网 HTTP(S) 图片地址、图片 data URL，或上传返回的 `dataset-image:<sha256>` 引用。前端可同时选择一个 JSON 与它引用的本地图片，按文件名关联。仅导入 JSON 时保留已有引用；本地路径须通过文件选择器上传后才能交给图片模型读取。
+
+原生标注直接处理图片，不依赖额外 OCR 或媒体连接器。`text_only` 模式跳过图片；高级配置仍支持 `image_only`。模型不支持图片时，无论请求模态和数据集有无配图，均使用文本并提醒。无可用文本的纯图片记录标记 `EmptyModelInput`。
+
+运行输入、标注产物和最终任务结果保存 `media_input`，记录实际模态、图片上限、总数、按上限选取数、忽略数及提示。所选图片读取失败时，该帖标记 `ImageInputError`，不静默改成文本标注，也不消耗模型调用次数。缓存比较实际发送的图片内容；同一网址的图片变化时重新标注。
+
 ## 使用
 
 先通过 DomainService/MCP 注册标准 PostRecord 数据，得到 dataset_ref。建立 EventSpec JSON，例如：
@@ -63,6 +81,7 @@ uv run --project backend python -m opinion_gateway.label_workflow --root .opinio
 
 执行 CLI 会调用配置的外部 API。
 `--provider` 支持 openai_decisions、jev 和 aliyun_decision，模型 ID 默认与供应商对应；`--model` 可显式指定其决策模型。标注批次固定为 1，GLM 仅作为 Agent 模型选项。
+CLI 同样支持 `--media-mode text_image` 与 `--max-images-per-post 3`，输出包含实际输入模态及提醒。
 默认拒判阈值为 0.7，可在 Demo 校准集上调整并冻结；common-v1 是可编辑的通用候选词库。
 返回码 0 表示处理完成，2 表示 partial/可恢复失败。各字段覆盖率和失败数量单独记录。
 每次尝试在对应运行目录另存 labels-<attempt_id>.json，不覆盖输入或其他并发尝试。
@@ -75,6 +94,6 @@ manifest 保存事件、数据引用、源码 SHA256、词库指纹、模型/提
 - 完整标注链路由 DomainWorker 执行，工作台显示阶段与产物；兼容 InventoryWorker 处理 inventory_report。
 - 新标注输出采用五字段契约。旧事件关联身份分类及其词库已移除；兼容入口仍保留 belief network。
 - 过滤发布时间晚于 as_of 的来源，日期缺失来源单列；当前时间检索结果的 historical_availability_verified=false。
-- 独立标注 CLI 处理文本并保留媒体引用；完整工作流的 image_only/text_image 模式通过支持相应输入的标签连接器执行。
+- Worker 与独立标注 CLI 共用模型能力判断、图片上限和原生协议适配。
 
 相关验证：test_event_preparation、test_weak_labeling、test_label_providers、test_automatic_label_workflow。

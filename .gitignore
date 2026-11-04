@@ -34,6 +34,8 @@ report/images/
 
 # Playwright Browsers
 .playwright-browsers/
+.playwright-cli/
+/output/playwright/
 
 .pytest_tmp_stdio/
 

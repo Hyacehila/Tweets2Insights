@@ -37,16 +37,29 @@ def invoke_connector(group, name, payload, timeout=120):
     return response
 
 
+def connector_supports_images(name):
+    path = os.environ.get('T2I_CONNECTORS_FILE')
+    if not path:
+        return False
+    registry = json.loads(Path(path).read_text(encoding='utf-8'))
+    return 'image' in registry.get('label', {}).get(name, {}).get('modalities', ['text'])
+
+
 class DecisionConnector:
-    def __init__(self, name, mode='text_only', ledger=None):
-        self.name,self.mode,self.ledger = name,mode,ledger
+    def __init__(self, name, mode='text_only', ledger=None, *, max_images_per_post=3):
+        from opinion_core.labeling.media import MediaPolicy
+        self.media_policy = MediaPolicy('connector', name, mode, max_images_per_post, connector_supports_images(name))
+        self.name,self.mode,self.ledger = name,self.media_policy.effective_mode,ledger
         # Operators must change the connector ID/version when implementation or model changes.
-        self.version = f'connector:{name}:{mode}'
+        self.version = f'connector:{name}:{self.media_policy.version}'
 
     def predict(self, posts, schema):
         reservation = self.ledger.reserve('label',self.version) if self.ledger else None
         try:
             records=[p.model_dump(mode='json') for p in posts]
+            for row, post in zip(records, posts):
+                row['media_refs'] = self.media_policy.references(post)
+                row.pop('raw_asset_ref', None)
             if self.mode=='image_only':
                 for row in records:
                     row['content']=''

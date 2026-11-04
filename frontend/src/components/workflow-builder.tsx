@@ -1,6 +1,9 @@
 "use client";
 import { useI18n } from "./language-provider";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
+import type { MediaInput } from "@/lib/types";
+import { MediaInputNotice } from "./media-input-notice";
 
 const phaseLabels: Record<string, string> = {
   retrospective: "事件复盘",
@@ -41,6 +44,20 @@ export function WorkflowBuilder({
   const [end, setEnd] = useState(new Date().toISOString().slice(0, 16));
   const [labelProvider, setLabelProvider] = useState("openai_decisions");
   const [model, setModel] = useState("gpt-6-luna");
+  const [mediaMode, setMediaMode] = useState("text_image");
+  const [maxImages, setMaxImages] = useState(3);
+  const [capability, setCapability] = useState<MediaInput>();
+  const [capabilityError, setCapabilityError] = useState("");
+  useEffect(() => {
+    let current = true;
+    setCapability(undefined);
+    setCapabilityError("");
+    const query = new URLSearchParams({ provider: labelProvider, model, media_mode: mediaMode, max_images_per_post: String(maxImages) });
+    api<MediaInput>(`/label-capabilities?${query}`)
+      .then((value) => { if (current) setCapability(value); })
+      .catch(() => { if (current) setCapabilityError("暂时无法读取模型图片能力，请检查服务连接。"); });
+    return () => { current = false; };
+  }, [labelProvider, model, mediaMode, maxImages]);
   const [platforms, setPlatforms] = useState("x");
   const [rounds, setRounds] = useState(3);
   const [horizon, setHorizon] = useState(7);
@@ -66,6 +83,8 @@ export function WorkflowBuilder({
       if (!(begin < finish) || finish > new Date())
         throw new Error("时间范围须有效，结束时间不得晚于当前时间。");
       const numeric = phases.some((p) => p !== "retrospective");
+      if (!Number.isInteger(maxImages) || maxImages < 1 || maxImages > 9)
+        throw new Error("每帖配图上限必须是 1–9 的整数。");
       const request = {
         event: {
           event_id: eventId,
@@ -100,7 +119,9 @@ export function WorkflowBuilder({
           max_calls: maxCalls,
           confidence_threshold: 0.7,
           probability_margin: 0.1,
+          max_images_per_post: maxImages,
         },
+        media_mode: mediaMode,
         observations: {
           start: begin.toISOString(),
           end: finish.toISOString(),
@@ -126,7 +147,6 @@ export function WorkflowBuilder({
         scenarios: phases.includes("scenario")
           ? [
               {
-                openai_decisions: "gpt-6-luna",
                 scenario_id: "measure-1",
                 measure: measure ?? t("信息澄清情景"),
                 mechanism,
@@ -225,6 +245,7 @@ export function WorkflowBuilder({
             setLabelProvider(e.target.value);
             setModel(
               {
+                openai_decisions: "gpt-6-luna",
                 jev: "jev-latest",
                 aliyun_decision: "decision-model-preview",
               }[e.target.value] ?? "",
@@ -241,6 +262,25 @@ export function WorkflowBuilder({
         <input value={model} readOnly={labelProvider === "openai_decisions"} onChange={(e) => setModel(e.target.value)} />
         {labelProvider === "openai_decisions" && <small>{t("使用 gpt-6-luna 的 Decisions API，返回五个标注字段及类别概率。")}</small>}
       </label>
+      <label>
+        {t("帖子输入模态")}
+        <select value={capability?.supports_images === false ? "text_only" : mediaMode}
+          disabled={capability?.supports_images === false} onChange={(e) => setMediaMode(e.target.value)}>
+          <option value="text_image">{t("图文联合（无配图时使用文字）")}</option>
+          <option value="text_only">{t("仅分析文字")}</option>
+        </select>
+      </label>
+      <label>
+        {t("每帖配图上限")}
+        <input type="number" min={1} max={9} step={1} value={maxImages}
+          disabled={capability?.effective_mode === "text_only"}
+          onChange={(e) => setMaxImages(Number(e.target.value))} />
+        <small>{t("默认 3 张，可选 1–9 张；按配图顺序选取，超出部分保留在原数据中。")}</small>
+      </label>
+      <MediaInputNotice value={capability} />
+      {capability?.supports_images && mediaMode !== "text_only" && <p className="caption">{t("系统按所选模型自动转换图片格式，与帖子文字一起提交标注。")}</p>}
+      {labelProvider === "jev" && capability?.supports_images && <p className="caption">{t("Jev 图片输入为实验功能，系统自动启用并适配图片尺寸。")}</p>}
+      {capabilityError && <p className="warning-text">{t(capabilityError)}</p>}
       <label>
         {t("标注调用上限")}
         <input

@@ -9,8 +9,9 @@ import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Protocol
-from opinion_core.schemas.records import AnnotationRecord, FieldAnnotation, PostRecord
+
 from opinion_core.schemas.event import EventSchema
+from opinion_core.schemas.records import AnnotationRecord, FieldAnnotation, PostRecord
 
 FIELDS = ("topic", "publisher", "emotion", "sentiment", "stance")
 
@@ -64,7 +65,7 @@ class WeakLabeler:
                 "CREATE TABLE IF NOT EXISTS annotations (key TEXT PRIMARY KEY, payload TEXT)"
             )
 
-    def _key(self, post, schema):
+    def _key(self, post, schema, input_fingerprint=None):
         data = [
             post.model_dump(mode="json"),
             schema.model_dump(mode="json"),
@@ -74,6 +75,8 @@ class WeakLabeler:
             self.probability_margin,
             "field-parser-v2",
         ]
+        if input_fingerprint is not None:
+            data.append(input_fingerprint)
         return hashlib.sha256(
             json.dumps(
                 data, sort_keys=True, ensure_ascii=False, allow_nan=False
@@ -163,23 +166,35 @@ class WeakLabeler:
             posts
         ):
             raise ValueError("one target and unique post IDs required")
-        results, pending, hits, calls, uncertain = {}, [], 0, 0, 0
+        results, hits, calls, uncertain = {}, 0, 0, 0
         usage = {"input_tokens": 0, "output_tokens": 0}
         known_cost, cost_complete = 0.0, True
-        with sqlite3.connect(self.path) as db:
-            for post in posts:
-                key = self._key(post, schema)
-                row = db.execute(
-                    "SELECT payload FROM annotations WHERE key=?", (key,)
-                ).fetchone()
+        for start in range(0, len(posts), self.batch_size):
+            check_cancel()
+            batch, keys = [], {}
+            for post in posts[start : start + self.batch_size]:
+                check_cancel()
+                try:
+                    prepare = getattr(self.provider, "prepare_input", None)
+                    fingerprint = prepare(post) if prepare else None
+                except Exception as exc:  # noqa: BLE001 - isolate unreadable inputs per post
+                    results[post.post_id] = self._empty(
+                        post, schema, status="failed", reason=type(exc).__name__
+                    )
+                    continue
+                key = self._key(post, schema, fingerprint)
+                keys[post.post_id] = key
+                with sqlite3.connect(self.path) as db:
+                    row = db.execute(
+                        "SELECT payload FROM annotations WHERE key=?", (key,)
+                    ).fetchone()
                 if row:
                     results[post.post_id] = AnnotationRecord.model_validate_json(row[0])
                     hits += 1
                 else:
-                    pending.append(post)
-        for start in range(0, len(pending), self.batch_size):
-            check_cancel()
-            batch = pending[start : start + self.batch_size]
+                    batch.append(post)
+            if not batch:
+                continue
             if not budget.reserve():
                 for post in batch:
                     results[post.post_id] = self._empty(
@@ -211,7 +226,7 @@ class WeakLabeler:
                     ann = self._empty(post, schema)
                     fields = mapping[post.post_id].get("fields", {})
                     if not isinstance(fields, dict):
-                        raise ValueError("invalid fields response")
+                        raise ValueError("invalid fields response")  # noqa: TRY004 - provider protocol validation
                     for name in FIELDS:
                         setattr(ann, name, self._field(name, fields.get(name), schema))
                     results[post.post_id] = ann
@@ -219,14 +234,12 @@ class WeakLabeler:
                         getattr(ann, name).status in ("accepted", "abstained")
                         for name in FIELDS
                     ):
-                        prepared.append(
-                            (self._key(post, schema), ann.model_dump_json())
-                        )
+                        prepared.append((keys[post.post_id], ann.model_dump_json()))
                 with sqlite3.connect(self.path) as db:
                     db.executemany(
                         "INSERT OR IGNORE INTO annotations VALUES (?,?)", prepared
                     )
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 - preserve failures for each provider batch
                 uncertain += 1
                 cost_complete = False
                 for post in batch:
@@ -246,7 +259,7 @@ class WeakLabeler:
             else None
             for name in FIELDS
         }
-        return {
+        result = {
             "status": "partial" if incomplete else "completed",
             "annotations": annotations,
             "cache_hits": hits,
@@ -260,3 +273,18 @@ class WeakLabeler:
             "confidence_calibrated": False,
             "human_review_required": False,
         }
+        policy = getattr(self.provider, "media_policy", None)
+        if policy:
+            media = policy.summary([post.model_dump(mode="json") for post in posts])
+            media["failed_image_posts"] = sum(
+                ann["topic"]["reason"] == "ImageInputError" for ann in annotations
+            )
+            media["empty_input_posts"] = sum(
+                ann["topic"]["reason"] == "EmptyModelInput" for ann in annotations
+            )
+            if media["failed_image_posts"]:
+                media["notices"].append("image_read_failed")
+            if media["empty_input_posts"]:
+                media["notices"].append("empty_model_input")
+            result["media_input"] = media
+        return result

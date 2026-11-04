@@ -32,12 +32,14 @@ import {
 } from "lucide-react";
 import { artifactLabels } from "@/lib/i18n";
 import { api, post } from "@/lib/api";
+import { importDatasetFiles } from "@/lib/dataset-import";
 import type { Thread, Dataset, Job } from "@/lib/types";
 import { useThreadStream } from "@/hooks/use-thread-stream";
 import { JobPanel } from "./job-panel";
 import { WorkflowBuilder } from "./workflow-builder";
 import { ProviderSettings } from "./provider-settings";
 import { RecentResearch } from "./recent-research";
+import { AppliedMediaNotice } from "./media-input-notice";
 import { Card } from "./tremor/Card";
 import { Badge } from "./tremor/Badge";
 import { EmptyState, Modal, StatusBadge, statusLabels, formatDate } from "./ui";
@@ -247,14 +249,17 @@ export function Workspace({ threadId }: { threadId?: string }) {
       setBusy(false);
     }
   }
-  async function upload(file?: File) {
-    if (!file || !threadId) return;
+  async function upload(files: File[]) {
+    if (!files.length || !threadId) return;
     setUploading(true);
     setImportedCount(null);
     try {
-      const records = JSON.parse(await file.text());
-      if (!Array.isArray(records))
-        throw new Error("请上传由帖子记录组成的 JSON 数组。");
+      const records = await importDatasetFiles(files, async (file) => {
+        const result = await api<{ media_ref: string }>(`/threads/${threadId}/datasets/images`, {
+          method: "POST", headers: { "Content-Type": file.type || "application/octet-stream" }, body: file,
+        });
+        return result.media_ref;
+      });
       const result = await post<Dataset>(`/threads/${threadId}/datasets`, {
         records,
       });
@@ -352,16 +357,18 @@ export function Workspace({ threadId }: { threadId?: string }) {
     <label className={`upload-zone ${uploading ? "disabled" : ""}`}>
       <UploadCloud size={25} />
       <strong>
-        {uploading ? t("正在导入数据…") : t("选择 JSON 数据文件")}
+        {uploading ? t("正在导入数据…") : t("选择 JSON 数据与配图")}
       </strong>
-      <span>{t("上传已有舆情数据，开始分析")}</span>
+      <span>{t("选择一个帖子 JSON，可同时选择它引用的 JPG、PNG 或 WebP 图片。")}</span>
+      <span>{t("media_refs 填写图片网址或文件名；本地配图按文件名匹配，每张不超过 16 MiB。")}</span>
       <input
         aria-label={t("上传舆情数据")}
         type="file"
-        accept=".json,application/json"
+        accept=".json,application/json,.jpg,.jpeg,.png,.webp"
+        multiple
         disabled={uploading}
         onChange={(e) => {
-          void upload(e.target.files?.[0]);
+          void upload(Array.from(e.target.files ?? []));
           e.target.value = "";
         }}
       />
@@ -775,6 +782,7 @@ export function Workspace({ threadId }: { threadId?: string }) {
                           )}
                           <details className="advanced-settings">
                             <summary>{t("高级运行配置")}</summary>
+                            <AppliedMediaNotice requestText={requestText} />
                             <textarea
                               aria-label={t("运行配置 JSON")}
                               className="request-editor"

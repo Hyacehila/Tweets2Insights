@@ -43,7 +43,7 @@ LangGraph Leader 将自然语言需求转换为 RunRequest，领域编译器据�
 ## 外部服务接入
 
 OpenAI Decisions 使用官方 `/v1/decisions` 原生协议，作为默认决策标注；Jev 和阿里 decision 使用 System One 原生适配，X 使用官方归档搜索 API 分页适配。
-其他社交平台及多模态通过连接器接入。
+OpenAI Decisions 与 Jev 的配图通过原生协议接入；其他社交平台和自定义决策服务可通过连接器扩展。
 操作者通过 `T2I_CONNECTORS_FILE` 指向本机配置，Agent 只能选择连接器 ID，不能提交命令或任意文件路径。
 连接器是 operator 安装的可执行程序，以 stdin/stdout JSON 通信；stderr 不写入任务产物。
 平台连接器缺失时返回配置错误，未登录时进入 waiting_for_auth，登录后可恢复任务。
@@ -52,8 +52,8 @@ OpenAI Decisions 使用官方 `/v1/decisions` 原生协议，作为默认决策�
 命令数组由操作者在本机配置；MCP RunRequest 通过连接器 ID 引用。
 
 - crawl：输入 operation=fetch_page、event、cursor、session_ref、remaining_posts/comments；输出 records（标准 PostRecord）、next_cursor。
-- label：输入 operation=label、mode、schema、posts；输出 records（post_id/fields）、usage、cost。接口字段与 WeakLabeler 相同。
-- media/default：输入指定 post_id/media_ref；输出 items（post_id、media_ref、ocr、interpretation）、usage、cost。
+- label：输入 operation=label、mode、schema、posts；输出 records（post_id/fields）、usage、cost。配置须声明 `"modalities": ["text", "image"]` 才传入图片，否则仅传文本并提示；图片引用按每帖上限截断。
+- media/default：保留给显式调用的 OCR/图像解读接口；输入指定 post_id/media_ref，输出 items（post_id、media_ref、ocr、interpretation）、usage、cost。标准图文标注流程不依赖此连接器。
 - 未登录可返回 `{"status":"waiting_for_auth"}`。会话内容由连接器从本机环境/会话存储解析，不进入请求清单。
 - Schema、论坛和报告生成共用独立的 OpenAI 兼容 Agent 模型配置，默认 Qwen3.8-Max；标签阶段默认 OpenAI Decisions / gpt-6-luna，也支持 Jev/阿里或决策 label 连接器。
 

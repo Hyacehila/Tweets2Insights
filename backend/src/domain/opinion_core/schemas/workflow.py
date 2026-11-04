@@ -35,6 +35,7 @@ class LabelOptions(Contract):
     max_calls: int = Field(default=100, ge=1)
     max_schema_calls: int = Field(default=4, ge=2)
     probability_margin: float = Field(default=0.10, ge=0, le=1)
+    max_images_per_post: int = Field(default=3, ge=1, le=9)
 
     @model_validator(mode="after")
     def decision_protocol(self):
@@ -167,7 +168,7 @@ class RunRequest(Contract):
     forum_rounds: int = Field(default=3, ge=0, le=8)
     max_total_calls: int = Field(default=120, ge=1, le=10000)
     max_cost: float | None = Field(default=None, ge=0)
-    media_mode: Literal["text_only", "image_only", "text_image"] = "text_only"
+    media_mode: Literal["text_only", "image_only", "text_image"] = "text_image"
 
     @model_validator(mode="after")
     def route(self):
@@ -196,8 +197,6 @@ class RunRequest(Contract):
             not self.event.start or not self.event.end
         ):
             raise ValueError("keyword collection requires an explicit time interval")
-        if self.media_mode != "text_only" and self.labels.provider != "connector":
-            raise ValueError("nontext labeling requires a multimodal connector")
         if self.event.requires_collection != (self.crawl is not None):
             raise ValueError("only keyword input requires a CrawlSpec")
         if self.scenarios and self.model is None:

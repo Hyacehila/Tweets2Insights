@@ -1,6 +1,6 @@
 # Tweets2Insights
 
-**面向事件的舆情分析与研究工作台：从社交文本出发，连接自动弱标注、分布分析、证据追溯与条件推演。**
+**面向事件的舆情分析与研究工作台：从帖子文字与配图出发，连接自动弱标注、分布分析、证据追溯与条件推演。**
 
 [![Python](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white)](backend/pyproject.toml)
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933?logo=node.js&logoColor=white)](frontend/package.json)
@@ -17,7 +17,8 @@ Tweets2Insights 将一次事件研究组织为可追溯的工作流：导入帖�
 
 | 能力 | 项目中的实现 |
 |---|---|
-| **事件驱动的数据接入** | 上传标准 JSON、选择已有数据；内置 X 官方归档搜索，其他平台由本机连接器扩展。 |
+| **事件驱动的数据接入** | 上传标准帖子 JSON 及配图、选择已有数据；内置 X 官方归档搜索，其他平台由本机连接器扩展。 |
+| **图文联合分析** | OpenAI Decisions / Jev 按模型协议接收正文与配图；每帖默认最多 3 张，可设为 1–9 张。纯文本模型自动忽略图片并提示。 |
 | **自动弱标注** | 高阅读量随机抽样 → Schema Agent → OpenAI Decisions（默认）/ Jev / 阿里 decision；完整类别概率、自动拒判、覆盖率与版本缓存。 |
 | **分布与证据分析** | 41 个保留工具入口覆盖情绪、话题、地区、互动和 NLP；继承本项目第二阶段选工具、补数据、补搜索、补图的反馈机制。 |
 | **预测与条件情景** | 训练截止点内拟合 PCA 和 HK 参数；隐空间同化、解码预测、六种模型/基线滚动诊断；相同起点与随机流下比较措施及资源成本。 |
@@ -26,7 +27,7 @@ Tweets2Insights 将一次事件研究组织为可追溯的工作流：导入帖�
 
 **生产流程使用模型弱标注，标注后自动进入分析，不逐条安排人工复核。** 人工标注仅用于独立 Demo 的方案评测。自动校验、字段拒判、失败记录、预算和版本追溯仍保留；缺失或失败不会被填成“中性”。
 
-自动标注默认采用 OpenAI Decisions API 的 `gpt-6-luna`，也支持 Jev 与阿里 decision 的原生 System One 接口。生成式 Agent 支持各厂商的 OpenAI 兼容接口，与弱标注模型独立配置。视觉及其他平台通过[连接器](doc/modules/architecture-rewrite.md#外部服务接入)扩展。阶段流程、论坛角色和工具说明见[完整工作流](doc/modules/full-workflow.md)。
+自动标注默认采用 OpenAI Decisions API 的 `gpt-6-luna`，也支持 Jev 与阿里 decision 的原生 System One 接口。生成式 Agent 支持各厂商的 OpenAI 兼容接口，与弱标注模型独立配置。OpenAI Decisions 与 Jev 直接处理配图；其他平台通过[连接器](doc/modules/architecture-rewrite.md#外部服务接入)扩展。阶段流程、论坛角色和工具说明见[完整工作流](doc/modules/full-workflow.md)。
 
 <a id="quickstart"></a>
 ## 快速开始
@@ -116,7 +117,7 @@ uv run --project backend python scripts/dev.py stop
 ## 第一次分析
 
 1. **新建事件会话**：使用 `rain` 等事件 ID。同一事件的多个会话共享该事件的数据和领域任务。
-2. **选择输入与阶段**：上传标准 JSON 或选择关键词采集；设置时间范围、复盘/预测/情景、论坛角色、模型及调用预算。
+2. **选择输入与阶段**：上传标准 JSON 及配图，或选择关键词采集；设置时间范围、研究阶段、模型、每帖图片上限及调用预算。
 3. **生成计划**：点击“应用研究配置”，再让 Leader 生成计划；也可在高级运行配置中改用自然语言规划。
 4. **提交执行**：点击“开始执行”，在“分析与报告”中跟踪任务进度。
 5. **查看结果**：打开已完成的任务，浏览交互图表、论坛讨论与章节报告，并下载结果。
@@ -144,6 +145,7 @@ uv run --project backend python scripts/dev.py stop
     "raw_id": "001",
     "kind": "post",
     "content": "暴雨后道路积水，希望尽快公布排水进展。",
+    "media_refs": ["rain-01.jpg", "rain-02.png"],
     "published_at": "2026-10-01T10:00:00Z",
     "time_status": "parsed"
   }
@@ -151,6 +153,7 @@ uv run --project backend python scripts/dev.py stop
 ```
 
 时间使用含时区的 ISO 8601 格式。`published_at` 有值时，`time_status` 必须为 `parsed`；时间未知时保留缺失状态。旧格式数据可通过[迁移入口](doc/modules/domain-application.md#兼容入口)转换。
+`media_refs` 为可选配图列表，可填写图片网址；使用本地文件名时，在上传框同时选择 JSON 与这些图片。每张支持静态 JPG、PNG、WebP，最大 16 MiB。在研究配置中调整每帖图片上限，默认 3 张。模型不支持图片时自动使用文本，并在界面与结果中提醒。
 
 </details>
 

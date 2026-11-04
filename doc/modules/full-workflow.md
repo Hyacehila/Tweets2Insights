@@ -9,6 +9,7 @@ CollectTools → DecisionTools → ExecuteTools → ProcessResult → EnsureChar
 1. 前端选择数据/关键词输入与复盘、训练预测、情景建议；Leader 生成运行请求，领域服务编译依赖，Worker 按阶段执行。
 2. 随机抽取高阅读量候选记录，由 Schema Agent 结合搜索选择标签；抽样不截断后续分析数据。
 3. 默认用 OpenAI Decisions / gpt-6-luna 标注，也支持 TypeSafe Jev、阿里 decision 与自定义决策连接器；用户在本机配置 API 凭据。
+   OpenAI Decisions 与 Jev 联合分析正文和配图，每帖默认取前 3 张，可设 1–9 张；纯文本决策模型自动忽略图片并提示。图片通过原生标注步骤进入统计、论坛与报告，不另行要求媒体连接器。
 4. 41 个保留分析工具迁移到新契约；独立工具目录、参数验证、结果/图表/来源资产。
 5. 按需论坛角色、工具自主选择、搜索补证、图表覆盖检查、分歧记录和有界反馈循环。
 6. 内容整理 Agent → 人文社科解释 Agent → 页面结构 Agent → 程序校验与智能报告页面。
@@ -78,6 +79,7 @@ CollectTools → DecisionTools → ExecuteTools → ProcessResult → EnsureChar
 [阿里云决策模型](https://help.aliyun.com/zh/model-studio/decision-model-api)：每帖五个 choice 问题共享一次请求，
 保留完整概率、供应商置信度和前两项概率差距；unknown、低置信度或小差距自动拒判。
 Jev/阿里只承担结构化决策；Schema、论坛、内容、社科和布局使用独立 `agent_model`。
+配图输入、格式适配、失败处理与缓存说明见[帖子配图](automatic-labeling.md#帖子配图)。图片读取失败的帖子保留独立失败状态，结果页面展示本次图片选择情况。
 
 ## 实验预测与调控建议
 

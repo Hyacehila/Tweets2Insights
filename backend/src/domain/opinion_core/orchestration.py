@@ -20,8 +20,6 @@ def compile_plan(request):
     ]
     if "retrospective" in selected:
         steps.append(("analysis", "DataAgent", "analysis"))
-        if req.media_mode != "text_only":
-            steps.append(("media", "MediaAgent", "media"))
         if req.forum_rounds:
             steps.append(("forum", "ForumHost", "forum"))
     if selected & {"forecast", "scenario", "backtest"}:

@@ -14,6 +14,7 @@ import { artifactLabels } from "@/lib/i18n";
 import { api, post } from "@/lib/api";
 import type { Job, DomainResult, ArtifactRef } from "@/lib/types";
 import { ArtifactViewer } from "./artifact-viewer";
+import { MediaInputNotice } from "./media-input-notice";
 import { Card } from "./tremor/Card";
 import { Badge } from "./tremor/Badge";
 import { EmptyState, StatusBadge, statusLabels } from "./ui";
@@ -269,6 +270,7 @@ export function JobPanel({
       )}
       {result.artifacts && (
         <Card className="surface result-card">
+          <MediaInputNotice value={result.media_input} counts />
           <div className="section-heading">
             <h2>
               <FileChartColumn size={18} />

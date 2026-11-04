@@ -45,6 +45,7 @@ Tweets2Insights/
 │   │       │   │   ├── sampling.py  # 高阅读量池随机抽样，仅用于标签发现
 │   │       │   │   ├── openai_provider.py # 通用 Chat Completions JSON 适配
 │   │       │   │   ├── openai_decisions.py # OpenAI 原生决策标注与类别概率
+│   │       │   │   ├── media.py     # 模型图片能力、每帖上限、图像预处理与内容指纹
 │   │       │   │   ├── schema_builder.py # 通用 Agent 标签体系设计
 │   │       │   │   └── system_one.py # Jev / 阿里 decision 原生协议
 │   │       │   ├── evidence/        # 搜索适配、证据卡、论坛、多模态接口
@@ -58,6 +59,7 @@ Tweets2Insights/
 │   │       │   ├── evaluation/      # Demo 与消融脚本，后置评测
 │   │       │   └── orchestration.py # 确定性领域计划编译
 │   │       ├── opinion_gateway/     # MCP 服务、应用服务、资产、预算、Job/Worker
+│   │       │   ├── media_assets.py  # 数据集配图原文件存储与事件隔离
 │   │       │   ├── agent_models.py  # 推荐模型、配置保存与端点凭据解析
 │   │       │   └── label_providers.py # Worker/CLI 共用决策标注适配器
 │   │       └── crawler_worker/      # 独立采集执行器、X 官方 API、连接器协议

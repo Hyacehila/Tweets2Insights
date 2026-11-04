@@ -47,7 +47,8 @@ from .connectors import (
     invoke_connector,
 )
 from .dataset_repository import storage_id
-from .label_providers import make_label_provider
+from .label_providers import make_label_provider, media_policy_for
+from .media_assets import MediaAssets
 from .label_workflow import DurableLabelBudget
 
 
@@ -181,10 +182,15 @@ class Execution:
                 raise IncompleteStage(
                     "collection returned no records; coverage is incomplete"
                 )
-            dataset = self.service.register_dataset(
-                self.req.event.event_id, result.pop("records")
-            )
-            return {**result, **dataset}
+            records = result.pop("records")
+            dataset = self.service.register_dataset(self.req.event.event_id, records)
+            return {
+                **result,
+                **dataset,
+                "media_input": media_policy_for(
+                    self.req.labels, self.req.media_mode
+                ).summary(records),
+            }
         finally:
             if process.poll() is None:
                 process.kill()
@@ -201,10 +207,12 @@ class Execution:
         if operation == "collect":
             return self.collect()
         if operation == "load_dataset":
+            records = self.service.repo.read(req.event.event_id, req.event.dataset_ref)
             return {
                 "dataset_id": req.event.dataset_ref,
-                "count": len(
-                    self.service.repo.read(req.event.event_id, req.event.dataset_ref)
+                "count": len(records),
+                "media_input": media_policy_for(req.labels, req.media_mode).summary(
+                    records
                 ),
                 "status": "completed",
             }
@@ -257,7 +265,14 @@ class Execution:
                 raise IncompleteStage(result["error_type"])
             return result
         if operation == "label":
-            provider = make_label_provider(req.labels, self.ledger, req.media_mode)
+            provider = make_label_provider(
+                req.labels,
+                self.ledger,
+                req.media_mode,
+                image_loader=MediaAssets(
+                    self.service.repo.root, req.event.event_id
+                ).load,
+            )
             labeler = WeakLabeler(
                 self.service.repo.root,
                 provider,

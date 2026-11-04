@@ -1,5 +1,30 @@
 export type Locale = "zh-CN" | "en-US";
 
+const mediaMessages: Record<string, string> = {
+  "请选择一个 JSON 文件，可同时选择它引用的配图。": "Select one JSON file, optionally with the images it references.",
+  "配图文件名重复，请重命名后再导入。": "Image filenames are duplicated. Rename them before importing.",
+  "每张图片不得超过 16 MiB。": "Each image must be at most 16 MiB.",
+  "media_refs 必须是图片引用字符串数组。": "media_refs must be an array of image reference strings.",
+  "帖子输入模态": "Post input modalities",
+  "图文联合（无配图时使用文字）": "Text and images (text only when no image is attached)",
+  "仅分析文字": "Analyze text only",
+  "每帖配图上限": "Maximum images per post",
+  "每帖配图上限必须是 1–9 的整数。": "The image limit must be an integer from 1 to 9.",
+  "默认 3 张，可选 1–9 张；按配图顺序选取，超出部分保留在原数据中。": "Default: 3, adjustable from 1 to 9. Images are selected in their original order; remaining images stay in the dataset.",
+  "当前模型按纯文本模式运行。无论数据集是否包含图片，都只发送帖子文字，不读取或发送配图。": "This model runs in text-only mode. Only post text is sent, whether or not the dataset contains images. Images are not read or sent.",
+  "已选择仅分析文字，帖子配图将保留在数据集中，不参与本次分析。": "Text-only analysis is selected. Images stay in the dataset and are excluded from this run.",
+  "部分帖子超过配图上限，按原始顺序选取前 {limit} 张，其余配图保留在数据集中。": "Some posts exceed the image limit. The first {limit} images are selected in order; remaining images stay in the dataset.",
+  "部分配图读取失败，对应帖子已标记为标注失败，请检查图片引用后重试。": "Some images could not be read. The affected posts are marked as labeling failures. Check the image references before retrying.",
+  "部分帖子在当前模式下没有可分析的内容，已标记为标注失败。": "Some posts have no usable content in this input mode and are marked as labeling failures.",
+  "配图共 {total} 张；按每帖上限选择 {selected} 张，忽略 {ignored} 张。": "{total} images in total; {selected} selected under the per-post limit, {ignored} excluded.",
+  "系统按所选模型自动转换图片格式，与帖子文字一起提交标注。": "Images are automatically formatted for the selected model and submitted together with the post text.",
+  "Jev 图片输入为实验功能，系统自动启用并适配图片尺寸。": "Jev image input is experimental. The system enables it and adjusts image dimensions automatically.",
+  "暂时无法读取模型图片能力，请检查服务连接。": "Unable to retrieve image capabilities. Check the service connection.",
+  "选择 JSON 数据与配图": "Select post JSON and images",
+  "选择一个帖子 JSON，可同时选择它引用的 JPG、PNG 或 WebP 图片。": "Select one post JSON file, optionally with the JPG, PNG or WebP images it references.",
+  "media_refs 填写图片网址或文件名；本地配图按文件名匹配，每张不超过 16 MiB。": "Use image URLs or filenames in media_refs. Local images are matched by filename, up to 16 MiB each.",
+};
+
 export const artifactLabels: Record<string, string> = {
   input: "输入数据",
   sample: "抽样结果",
@@ -24,6 +49,7 @@ export const artifactLabels: Record<string, string> = {
 };
 
 const english: Record<string, string> = {
+  ...mediaMessages,
   "右键管理事件": "Right-click to manage event",
   "删除事件": "Delete event",
   "确认删除": "Confirm deletion",
