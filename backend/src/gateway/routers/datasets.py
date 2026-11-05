@@ -41,9 +41,10 @@ async def upload_image(
 
 
 @router.get("")
-async def list_datasets(thread_id: str, db=Depends(store), manager=Depends(runtime)):
+def list_datasets(thread_id: str, db=Depends(store), config=Depends(settings)):
+    from opinion_gateway.application import ApplicationService
     event = db.get(thread_id)["event_id"]
-    return await manager.mcp.call("list_datasets", {"event_id": event})
+    return ApplicationService(config.asset_root).list_datasets(event)
 
 
 @router.post("")

@@ -268,7 +268,7 @@ def test_pdf_download_and_report_only_job_are_scoped(workspace, source):
     from types import SimpleNamespace
 
     async def call(name, arguments):
-        return getattr(r.service, name)(**arguments)
+        raise AssertionError("Reading a published report must not start an MCP process")
 
     r.client.app.state.runtime = SimpleNamespace(mcp=SimpleNamespace(call=call))
     request = {
@@ -305,6 +305,17 @@ def test_pdf_download_and_report_only_job_are_scoped(workspace, source):
     claimed = r.service.jobs.claim("test", kinds=["analysis_run"])
     r.service.jobs.finish(claimed, {"artifacts": refs})
     url = f"/api/threads/{r.thread['thread_id']}"
+    assert r.client.get(url + "/datasets").json()[0]["count"] == 2
+    assert r.client.get(url + "/jobs").json()[0]["job_id"] == job.job_id
+    assert r.client.get(url + f"/jobs/{job.job_id}").json()["status"] == "completed"
+    assert (
+        r.client.get(url + f"/jobs/{job.job_id}/result").json()["artifacts"]["report"]
+        == ref
+    )
+    assert (
+        r.client.get(url + f"/artifacts/report-test/{ref['artifact_id']}").status_code
+        == 200
+    )
     download = r.client.get(
         url + f"/exports/report-test/{ref['artifact_id']}?format=pdf"
     )

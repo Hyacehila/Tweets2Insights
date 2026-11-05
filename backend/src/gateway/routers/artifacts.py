@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Query, HTTPException
 from fastapi.responses import Response
 import io, json, zipfile, re, base64, asyncio
 from opinion_gateway.assets import ArtifactStore
+from opinion_gateway.application import ApplicationService
 from ..dependencies import runtime, store, settings
 
 router = APIRouter(
@@ -48,16 +49,16 @@ async def analytical_tool(
 
 
 @router.get("/jobs")
-async def jobs(thread_id: str, db=Depends(store), manager=Depends(runtime)):
-    return await manager.mcp.call(
-        "list_jobs", {"event_id": db.get(thread_id)["event_id"]}
+def jobs(thread_id: str, db=Depends(store), config=Depends(settings)):
+    return ApplicationService(config.asset_root).list_jobs(
+        db.get(thread_id)["event_id"]
     )
 
 
 @router.get("/jobs/{job_id}")
-async def job(thread_id: str, job_id: str, db=Depends(store), manager=Depends(runtime)):
-    return await manager.mcp.call(
-        "job_status", {"event_id": db.get(thread_id)["event_id"], "job_id": job_id}
+def job(thread_id: str, job_id: str, db=Depends(store), config=Depends(settings)):
+    return ApplicationService(config.asset_root).job_status(
+        db.get(thread_id)["event_id"], job_id
     )
 
 
@@ -78,34 +79,24 @@ async def action(
 
 
 @router.get("/jobs/{job_id}/result")
-async def result(
-    thread_id: str, job_id: str, db=Depends(store), manager=Depends(runtime)
-):
-    return await manager.mcp.call(
-        "read_job_artifact",
-        {"event_id": db.get(thread_id)["event_id"], "job_id": job_id},
+def result(thread_id: str, job_id: str, db=Depends(store), config=Depends(settings)):
+    return ApplicationService(config.asset_root).read_job_artifact(
+        db.get(thread_id)["event_id"], job_id
     )
 
 
 @router.get("/artifacts/{run_id}/{artifact_id}")
-async def artifact(
+def artifact(
     thread_id: str,
     run_id: str,
     artifact_id: str,
     offset: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     db=Depends(store),
-    manager=Depends(runtime),
+    config=Depends(settings),
 ):
-    return await manager.mcp.call(
-        "read_domain_artifact",
-        {
-            "event_id": db.get(thread_id)["event_id"],
-            "run_id": run_id,
-            "artifact_id": artifact_id,
-            "offset": offset,
-            "limit": limit,
-        },
+    return ApplicationService(config.asset_root).read_domain_artifact(
+        db.get(thread_id)["event_id"], run_id, artifact_id, offset, limit
     )
 
 

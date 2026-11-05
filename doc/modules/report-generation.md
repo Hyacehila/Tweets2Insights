@@ -34,6 +34,8 @@ PDF 随报告生成并写入不可变报告资产，下载不再调用模型。�
 
 报告中心提供“重新生成报告”、版本选择与“下载 PDF”。进程追踪保留监控汇报、各 Agent 状态、逐章日志、停止、重试及失败详情。删除事件时一并清理报告、草稿和计算结果，输入数据仍保留。
 
+数据集列表、任务状态、任务结果和报告产物等只读 HTTP 接口直接调用本地 ApplicationService，共用领域服务的事件归属检查；页面加载与轮询无需启动 MCP 子进程。Agent 的工具调用继续使用 MCP。
+
 DeepSeek 官方端点的 `deepseek-flash` / `deepseek-v4-pro` 默认开启高强度思考。报告阶段在用户未显式设置 `thinking` 或 `reasoning_effort` 时采用 `reasoning_effort=low`，使逐章写作适配已配置的输出上限；显式参数保持优先。其他供应商沿用其配置。[官方参数说明](https://api-docs.deepseek.com/guides/thinking_mode/)
 
 ## 实现位置
