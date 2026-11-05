@@ -192,9 +192,7 @@ const english: Record<string, string> = {
   已完成任务: "Completed tasks",
   "结果已保存，可随时查看": "Saved results, ready to explore",
   研究流程: "Research workflow",
-  "从事件数据，到可解释的研究结论": "From event data to interpretable insights",
-  "按研究目标选择阶段，由 Leader Agent 组织执行。":
-    "Choose the stages you need. The Leader Agent coordinates execution.",
+  "多智能体舆情研究工作台": "Multi-Agent Public Opinion Research Workspace",
   开始研究: "Start a study",
   数据与标注: "Data & labeling",
   "上传数据 / 关键词采集": "Upload data / collect by keyword",

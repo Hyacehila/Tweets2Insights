@@ -23,8 +23,7 @@ export function LaunchPage() {
     <main className="launch-main">
       <div className="launch-intro">
         <span className="launch-eyebrow">TWEETS2INSIGHTS</span>
-        <h1>{t("从事件数据，到可解释的研究结论")}</h1>
-        <p>{t("按研究目标选择阶段，由 Leader Agent 组织执行。")}</p>
+        <h1>{t("多智能体舆情研究工作台")}</h1>
         <Link className="launch-cta" href="/workspace">{t("开始研究")}<ArrowRight size={20} /></Link>
       </div>
       <section className="launch-workflow" aria-label={t("研究流程")}>
