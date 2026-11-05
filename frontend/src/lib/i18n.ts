@@ -193,8 +193,8 @@ const english: Record<string, string> = {
   "结果已保存，可随时查看": "Saved results, ready to explore",
   研究流程: "Research workflow",
   "智能舆情研判与情景推演平台": "Public Opinion Intelligence & Scenario Simulation",
-  "融合多源社交媒体数据与多智能体协作，支持事件复盘、趋势分析、条件情景推演与可追溯研究报告。":
-    "AI-powered, multi-source public opinion analysis for event investigation, trend exploration, scenario simulation, and evidence-backed reporting.",
+  "融合多源社交媒体数据与多智能体协作，支持事件复盘、趋势分析、条件情景推演与可追溯研究报告":
+    "AI-powered, multi-source public opinion analysis for event investigation, trend exploration, scenario simulation, and evidence-backed reporting",
   "开始舆情研究": "Start Analysis",
   开始研究: "Start a study",
   数据与标注: "Data & labeling",

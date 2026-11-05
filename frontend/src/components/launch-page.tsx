@@ -28,7 +28,7 @@ export function LaunchPage() {
       <div className="launch-intro">
         <span className="launch-eyebrow">TWEETS2INSIGHTS</span>
         <h1>{t("智能舆情研判与情景推演平台")}</h1>
-        <p>{t("融合多源社交媒体数据与多智能体协作，支持事件复盘、趋势分析、条件情景推演与可追溯研究报告。")}</p>
+        <p>{t("融合多源社交媒体数据与多智能体协作，支持事件复盘、趋势分析、条件情景推演与可追溯研究报告")}</p>
         <Link className="launch-cta" href="/workspace">{t("开始舆情研究")}<ArrowRight size={20} /></Link>
       </div>
       <section className="launch-workflow" aria-label={t("研究流程")}>
