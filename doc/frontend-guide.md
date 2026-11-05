@@ -16,7 +16,7 @@
 
 工作台四个子页在同一事件内切换，配置表单保持不变。概览不显示事件标识或任务状态统计卡片，失败任务已完成的分析仍可进入看板。
 
-启动页右上角“中文 / EN”切换整页语言，包括标题、简介、入口按钮和流程卡片。英文标题为 “Public Opinion Intelligence & Scenario Simulation”，入口为 “Start Analysis”。选择自动保存，刷新及进入工作台后继续沿用。
+启动页使用居中标题、蓝色入口按钮与原创浅蓝背景，以对话气泡、网络节点和流动光线表现信息传播。三个研究节点沿曲线错落排列，窄屏改为纵向排列。右上角“中文 / EN”切换整页语言，包括标题、简介、入口按钮和研究节点。英文标题为 “Public Opinion Intelligence & Scenario Simulation”，入口为 “Start Analysis”。选择自动保存，刷新及进入工作台后继续沿用。
 
 “研究进程追踪”顶部选择运行版本，先展示流程监控 Agent 的当前汇报、阶段完成数、下一阶段和运行时间，再展示各 Agent 的等待、执行、完成与失败状态。错误分析列出原因、证据和处理建议，原始调用栈、运行日志及任务操作可展开查看。页面每两秒同步一次；正常监控不产生模型调用费用。
 
@@ -52,6 +52,7 @@ API 设置可在创建研究前直接使用。界面支持明暗主题，窄屏�
 - `components/workspace.tsx`：导航、概览、会话、数据输入、研究配置与 Leader 交互。
 - `components/recent-research.tsx`：最近研究、重命名和事件删除。
 - `components/launch-page.tsx`：项目启动页。
+- `frontend/public/images/opinion-flow-v1.png`：启动页背景，由 Next.js Image 优化加载；[生成提示词](diagrams/landing-background-prompt.md)。
 - `components/research-dashboard.tsx`：分析大屏与数据集描述统计。
 - `components/research-progress.tsx`：实时阶段、日志、异常和用量。
 - `components/report-library.tsx`：最终报告与版本切换。

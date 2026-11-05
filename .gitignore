@@ -16,6 +16,7 @@ report/images/
 *.gif
 *.png
 !doc/diagrams/*.png
+!frontend/public/images/*.png
 
 # Claude 
 .claude/

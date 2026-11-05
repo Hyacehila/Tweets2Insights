@@ -36,6 +36,7 @@
 - [升级实施记录](upgrade-status.md)：版本变更、检查结果及后续任务。
 - [弱标注 Demo 协议](testing/weak-label-demo-protocol.md)：独立人工金标准、质量与覆盖率评测；不进入日常标注流程。
 - [测试工作流](testing/testing_workflow.md)：测试分层、执行命令与用例映射。
+- [启动页背景素材](diagrams/landing-background-prompt.md)：原创背景的素材路径与生成提示词。
 
 ## 历史与兼容文档
 

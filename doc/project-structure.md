@@ -76,6 +76,7 @@ Tweets2Insights/
 │   ├── TREMOR_LICENSE               # 复用组件的 MIT 许可
 │   ├── next.config.ts               # 本机 API 代理
 │   ├── tsconfig.json
+│   ├── public/images/               # 启动页信息传播背景
 │   ├── tests/                       # 界面语言转换检查
 │   └── src/
 │       ├── app/                     # App Router、布局、工作区和聊天页
