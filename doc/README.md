@@ -20,6 +20,8 @@
 - [系统架构](architecture.md)：架构总览图、应用分层、Agent 协作与数据流。
 - [项目目录](project-structure.md)：应用入口、领域源码与兼容目录。
 - [Agent Runtime](modules/agent-runtime-architecture.md)：Leader、子 Agent、记忆、检查点、MCP 与 SSE。
+- [OpenUI 交互分析](modules/intelligent-ui.md)：组件库、模型流、真实数据绑定和情景实验接口。
+- [Agent 复盘报告](modules/report-generation.md)：旧模板写作、Agent 排版、交互网页与 PDF 下载。
 - [架构重写与迁移清单](modules/architecture-rewrite.md)：复用归属、连接器协议与数值假设。
 - [贡献指南](../CONTRIBUTING.md)：环境、模块依赖和文档同步要求。
 - [安全边界](../SECURITY.md)：本机部署、凭据、文件能力和访问控制范围。

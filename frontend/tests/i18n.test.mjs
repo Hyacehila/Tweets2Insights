@@ -47,6 +47,12 @@ test("invalid or missing saved preferences fall back to Chinese", () => {
   assert.equal(normalizeLocale("unknown"), "zh-CN");
 });
 
+test("report reader controls use the selected language", () => {
+  assert.equal(translate("en-US", "研究报告"), "Research report");
+  assert.equal(translate("en-US", "搜索报告"), "Search report");
+  assert.equal(translate("en-US", "重新生成报告"), "Regenerate report");
+});
+
 test("model settings explain compatibility and recommended models in English", () => {
   assert.equal(translate("en-US", "Agent 模型"), "Agent model");
   assert.equal(translate("en-US", "检测并保存"), "Check & save");

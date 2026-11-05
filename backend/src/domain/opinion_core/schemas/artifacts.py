@@ -5,7 +5,7 @@ from .base import Contract, Identifier, UTCDateTime
 
 class EvidenceCard(Contract):
     evidence_id: Identifier
-    kind: Literal['post', 'web', 'calculation', 'media']
+    kind: Literal["post", "web", "calculation", "media"]
     title: str
     excerpt: str
     source_url: str | None = None
@@ -20,12 +20,19 @@ class EvidenceCard(Contract):
 
 class ContentBlock(Contract):
     block_id: Identifier
-    kind: Literal['observed', 'forecast', 'simulated', 'interpretation']
+    kind: Literal["observed", "forecast", "simulated", "interpretation"]
     title: str
     text: str
     evidence_refs: list[Identifier] = Field(default_factory=list)
     numeric_refs: list[str] = Field(default_factory=list)
     artifact_refs: list[Identifier] = Field(default_factory=list)
+    chart_ids: list[str] = Field(default_factory=list)
+
+
+class ReportChapter(Contract):
+    chapter_id: Identifier
+    title: str
+    block_ids: list[Identifier] = Field(min_length=1)
 
 
 class ContentBundle(Contract):
@@ -35,25 +42,33 @@ class ContentBundle(Contract):
     evidence: list[EvidenceCard]
     metrics: dict[str, Any]
     source_versions: dict[str, str]
+    report_title: str = ""
+    template_version: str = ""
+    chapters: list[ReportChapter] = Field(default_factory=list)
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def references(self):
         if len({b.block_id for b in self.blocks}) != len(self.blocks):
-            raise ValueError('duplicate content block')
+            raise ValueError("duplicate content block")
         evidence = {e.evidence_id for e in self.evidence}
         if len(evidence) != len(self.evidence):
-            raise ValueError('duplicate evidence ID')
+            raise ValueError("duplicate evidence ID")
         for block in self.blocks:
-            if not set(block.evidence_refs) <= evidence or not set(block.numeric_refs) <= set(self.metrics):
-                raise ValueError('unresolved content reference')
+            if not set(block.evidence_refs) <= evidence or not set(
+                block.numeric_refs
+            ) <= set(self.metrics):
+                raise ValueError("unresolved content reference")
             if not set(block.artifact_refs) <= set(self.source_versions.values()):
-                raise ValueError('unresolved artifact reference')
+                raise ValueError("unresolved artifact reference")
         return self
 
 
 class LayoutSection(Contract):
     title: str
     block_ids: list[Identifier] = Field(min_length=1)
+    chart_ids: list[str] = Field(default_factory=list)
+    presentation: Literal["narrative", "spotlight", "columns"] = "narrative"
+    chart_position: Literal["before", "after"] = "after"
 
 
 class LayoutSpec(Contract):

@@ -27,6 +27,8 @@ import {
   Settings2,
   Square,
   Sun,
+  Sparkles,
+  TrendingUp,
   UploadCloud,
   X,
 } from "lucide-react";
@@ -46,13 +48,17 @@ import { AppliedMediaNotice } from "./media-input-notice";
 import { Card } from "./tremor/Card";
 import { Badge } from "./tremor/Badge";
 import { EmptyState, Modal, StatusBadge, statusLabels, formatDate } from "./ui";
+import { ForecastWorkspace, IntelligenceProvider, IntelligentAssistant } from "./intelligent-ui";
+import type { CanvasPage, WorkspaceView } from "@/lib/intelligence-types";
 
-type View = "overview" | "research" | "settings";
+type View = WorkspaceView;
 type ResearchTab = "configure" | "progress" | "reports" | "datasets";
 const views = [
-  { id: "overview" as const, label: "研究概览", icon: LayoutDashboard },
-  { id: "research" as const, label: "研究工作台", icon: MessageSquare },
-  { id: "settings" as const, label: "API 设置", icon: Settings2 },
+  { id: "overview" as const, label: "舆情分析总览", icon: LayoutDashboard },
+  { id: "research" as const, label: "事件研判工作台", icon: MessageSquare },
+  { id: "forecast" as const, label: "趋势与情景推演", icon: TrendingUp },
+  { id: "reports" as const, label: "研究报告中心", icon: FileChartColumn },
+  { id: "settings" as const, label: "模型与服务设置", icon: Settings2 },
 ];
 
 export function Workspace({ threadId }: { threadId?: string }) {
@@ -63,6 +69,7 @@ export function Workspace({ threadId }: { threadId?: string }) {
   const [view, setView] = useState<View>(threadId ? "research" : "overview");
   const [researchTab, setResearchTab] = useState<ResearchTab>("configure");
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [event, setEvent] = useState("");
@@ -132,7 +139,8 @@ export function Workspace({ threadId }: { threadId?: string }) {
     setError("");
     setExecution("");
     setImportedCount(null);
-    setView(threadId ? "research" : "overview");
+    const requestedView = new URLSearchParams(window.location.search).get("view");
+    setView(views.some(item => item.id === requestedView) ? requestedView as View : threadId ? "research" : "overview");
     setResearchTab("configure");
     if (!threadId) return;
     let live = true;
@@ -166,6 +174,14 @@ export function Workspace({ threadId }: { threadId?: string }) {
       live = false;
     };
   }, [threadId]);
+  useEffect(() => {
+    if (threadId) return;
+    let live = true;
+    api<{ thread_id?: string }>("/overview").then(value => {
+      if (live && value.thread_id) router.replace(`/workspace/chats/${value.thread_id}?view=overview`);
+    }).catch(() => {});
+    return () => { live = false; };
+  }, [threadId, router]);
   useEffect(() => {
     if (!threadId) return;
     let live = true;
@@ -306,6 +322,11 @@ export function Workspace({ threadId }: { threadId?: string }) {
   const nav = (id: View) => {
     setView(id);
     setMobileOpen(false);
+    window.history.replaceState(null, "", `${window.location.pathname}?view=${id}`);
+  };
+  const navigateCanvas = (page: CanvasPage) => {
+    if (page === "progress" || page === "datasets") { nav("research"); setResearchTab(page); }
+    else nav(page);
   };
   const sessionTable = (
     <div className="table-scroll">
@@ -392,7 +413,8 @@ export function Workspace({ threadId }: { threadId?: string }) {
     </label>
   );
   return (
-    <div className="app-shell">
+    <IntelligenceProvider key={threadId ?? "no-event"} threadId={threadId} datasetId={dataset} refreshKey={refreshKey} navigate={navigateCanvas}>
+    <div className={`app-shell intelligent-shell ${assistantOpen ? "assistant-visible" : ""}`}>
       <a className="skip-link" href="#main-content">
         {t("跳转到主内容")}
       </a>
@@ -412,7 +434,7 @@ export function Workspace({ threadId }: { threadId?: string }) {
             <BarChart3 size={20} />
           </span>
           <span>
-            Tweets2Insights<small>{t("舆情研究工作台")}</small>
+            Tweets2Insights<small>Agent-powered</small>
           </span>
         </Link>
         <button
@@ -443,6 +465,7 @@ export function Workspace({ threadId }: { threadId?: string }) {
             </button>
           ))}
         </nav>
+        <button className={`assistant-launch ${assistantOpen ? "active" : ""}`} onClick={() => { setAssistantOpen(value => !value); setMobileOpen(false); }}><Sparkles size={17}/><span>{t("AI 交互分析助手")}<small>OpenUI</small></span><ArrowRight size={14}/></button>
         <div className="sidebar-section-heading">
           <p className="nav-label">{t("最近研究")}</p>
           <span>{threads.length}</span>
@@ -475,6 +498,7 @@ export function Workspace({ threadId }: { threadId?: string }) {
             </strong>
           </div>
           <div className="topbar-actions">
+            {!!threads.length && <select className="event-switcher" aria-label={t("当前研究事件")} value={threadId || ""} onChange={e => router.push(`/workspace/chats/${e.target.value}?view=${view}`)}><option value="" disabled>{t("选择研究事件")}</option>{threads.map(item => <option key={item.thread_id} value={item.thread_id}>{item.title}</option>)}</select>}
             <button
               className="language-switch"
               aria-label={t("切换显示语言")}
@@ -506,6 +530,7 @@ export function Workspace({ threadId }: { threadId?: string }) {
             >
               <RefreshCw size={16} />
             </button>
+            <button className="assistant-toggle" aria-expanded={assistantOpen} onClick={() => setAssistantOpen(value => !value)}><Sparkles size={16}/><span>{t("分析助手")}</span></button>
             <button
               className="icon-button"
               aria-label={t("切换明暗主题")}
@@ -522,7 +547,7 @@ export function Workspace({ threadId }: { threadId?: string }) {
           </div>
         </header>
         <main id="main-content" className="page-content">
-          {view !== "overview" && <div className="workspace-heading"><h1>{view === "settings" ? t("模型与 API 设置") : thread?.title ?? t("研究工作台")}</h1></div>}
+          {!["overview", "forecast"].includes(view) && <div className="workspace-heading"><span className="view-kicker">{view === "reports" ? "RESEARCH REPORTS" : view === "settings" ? "SETTINGS" : "ANALYSIS WORKSPACE"}</span><h1>{t(views.find(item => item.id === view)?.label || "事件研判工作台")}</h1>{thread && view !== "settings" && <p className="muted">{thread.title}</p>}</div>}
           {error && (
             <div className="error" role="alert">
               <span>{t(error)}</span>
@@ -538,7 +563,9 @@ export function Workspace({ threadId }: { threadId?: string }) {
           {
             <>
               {view === "settings" && <ProviderSettings />}
-              {view === "overview" && <ResearchDashboard threads={threads} refreshKey={refreshKey} />}
+              {view === "overview" && <ResearchDashboard threads={threads} refreshKey={refreshKey} threadId={threadId} onAsk={() => setAssistantOpen(true)} />}
+              {view === "forecast" && threadId && <ForecastWorkspace/>}
+              {view === "reports" && threadId && <ReportLibrary threadId={threadId} jobs={jobs}/>}
               {view !== "overview" && view !== "settings" && !threadId && (
                 <Card className="surface section-card">
                   <div className="section-heading">
@@ -556,7 +583,7 @@ export function Workspace({ threadId }: { threadId?: string }) {
                 <>
                   <div hidden={view !== "research"}>
                     <div className="research-tabs" role="tablist" aria-label={t("研究工作台")}>
-                      {([["configure", "研究配置与执行"], ["progress", "研究进程追踪"], ["reports", "分析与报告"], ["datasets", "数据集概览"]] as const).map(([key, label]) => <button key={key} id={`research-tab-${key}`} role="tab" aria-selected={researchTab === key} aria-controls={`research-panel-${key}`} className={researchTab === key ? "selected" : ""} onClick={() => setResearchTab(key)}>{t(label)}</button>)}
+                      {([["configure", "研究配置与执行"], ["progress", "研究进程追踪"], ["reports", "分析与报告"], ["datasets", "数据集概览"]] as const).map(([key, label]) => <button key={key} id={`research-tab-${key}`} role="tab" aria-selected={researchTab === key} aria-controls={`research-panel-${key}`} className={researchTab === key ? "selected" : ""} onClick={() => key === "reports" ? nav("reports") : setResearchTab(key)}>{t(label)}</button>)}
                     </div>
                     <div id="research-panel-configure" role="tabpanel" aria-labelledby="research-tab-configure" hidden={researchTab !== "configure"}>
                     <div className="research-grid">
@@ -889,6 +916,7 @@ export function Workspace({ threadId }: { threadId?: string }) {
           </footer>
         </main>
       </div>
+      <IntelligentAssistant open={assistantOpen} onClose={() => setAssistantOpen(false)} page={view}/>
       <Modal
         open={createOpen}
         onOpenChange={setCreateOpen}
@@ -938,5 +966,6 @@ export function Workspace({ threadId }: { threadId?: string }) {
         </form>
       </Modal>
     </div>
+    </IntelligenceProvider>
   );
 }

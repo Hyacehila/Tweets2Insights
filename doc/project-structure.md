@@ -27,9 +27,11 @@ Tweets2Insights/
 │   │   ├── gateway/                 # FastAPI 应用层
 │   │   │   ├── app.py               # 应用工厂与生命周期
 │   │   │   ├── runtime.py           # Agent 执行、取消、事件发布
+│   │   │   ├── intelligent_ui.py    # OpenUI 事件数据绑定与模型流
+│   │   │   ├── openui_prompt.txt    # 从前端组件契约生成的系统提示词
 │   │   │   ├── event_deletion.py    # 删除事件研究记录与产物，保留数据集
 │   │   │   ├── dependencies.py      # 配置、线程仓库、Runtime 注入
-│   │   │   └── routers/             # threads/runs/events/datasets/artifacts/system
+│   │   │   └── routers/             # threads/runs/events/datasets/artifacts/system/intelligence
 │   │   ├── subagents/               # 专业角色注册与受限执行
 │   │   ├── tools/                   # 领域工具入口、CLI 与 Worker 启动
 │   │   ├── mcp/                     # MCP 配置、发现和调用客户端
@@ -54,8 +56,11 @@ Tweets2Insights/
 │   │       │   ├── dynamics/        # 联合 HK、同化、预测与回测
 │   │       │   │   └── latent.py    # PCA 编解码与训练内滚动参数选择
 │   │       │   ├── scenarios/       # 配对条件情景
-│   │       │   ├── reporting/       # 内容、结构、引用校验与渲染
-│   │       │   │   └── agents.py    # 内容整理 / 社科解释 / 页面布局
+│   │       │   ├── reporting/       # 模板、逐章写作、Agent 排版、OpenUI 与 PDF
+│   │       │   │   ├── agents.py    # 内容主笔 / 社科解释 / 页面布局
+│   │       │   │   ├── composition.py # 模板章节、材料规划与逐章检查点
+│   │       │   │   ├── charts.py    # 完整数据的打印矢量图
+│   │       │   │   └── pdf.py       # 同源正文、图表和证据 PDF 排版
 │   │       │   ├── evaluation/      # Demo 与消融脚本，后置评测
 │   │       │   └── orchestration.py # 确定性领域计划编译
 │   │       ├── opinion_gateway/     # MCP 服务、应用服务、资产、预算、Job/Worker
@@ -77,11 +82,13 @@ Tweets2Insights/
 │   ├── next.config.ts               # 本机 API 代理
 │   ├── tsconfig.json
 │   ├── public/images/               # 启动页信息传播背景
+│   ├── scripts/generate-openui.mjs   # OpenUI 提示词生成与一致性检查
 │   ├── tests/                       # 界面语言转换检查
 │   └── src/
 │       ├── app/                     # App Router、布局、工作区和聊天页
 │       ├── components/              # 工作台、任务面板、产物查看器
 │       │   ├── launch-page.tsx      # 独立启动页
+│       │   ├── intelligent-ui.tsx   # 分析助手、组件库、数据绑定与情景控件
 │       │   ├── research-dashboard.tsx # 分析看板与数据统计
 │       │   ├── research-progress.tsx # 监控汇报、Agent 状态、日志与错误分析
 │       │   ├── report-library.tsx   # 最终分析报告
@@ -95,7 +102,7 @@ Tweets2Insights/
 │       │   ├── specialty-chart.tsx   # 热图、网络与词云
 │       │   ├── forum-view.tsx       # 讨论、补充行动、分歧与停止原因
 │       │   ├── analysis-chart.tsx   # 交互图表、序列筛选和来源表
-│       │   └── report-view.tsx      # 章节化报告与证据引用
+│       │   └── report-view.tsx      # OpenUI 报告阅读、目录检索与证据引用
 │       ├── hooks/                   # SSE 事件流与游标续读
 │       └── lib/                     # API 客户端、共享类型和中英文文案
 │

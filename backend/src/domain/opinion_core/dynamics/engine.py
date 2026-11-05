@@ -161,7 +161,9 @@ def forecast(state, scenario=None, check_cancel=lambda: None):
             if codec
             else ensemble.copy()
         )
-        if active and scenario.mechanism == "state_shift":
+        # A zero intervention must preserve the exact paired baseline. Re-encoding
+        # an unchanged decoded PCA state would introduce a second projection error.
+        if active and scenario.mechanism == "state_shift" and scenario.shift != 0:
             dimension = -2 if scenario.dimension == "stance" else -1
             decoded[..., dimension] += scenario.shift
             decoded = project(decoded, state["simplex_blocks"])

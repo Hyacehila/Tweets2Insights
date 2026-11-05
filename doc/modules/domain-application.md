@@ -47,7 +47,7 @@ uv run --project backend python -m src.tools.cli serve
 
 retry 为失败/取消/部分完成建立后继；resume 仅恢复 waiting_for_auth。取消后不再进入新阶段。
 重试复用完整阶段；首次缺失阶段及下游重新执行。最终结果以 JobStore 的状态与结果事务提交为准。
-报告导出包含 Markdown、HTML、SVG 和 JSON，HTTP 导出另提供 ZIP。
+报告导出包含 Markdown、HTML、SVG 和 JSON，HTTP 导出另提供 PDF 与 ZIP。
 
 ## MCP 和供应商
 

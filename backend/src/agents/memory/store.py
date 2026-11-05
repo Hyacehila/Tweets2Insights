@@ -118,6 +118,17 @@ class ThreadStore:
             rows = db.execute('SELECT id,kind,payload FROM events WHERE thread=? ORDER BY id DESC LIMIT 100', (key,)).fetchall()
         return [{'id': i, 'event': k, 'data': json.loads(p)} for i, k, p in reversed(rows)]
 
+    def ui_history(self, key, kind="ui_message", limit=100):
+        self.get(key)
+        if kind not in {"ui_message", "ui_simulation"}:
+            raise ValueError("unknown UI history kind")
+        with sqlite3.connect(self.path) as db:
+            rows = db.execute(
+                "SELECT id,payload FROM events WHERE thread=? AND kind=? ORDER BY id DESC LIMIT ?",
+                (key, kind, min(limit, 100)),
+            ).fetchall()
+        return [{**json.loads(p), "id": i} for i, p in reversed(rows)]
+
     def begin_execution(self, thread):
         key = uuid.uuid4().hex
         with sqlite3.connect(self.path, timeout=30) as db:

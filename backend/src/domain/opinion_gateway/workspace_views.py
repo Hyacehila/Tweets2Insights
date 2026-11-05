@@ -19,6 +19,11 @@ def chart(title, values, kind="bar"):
 @lru_cache(maxsize=16)
 def dataset_overview(root, event_id, dataset_id):
     records = DatasetRepository(root).read(event_id, dataset_id)
+    return summarize_records(records, dataset_id)
+
+
+def summarize_records(records, dataset_id):
+    """Shared descriptive statistics for full datasets and UI-filtered subsets."""
     daily = defaultdict(lambda: {"posts": 0, "engagement": 0})
     platforms, regions, kinds = Counter(), Counter(), Counter()
     fields = (
@@ -252,7 +257,7 @@ def overview(root, threads, selected=None):
     def read(key):
         ref = refs.get(key)
         return (
-            assets.read(event, job.run_id, ref["artifact_id"], key)
+            assets.read(event, ref.get("run_id", job.run_id), ref["artifact_id"], key)
             if ref and ref.get("artifact_id")
             else {}
         )

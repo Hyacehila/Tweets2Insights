@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Database, Image, MessageSquare, TrendingUp } from "lucide-react";
+import { ArrowUpRight, Database, Image, MessageSquare, TrendingUp, Sparkles } from "lucide-react";
 import { api } from "@/lib/api";
 import type { ArtifactRef, Thread } from "@/lib/types";
 import { useI18n } from "./language-provider";
@@ -53,9 +53,9 @@ export function DatasetOverview({ threadId, datasetId }: { threadId: string; dat
   return <DatasetCharts value={value} />;
 }
 
-export function ResearchDashboard({ threads, refreshKey }: { threads: Thread[]; refreshKey: number }) {
+export function ResearchDashboard({ threads, refreshKey, threadId, onAsk }: { threads: Thread[]; refreshKey: number; threadId?: string; onAsk?: () => void }) {
   const { t } = useI18n();
-  const [selected, setSelected] = useState("");
+  const selected = threadId || "";
   const [value, setValue] = useState<Dashboard>();
   const [error, setError] = useState("");
   useEffect(() => {
@@ -65,8 +65,8 @@ export function ResearchDashboard({ threads, refreshKey }: { threads: Thread[]; 
     return () => { live = false; clearInterval(timer); };
   }, [selected, refreshKey]);
   return <div className="dashboard-layout">
-    <div className="dashboard-toolbar"><h1>{t("研究概览")}</h1><div className="actions">
-      <select aria-label={t("选择看板事件")} value={selected} onChange={e => setSelected(e.target.value)}><option value="">{t("最近分析 / Demo")}</option>{threads.map(item => <option value={item.thread_id} key={item.thread_id}>{item.title}</option>)}</select>
+    <div className="dashboard-toolbar"><div><span className="view-kicker">OVERVIEW</span><h1>{t("舆情分析总览")}</h1></div><div className="actions">
+      {onAsk && <button className="ask-about-event" onClick={onAsk}><Sparkles size={16}/>{t("用 AI 探索当前事件")}</button>}
       {value?.thread_id && <Link className="text-link" href={`/workspace/chats/${value.thread_id}`}>{t("进入研究")}<ArrowUpRight size={16} /></Link>}
     </div></div>
     {error && <p role="alert" className="error">{error}</p>}

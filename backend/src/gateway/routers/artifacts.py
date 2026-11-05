@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from fastapi.responses import Response
-import io, json, zipfile, re
+import io, json, zipfile, re, base64, asyncio
 from opinion_gateway.assets import ArtifactStore
 from ..dependencies import runtime, store, settings
 
@@ -9,10 +9,22 @@ router = APIRouter(
 )
 
 
-@router.get('/jobs/{job_id}/progress')
+@router.post("/jobs/{job_id}/report")
+def regenerate_report(
+    thread_id: str, job_id: str, db=Depends(store), config=Depends(settings)
+):
+    from opinion_gateway.application import ApplicationService
+
+    return ApplicationService(config.asset_root).submit_report(
+        db.get(thread_id)["event_id"], job_id
+    )
+
+
+@router.get("/jobs/{job_id}/progress")
 def progress(thread_id: str, job_id: str, db=Depends(store), config=Depends(settings)):
     from opinion_gateway.workspace_views import job_progress
-    return job_progress(config.asset_root, db.get(thread_id)['event_id'], job_id)
+
+    return job_progress(config.asset_root, db.get(thread_id)["event_id"], job_id)
 
 
 @router.post("/jobs/{job_id}/analysis-tools/{tool}")
@@ -107,14 +119,44 @@ async def export(
     manager=Depends(runtime),
     config=Depends(settings),
 ):
-    if format not in {"json", "markdown", "html", "zip"}:
+    if format not in {"json", "markdown", "html", "zip", "pdf"}:
         raise ValueError("unsupported export format")
     event = db.get(thread_id)["event_id"]
-    await manager.mcp.call(
-        "read_domain_artifact",
-        {"event_id": event, "run_id": run_id, "artifact_id": artifact_id},
-    )
-    data = ArtifactStore(config.asset_root).read(event, run_id, artifact_id)
+    from opinion_gateway.application import ApplicationService
+
+    try:
+        await asyncio.to_thread(
+            ApplicationService(config.asset_root).read_domain_artifact,
+            event,
+            run_id,
+            artifact_id,
+        )
+        data = ArtifactStore(config.asset_root).read(event, run_id, artifact_id)
+    except FileNotFoundError:
+        raise HTTPException(404, "Report artifact not found") from None
+    if format in {"pdf", "zip"} and "content" in data and "layout" in data:
+        if data.get("pdf_base64"):
+            pdf = base64.b64decode(data["pdf_base64"], validate=True)
+        else:
+            from opinion_core.reporting.render import render_report
+
+            rendered = await asyncio.to_thread(
+                render_report,
+                data["content"],
+                data["layout"],
+                data.get("chart_data", {}),
+            )
+            pdf = base64.b64decode(rendered["pdf_base64"])
+    elif format == "pdf":
+        raise ValueError("artifact is not a report")
+    else:
+        pdf = None
+    if format == "pdf":
+        return Response(
+            pdf,
+            media_type="application/pdf",
+            headers={"Content-Disposition": 'attachment; filename="report.pdf"'},
+        )
     if format == "json":
         return Response(
             json.dumps(data, ensure_ascii=False, indent=2),
@@ -124,6 +166,8 @@ async def export(
     if format == "zip":
         stream = io.BytesIO()
         with zipfile.ZipFile(stream, "w", zipfile.ZIP_DEFLATED) as archive:
+            if pdf:
+                archive.writestr("report.pdf", pdf)
             for key, name in [("markdown", "report.md"), ("html", "report.html")]:
                 if key in data:
                     archive.writestr(name, data[key])

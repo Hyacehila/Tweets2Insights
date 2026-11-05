@@ -19,6 +19,7 @@ class DomainService:
         sources = sorted((source_root / 'opinion_core').rglob('*.py')) + sorted((source_root / 'opinion_gateway').rglob('*.py'))
         sources += sorted((source_root / 'crawler_worker').rglob('*.py'))
         sources += sorted((source_root / 'opinion_core/labeling/vocabularies').glob('*.json'))
+        sources += sorted((source_root / 'opinion_core/reporting').glob('*.md'))
         digest = hashlib.sha256()
         for source in sources:
             digest.update(str(source.relative_to(source_root)).replace('\\', '/').encode())

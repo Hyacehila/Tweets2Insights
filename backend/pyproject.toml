@@ -21,6 +21,9 @@ dependencies = [
   "psutil>=6,<8",
   "scipy>=1.15,<2",
   "pillow>=11,<14",
+  "httpx>=0.28,<1",
+  "reportlab>=4.4,<5",
+  "svglib>=1.6,<2",
 ]
 
 [build-system]
@@ -38,10 +41,17 @@ include = ["src*", "opinion_core*", "opinion_gateway*", "crawler_worker*"]
 exclude = ["src.domain*", "tests*"]
 
 [tool.setuptools.package-data]
-opinion_core = ["labeling/vocabularies/*.json"]
+"src.gateway" = ["openui_prompt.txt"]
+opinion_core = ["labeling/vocabularies/*.json", "reporting/*.md"]
 
 [dependency-groups]
-dev = ["pytest>=8", "httpx>=0.28", "ruff>=0.9"]
+dev = [
+    "pytest>=8",
+    "httpx>=0.28",
+    "ruff>=0.9",
+    "pypdf>=6,<7",
+    "pymupdf>=1.26,<2",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -40,11 +40,12 @@ graph 为 context → leader → subagents → dispatch。结构化请求直接�
 
 ## REST 与前端
 
-6 组路由：threads、runs、events、datasets、artifacts、system；system 增加工具目录与写入式本机凭据配置。
+路由包括 threads、runs、events、datasets、artifacts、system、intelligence；system 提供工具目录与本机凭据配置，intelligence 提供 OpenUI 上下文、流式生成、对话和条件情景比较。
 客户端仅提交会话输入和配置；event_id 从线程记录解析。上传、任务、产物读取都走同一事件范围。
 `DELETE /api/threads/{thread_id}/event` 删除该会话所属事件的全部研究记录及产物，保留注册数据集。删除包含会话消息、记忆、SSE 事件、LangGraph 检查点、领域任务与批次、标注缓存、预算记录和报告；不同事件的记录保持独立。SQLite 写锁防止排队任务在清理时被 Worker 领取；运行中或正在取消的任务返回 409，需先停止并等待结束。
 前端使用 App Router，聊天地址 `/workspace/chats/[threadId]`，通过 EventSource 接收阶段事件。
 Next.js 为 `/api` 提供同源代理。SSE 使用本项目的事件协议。
+OpenUI 助手复用服务端 Agent 模型配置，以 Chat Completions 文本流生成已登记组件。对话存入线程事件表，与 Leader 规划消息独立；界面筛选读取真实数据，训练和完整领域工作流仍由原有调度器执行。交互情景从已完成运行读取模型状态，调用同一数值引擎，结果按事件保存。见 [OpenUI 交互分析](intelligent-ui.md)。
 报告支持 Markdown/HTML/JSON/ZIP 下载；ZIP 包含图表。完整领域分布、预测与情景计算继续复用已有实现。
 Next 前端当前提供会话、配置、上传、任务、产物与报告；原 Streamlit 的细分图表与 PDF 导出保留为兼容视图。
 会话模型调用数量按回合受限；领域调用与金额预算独立计算，当前没有跨层累计金额上限。

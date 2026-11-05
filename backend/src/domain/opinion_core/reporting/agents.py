@@ -31,59 +31,10 @@ def agent_bundle(bundle):
     }
 
 
-def organize_content(bundle, model, results, instruction):
-    """Content Agent selects and orders verified blocks; it cannot rewrite measurements."""
-    bundle = ContentBundle.model_validate(bundle)
-    answer, _ = model.request(
-        "Role: ContentAgent. Read all available analysis summaries and report blocks. "
-        "Select a narrative order of ALL existing block IDs, place key findings first. Return JSON {block_order:[id],"
-        "selection_rationale:text,overview:[{text,evidence_refs}]}. Summarize key findings in overview with supplied evidence IDs "
-        "and no numeric literals; include uncertainties. Do not remove original blocks or alter any measured values. "
-        "Write in Chinese. At most 4 overview items, 300 characters and 3 references each; rationale under 300 characters. "
-        "Only return the requested fields, not block content or source tables.",
-        {
-            "instruction": instruction,
-            "blocks": [b.model_dump(mode="json") for b in bundle.blocks],
-            "all_results": results,
-            "metrics": bundle.metrics,
-        },
-    )
-    order = answer.get("block_order", [])
-    allowed = {b.block_id: b for b in bundle.blocks}
-    valid = (
-        isinstance(order, list)
-        and all(isinstance(k, str) for k in order)
-        and len(order) == len(allowed)
-        and set(order) == set(allowed)
-    )
-    if valid:
-        bundle.blocks = [allowed[k] for k in order]
-    evidence = {e.evidence_id for e in bundle.evidence}
-    for i, raw in enumerate(answer.get("overview", [])[:4]):
-        if (
-            isinstance(raw, dict)
-            and isinstance(raw.get("text"), str)
-            and not re.search(r"\d", raw["text"])
-            and isinstance(raw.get("evidence_refs"), list)
-            and raw["evidence_refs"]
-            and all(
-                isinstance(ref, str) and ref in evidence for ref in raw["evidence_refs"]
-            )
-        ):
-            bundle.blocks.insert(
-                i,
-                ContentBlock(
-                    block_id=f"overview-{i}",
-                    title="研究摘要",
-                    kind="interpretation",
-                    text=raw["text"],
-                    evidence_refs=raw["evidence_refs"],
-                ),
-            )
-    return bundle.model_dump(mode="json"), {
-        "status": "accepted" if valid else "deterministic_fallback",
-        "selection_rationale": str(answer.get("selection_rationale", ""))[:4000],
-    }
+def organize_content(bundle, model, results, instruction, charts=None, **options):
+    from .composition import compose_report
+
+    return compose_report(bundle, model, results, instruction, charts, **options)
 
 
 def interpret_theory(bundle, model, theory_ids):
@@ -136,20 +87,31 @@ def interpret_theory(bundle, model, theory_ids):
     }
 
 
-def arrange_report(bundle, model):
-    fallback = build_structure(bundle)
-    answer, _ = model.request(
-        "Role: ReportUIAgent. Organize a readable event report with overview, findings, methodology and "
-        "limitations; include predictions or scenarios only when supplied. Return JSON in the exact layout shape provided. "
-        "Every block ID must appear exactly once. You may change section titles and grouping, not block contents. "
-        "No HTML, JavaScript or invented components.",
-        {"content": agent_bundle(bundle), "layout_template": fallback},
-    )
-    try:
-        _, layout = validate_structure(bundle, answer)
-        return layout.model_dump(mode="json")
-    except (ValueError, TypeError, KeyError):
-        return fallback
+def arrange_report(bundle, model, charts=None):
+    template = build_structure(bundle, charts)
+    feedback = None
+    for _ in range(2):
+        answer, _ = model.request(
+            "Role: ReportUIAgent. 你是报告版式编辑。阅读已经完成的全文，组织报告的完整阅读体验。"
+            "返回与layout_template完全相同结构的JSON。可调整章节标题、顺序、段落顺序、presentation(narrative/spotlight/columns)、"
+            "chart_position(before/after)及chart_ids。摘要适合spotlight，比较内容可用columns，长文用narrative。"
+            "将图表放入最相关章节，每个内容block和每张可用图表均需且只能出现一次；每个原章节的内容保持在同一节内。"
+            "不能改正文、证据或数值。保留完整章节，先摘要，再展开论证，最后建议与附录。不要输出HTML或脚本。",
+            {
+                "content": agent_bundle(bundle),
+                "layout_template": template,
+                "chart_catalog": {
+                    k: {"title": v.get("title", k)} for k, v in (charts or {}).items()
+                },
+                "repair": feedback,
+            },
+        )
+        try:
+            _, layout = validate_structure(bundle, answer, charts)
+            return layout.model_dump(mode="json")
+        except (ValueError, TypeError, KeyError) as exc:
+            feedback = str(exc)
+    raise ValueError("报告排版生成失败：" + feedback)
 
 
 def recommend(scenarios, model):

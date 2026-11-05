@@ -48,7 +48,7 @@ from .connectors import (
     WaitingForAuthentication,
     invoke_connector,
 )
-from .dataset_repository import storage_id
+from .dataset_repository import storage_id, atomic_json
 from .diagnostics import exception_details
 from .label_providers import make_label_provider, media_policy_for
 from .label_workflow import DurableLabelBudget
@@ -133,6 +133,19 @@ class Execution:
             self._model = MeteredAgent(self.ledger, config, key)
             self._model.trace = lambda kind, value: self.trace(kind, value)
         return self._model
+
+    @property
+    def report_model(self):
+        from opinion_core.reporting.composition import report_model_config
+
+        base = self.model
+        if not hasattr(base, "config"):
+            return base
+        if not hasattr(self, "_report_model"):
+            config = report_model_config(base.config)
+            self._report_model = MeteredAgent(self.ledger, config, api_key_for(config))
+            self._report_model.trace = lambda kind, value: self.trace(kind, value)
+        return self._report_model
 
     @property
     def toolbox(self):
@@ -620,7 +633,7 @@ class Execution:
                 results,
                 self.values.get("recommendations"),
             )
-            self.model.stage = "content"
+            self.report_model.stage = "content"
             all_results = {
                 "analyses": [brief_tool(v) for v in results],
                 "prediction": self.values.get("forecast"),
@@ -630,9 +643,49 @@ class Execution:
                     for k, v in self.values.get("backtest", {}).items()
                     if k != "scores"
                 },
+                "event": req.event.model_dump(mode="json"),
+                "observation_scope": req.observations.model_dump(mode="json"),
+                "forum": {
+                    k: v
+                    for k, v in self.values.get("forum", {}).items()
+                    if k in {"claims", "unresolved", "termination"}
+                },
             }
+            chapter_dir = self.service.repo.path(
+                storage_id(req.event.event_id), "report-drafts", storage_id(req.run_id)
+            )
+            chapter_dir.mkdir(parents=True, exist_ok=True)
+
+            def load_chapter(key):
+                path = chapter_dir / (key + ".json")
+                return (
+                    json.loads(path.read_text(encoding="utf-8"))
+                    if path.exists()
+                    else None
+                )
+
+            def save_chapter(key, value):
+                self.check_cancel()
+                atomic_json(chapter_dir / (key + ".json"), value)
+
             bundle, audit = organize_content(
-                bundle, self.model, all_results, req.analysis.instruction
+                bundle,
+                self.report_model,
+                all_results,
+                req.analysis.instruction,
+                self.values.get("charts", {}),
+                check_cancel=self.check_cancel,
+                progress=lambda value: self.trace(
+                    "report_chapter",
+                    {
+                        "stage": "content",
+                        "role": "ContentAgent",
+                        "message": f"{value['current']} / {value['total']} · {value['chapter']}",
+                        **value,
+                    },
+                ),
+                load_chapter=load_chapter,
+                save_chapter=save_chapter,
             )
             self.service.assets.put(
                 req.event.event_id, req.run_id, "content-agent-audit", audit
@@ -642,13 +695,17 @@ class Execution:
             self.model.stage = "recommendations"
             return recommend(self.values["scenarios"], self.model)
         if operation == "theory":
-            self.model.stage = "theory"
+            self.report_model.stage = "theory"
             return interpret_theory(
-                self.values["content"], self.model, req.analysis.theory_ids
+                self.values["content"], self.report_model, req.analysis.theory_ids
             )
         if operation == "structure":
-            self.model.stage = "report_ui"
-            return arrange_report(self.values["theory"]["content"], self.model)
+            self.report_model.stage = "report_ui"
+            return arrange_report(
+                self.values["theory"]["content"],
+                self.report_model,
+                self.values["charts"],
+            )
         if operation == "render":
             return render_report(
                 self.values["theory"]["content"],

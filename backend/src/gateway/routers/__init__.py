@@ -1,4 +1,4 @@
-from . import threads, runs, events, datasets, artifacts, system
+from . import threads, runs, events, datasets, artifacts, system, intelligence
 
 ROUTERS = [
     threads.router,
@@ -7,4 +7,5 @@ ROUTERS = [
     datasets.router,
     artifacts.router,
     system.router,
+    intelligence.router,
 ]

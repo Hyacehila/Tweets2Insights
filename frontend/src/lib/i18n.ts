@@ -1,6 +1,26 @@
 export type Locale = "zh-CN" | "en-US";
 
 const mediaMessages: Record<string, string> = {
+  "研究报告": "Research report", "报告主笔": "Report author", "报告章节": "Report chapter", "查看依据": "View evidence", "查看来源": "View source",
+  "{count} 个章节": "{count} chapters", "{count} 张图表": "{count} charts", "页": "pages", "搜索报告": "Search report", "章节或关键词": "Chapter or keyword",
+  "报告页面未能加载，请下载 PDF 阅读": "The report view could not load. Download the PDF to read it.",
+  "重新生成报告": "Regenerate report", "正在生成报告…": "Generating report…", "报告任务已提交，可在研究进程追踪查看逐章进度。": "Report generation queued. Follow chapter progress in Research progress.",
+
+  "展开分析画布": "Expand analysis canvas", "收起分析画布": "Collapse analysis canvas", "解读生成时的数据范围": "Interpretation generated for", "不限起始日期": "Any start date", "不限结束日期": "Any end date", "筛选已变化，图表已更新；重新生成可更新解读": "Charts reflect the new filters. Regenerate to update the interpretation.",
+  "舆情分析总览": "Overview", "事件研判工作台": "Analysis Workspace", "趋势与情景推演": "Forecast & Simulation", "研究报告中心": "Research Reports", "模型与服务设置": "Settings",
+  "AI 交互分析助手": "AI Analysis Assistant", "分析助手": "Analysis assistant", "当前研究事件": "Current research event", "选择研究事件": "Select an event", "用 AI 探索当前事件": "Explore with AI",
+  "筛选数据": "Filter data", "开始日期": "Start date", "结束日期": "End date", "全部平台": "All platforms", "应用筛选": "Apply filters", "重置": "Reset", "正在读取…": "Loading…", "已选 {count} / {total} 条": "{count} of {total} posts",
+  "帖子数量": "Posts", "图文帖子": "Posts with images", "参与作者": "Authors", "覆盖天数": "Days covered", "当前筛选范围": "Filtered dataset", "分析运行结果": "Saved analysis run", "当前数据中没有这项图表": "This chart is unavailable for the current data",
+  "高互动帖子证据": "High-engagement post evidence", "当前筛选范围没有帖子": "No posts match these filters", "时间未知": "Unknown time", "互动 {count}": "{count} interactions", "查看原帖": "Source post",
+  "条件情景实验": "Conditional scenario experiment", "基于已训练模型，对比同一起点下的基线与情景轨迹": "Compare baseline and scenario trajectories from the same fitted state", "实验模型": "Experimental model",
+  "当前事件尚无已训练的预测模型": "No trained forecast model for this event", "在事件研判工作台选择意见动力学训练与预测，完成后即可调整情景参数。": "Select model training and forecasting in Analysis Workspace, then return to explore scenarios.", "配置模型训练": "Configure model training",
+  "模型运行版本": "Fitted model run", "选择模型": "Select model", "预测步数": "Forecast steps", "影响维度": "Dimension", "条件偏移强度": "Conditional shift", "持续步数": "Duration in steps", "情景假设": "Scenario assumption", "描述从第 1 步起施加该偏移所代表的条件": "Describe the condition represented by this shift from step 1",
+  "正在计算情景…": "Computing scenario…", "运行情景比较": "Run comparison", "情景比较结果": "Scenario comparisons", "条件模拟结果表示模型假设下的差异": "Conditional simulations show differences under the stated model assumptions", "步": "steps", "立场轨迹": "Stance trajectories", "情感轨迹": "Sentiment trajectories", "下载计算结果": "Download results",
+  "界面生成失败，请重新生成": "UI generation failed. Please regenerate.", "部分界面未能生成，查看原因": "Some components could not render. View details", "服务没有返回响应内容": "The service returned no response body", "连接中断，请重试": "Connection interrupted. Please retry.",
+  "关闭分析助手": "Close analysis assistant", "助手将使用当前事件的数据、分析结果和模型": "The assistant uses the selected event's data, findings and model", "已连接事件数据": "Event data connected", "交互数据视图": "Interactive data view", "正在读取对话…": "Loading conversation…",
+  "从一个问题开始探索": "Start with a question", "把问题变成可筛选的图表、证据和情景实验": "Explore through interactive charts, evidence and scenario experiments", "展示事件的热度变化和高互动帖子": "Show engagement trends and the most discussed posts", "结合现有分析结果解释主要分歧": "Explain the main disagreements using existing findings", "构建一个可调整参数的情景比较界面": "Build an interactive scenario comparison",
+  "正在读取证据并组织界面…": "Reading evidence and composing your view…", "已停止生成": "Generation stopped", "本次用量": "Usage", "重新生成": "Regenerate", "询问当前事件，或描述想要的分析界面…": "Ask about this event, or describe a view to create…", "分析助手问题": "Analysis question", "围绕当前事件持续分析": "Connected to your current event", "发送分析问题": "Send analysis question",
+  "baseline": "Baseline", "scenario": "Scenario",
   "正在分析错误": "Analyzing error", "label": "Labeling", "analysis_planning": "Analysis planning", "supervisor_diagnosis": "Supervisor diagnosis",
   "选择研究任务": "Select research run", "流程监控 Agent": "Supervisor Agent", "智能体协作": "Agent activity", "执行记录": "Execution records", "当前阶段": "Current stage", "已运行": "Elapsed", "接下来": "Next", "更新于": "Updated", "任务记录与操作": "Run history and controls",
   "监控 Agent 错误分析": "Supervisor error analysis", "模型诊断": "Model diagnosis", "本地诊断": "Local diagnosis", "错误依据": "Evidence", "处理建议": "Suggested actions", "诊断服务信息": "Diagnosis service details",
@@ -196,7 +216,6 @@ const english: Record<string, string> = {
   "融合多源社交媒体数据与多智能体协作，支持事件复盘、趋势分析、条件情景推演与可追溯研究报告":
     "AI-powered, multi-source public opinion analysis for event investigation, trend exploration, scenario simulation, and evidence-backed reporting",
   "开始研究": "Start",
-  开始研究: "Start a study",
   数据与标注: "Data & labeling",
   "上传数据 / 关键词采集": "Upload data / collect by keyword",
   复盘与预测: "Review & forecast",

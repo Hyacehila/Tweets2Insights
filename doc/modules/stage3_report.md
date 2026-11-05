@@ -1,5 +1,7 @@
 # 阶段 3：报告生成子系统
 
+本文记录旧 PocketFlow 报告入口。当前 Next.js 工作台沿用本模块的报告模板结构，运行链路见 [Agent 复盘报告](report-generation.md)。
+
 > **文档状态**: 2026-11-03 更新
 > **关联源码**: `nodes/stage3/*`, `flow.py`, `config.py`  
 > **上级文档**: [系统设计总览](../architecture.md)

@@ -37,30 +37,31 @@ export function ArtifactViewer({
   }, [threadId, reference]);
   return (
     <section className="artifact">
-      <div className="section-heading">
+      {reference.kind !== "report" && <><div className="section-heading">
         <h3>{t(artifactLabels[reference.kind] ?? reference.kind)}</h3>
       </div>
-      {error && <p className="error">{t(error)}</p>}
       <div className="export-links">
         <a
           href={`/api/threads/${threadId}/exports/${reference.run_id}/${reference.artifact_id}?format=json`}
         >
           {t("下载完整 JSON")}
         </a>
-      </div>
+      </div></>}
+      {error && <p className="error">{t(error)}</p>}
       {typeof data.markdown_excerpt === "string" ? (
         <>
-          <div className="export-links">
-            {["markdown", "html", "json", "zip"].map((format) => (
+          <div className="export-links report-export-links">
+            {["pdf", "html", "markdown", "json", "zip"].map((format) => (
               <a
                 key={format}
+                className={format === "pdf" ? "report-pdf-download" : undefined}
                 href={`/api/threads/${threadId}/exports/${reference.run_id}/${reference.artifact_id}?format=${format}`}
               >
                 {t("下载 {format}", { format: format.toUpperCase() })}
               </a>
             ))}
           </div>
-          <ReportView report={data as ReportData} />
+          <ReportView key={reference.artifact_id} report={data as ReportData} />
           <details>
             <summary>{t("Markdown 预览")}</summary>
             <pre className="report-text">{data.markdown_excerpt}</pre>

@@ -22,7 +22,7 @@ STAGE_NAMES = {
     "scenarios": "模拟调控措施",
     "recommendations": "形成调控建议",
     "charts": "生成图表",
-    "content": "整理报告内容",
+    "content": "逐章撰写复盘报告",
     "theory": "人文社科解读",
     "structure": "组织报告页面",
     "report": "生成最终报告",
@@ -139,6 +139,13 @@ class SupervisorAgent:
                 self.agents["DecisionModel"] = {
                     "status": "running",
                     "stage": "labels",
+                    "action": self.message,
+                }
+            if kind == "report_chapter":
+                self.message = f"正在撰写第 {payload['current']} / {payload['total']} 章：{payload['chapter']}。"
+                self.agents["ContentAgent"] = {
+                    "status": "running",
+                    "stage": "content",
                     "action": self.message,
                 }
             self._publish()

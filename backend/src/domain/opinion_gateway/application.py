@@ -71,6 +71,59 @@ class ApplicationService(DomainService):
             for p in sorted(directory.glob("ds-*.json"))
         ]
 
+    def submit_report(self, event_id: str, source_job_id: str) -> dict:
+        """Publish a new report version using frozen analyses, with its own call budget."""
+        import uuid
+        from .agent_models import active_config
+
+        source = self.job_status(event_id, source_job_id)
+        if source["status"] not in {"completed", "partial"} or source["kind"] not in {
+            "analysis_run",
+            "report_run",
+        }:
+            raise ValueError("select a completed analysis or report run")
+        refs = self.jobs.result(source_job_id).get("artifacts", {})
+        required = {"input", "schema", "labels", "observations", "evidence", "charts"}
+        if not required <= refs.keys():
+            raise ValueError("source run has no complete report inputs")
+        original = self.jobs.parameters(source_job_id)
+        req = self.assets.read(
+            event_id, source["run_id"], original["request_ref"], "request"
+        )
+        req = {
+            **req,
+            "run_id": "report-" + uuid.uuid4().hex[:16],
+            "agent_config": active_config().model_dump(mode="json"),
+            "agent_model": None,
+        }
+        req = RunRequest.model_validate(req)
+        request_ref = self.assets.put(
+            event_id, req.run_id, "request", req.model_dump(mode="json")
+        )
+        plan = compile_plan(req).model_dump(mode="json")
+        plan["tasks"] = [
+            t
+            for t in plan["tasks"]
+            if t["task_id"] in {"content", "theory", "structure", "report"}
+        ]
+        plan["tasks"][0]["dependencies"] = []
+        return self.jobs.submit(
+            event_id,
+            req.run_id,
+            "report_run",
+            {
+                "request_ref": request_ref["artifact_id"],
+                "source_job_id": source_job_id,
+                "source_artifacts": {
+                    k: ref
+                    for k, ref in refs.items()
+                    if k not in {"content", "theory", "structure", "report"}
+                },
+                "code_version": self.code_version,
+                "plan": plan,
+            },
+        ).model_dump(mode="json")
+
     def list_artifacts(self, event_id: str, run_id: str) -> list[dict]:
         """List immutable artifact references owned by this event/run."""
         return self.assets.list(event_id, run_id)
@@ -133,7 +186,7 @@ class ApplicationService(DomainService):
             published = False
             for job in self.jobs.list_jobs(event_id, 200):
                 if (
-                    job.kind == "analysis_run"
+                    job.kind in {"analysis_run", "report_run"}
                     and job.run_id == run_id
                     and job.status in {"completed", "partial"}
                 ):
@@ -153,15 +206,18 @@ class ApplicationService(DomainService):
                 "markdown_excerpt": data.get("markdown", "")[:8000],
                 "content": data.get("content"),
                 "layout": data.get("layout"),
+                "openui": data.get("openui"),
+                "pdf_pages": data.get("pdf_pages"),
+                "report_version": data.get("report_version"),
                 "charts": {
                     name: {k: v for k, v in chart.items() if k != "svg"}
                     | {
-                        "data": chart.get("data", [])[:60],
+                        "data": chart.get("data", []),
                         "data_total": len(chart.get("data", [])),
                     }
                     for name, chart in data.get("chart_data", {}).items()
                 },
-                "available_exports": ["markdown", "html", "images", "json"],
+                "available_exports": ["pdf", "markdown", "html", "zip", "json"],
                 "source_versions": data.get("content", {}).get("source_versions", {}),
             }
         if reference and reference["kind"] == "charts":

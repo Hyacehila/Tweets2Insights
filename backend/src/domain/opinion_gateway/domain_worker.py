@@ -22,12 +22,16 @@ class DomainWorker:
     def run_once(self):
         store = self.service.jobs
         job = store.claim(
-            self.identity, self.lease_seconds, kinds=["analysis_run", "analysis_tool"]
+            self.identity,
+            self.lease_seconds,
+            kinds=["analysis_run", "analysis_tool", "report_run"],
         )
         if job is None:
             return None
         stopped = threading.Event()
-        supervisor = SupervisorAgent(lambda kind, value: store.record_event(job, kind, value))
+        supervisor = SupervisorAgent(
+            lambda kind, value: store.record_event(job, kind, value)
+        )
 
         def check():
             current = store.get(job.job_id)
@@ -58,9 +62,15 @@ class DomainWorker:
                 job.event_id, job.run_id, params["request_ref"], "request"
             )
             execution = Execution(self.service, request, check)
+            if job.kind == "report_run":
+                for key, ref in params["source_artifacts"].items():
+                    execution.values[key] = self.service.assets.read(
+                        job.event_id, ref["run_id"], ref["artifact_id"], key
+                    )
+                    execution.refs[key] = ref
             execution.trace = supervisor.observe
             supervisor.model_factory = execution.diagnostic_model
-            supervisor.start(params.get('plan', {}).get('tasks', []))
+            supervisor.start(params.get("plan", {}).get("tasks", []))
             store.record_event(job, "started", {"stage": "input"})
             if job.kind == "analysis_tool":
                 for key in ("input", "schema", "labels"):
@@ -148,7 +158,7 @@ class DomainWorker:
             store.finish(job, result, status="partial" if partial else "completed")
         except WaitingForAuthentication as exc:
             try:
-                supervisor.pause('waiting_for_auth', str(exc))
+                supervisor.pause("waiting_for_auth", str(exc))
                 store.record_event(
                     job,
                     "waiting_for_auth",
@@ -195,7 +205,7 @@ class DomainWorker:
                         exception_details(exc, stage=store.get(job.job_id).stage),
                     )
                 else:
-                    supervisor.pause('cancelled', '任务已停止。')
+                    supervisor.pause("cancelled", "任务已停止。")
                 store.stop_owned(job, error_type=type(exc).__name__)
             except TransitionConflict:
                 pass

@@ -481,8 +481,10 @@ def test_worker_selected_pipeline_report_and_supplement_scope(
         stage = "fixture"
 
         def request(self, prompt, payload):
+            if "ContentAgent" in prompt and "chapter_plan" in payload:
+                return {"chapters": [{"chapter_id": c["chapter_id"], "focus": c["title"], "chart_ids": [], "evidence_refs": [payload["evidence_catalog"][0]["evidence_id"]]} for c in payload["chapter_plan"]]}, {}
             if "ContentAgent" in prompt:
-                return {"block_order": [b["block_id"] for b in payload["blocks"]]}, {}
+                return {"title": "Fixture report", "paragraphs": [{"title": payload["chapter"]["title"], "text": "根据现有事件资料整理章节内容与可核对的研究发现。", "kind": "interpretation", "evidence_refs": [payload["evidence"][0]["evidence_id"]]}]}, {}
             if "SocialScienceAgent" in prompt:
                 return {
                     "interpretations": [
@@ -524,8 +526,10 @@ def test_worker_selected_pipeline_report_and_supplement_scope(
             }, {}
 
     original = Execution.execute
+    operations = []
 
     def execute(self, operation):
+        operations.append(operation)
         if operation == "prepare_schema":
             return {
                 "schema": schema,
@@ -562,6 +566,18 @@ def test_worker_selected_pipeline_report_and_supplement_scope(
     assert "ensemble" not in json.dumps(payload)
     with pytest.raises((ValueError, FileNotFoundError)):
         service.read_domain_artifact("other", "run-fixture", report["artifact_id"])
+    operations.clear()
+    regenerated = service.submit_report("fixture", job["job_id"])
+    assert DomainWorker(tmp_path).run_once().status == "completed"
+    assert operations == ["content", "theory", "structure", "render"]
+    rebuilt = service.read_job_artifact("fixture", regenerated["job_id"])
+    new_ref = rebuilt["artifacts"]["report"]
+    assert new_ref["run_id"] != "run-fixture"
+    assert rebuilt["artifacts"]["labels"] == result["artifacts"]["labels"]
+    assert service.read_domain_artifact("fixture", new_ref["run_id"], new_ref["artifact_id"])["pdf_pages"] > 0
+    from opinion_gateway.workspace_views import overview
+    summary = overview(tmp_path, [{"thread_id": "thread", "event_id": "fixture", "title": "Fixture"}], "thread")
+    assert summary["report"] == new_ref and summary["charts"]
     extra = service.submit_analysis_tool(
         "fixture", job["job_id"], "participant_trend_chart", {}
     )

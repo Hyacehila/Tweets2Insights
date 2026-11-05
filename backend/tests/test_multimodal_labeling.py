@@ -398,8 +398,10 @@ def test_multimodal_worker_to_report(name, schema, tmp_path, monkeypatch):
         stage = "fixture"
 
         def request(self, prompt, payload):
+            if "ContentAgent" in prompt and "chapter_plan" in payload:
+                return {"chapters": [{"chapter_id": c["chapter_id"], "focus": c["title"], "chart_ids": [], "evidence_refs": [payload["evidence_catalog"][0]["evidence_id"]]} for c in payload["chapter_plan"]]}, {}
             if "ContentAgent" in prompt:
-                return {"block_order": [b["block_id"] for b in payload["blocks"]]}, {}
+                return {"title": "Fixture report", "paragraphs": [{"title": payload["chapter"]["title"], "text": "根据现有事件资料整理章节内容与可核对的研究发现。", "kind": "interpretation", "evidence_refs": [payload["evidence"][0]["evidence_id"]]}]}, {}
             if "SocialScienceAgent" in prompt:
                 return {"interpretations": []}, {}
             if "ReportUIAgent" in prompt:

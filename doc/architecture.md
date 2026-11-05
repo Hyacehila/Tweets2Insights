@@ -19,7 +19,7 @@ DeerFlow 提供运行时分层参考，业务阶段独立设计；论坛以本�
 
 | 层 | 实际位置 | 职责 |
 |---|---|---|
-| 前端 | `frontend/src` | Tremor 工作台、数据集、研究配置、SSE 状态、任务报告与 API 设置 |
+| 前端 | `frontend/src` | 事件工作台、OpenUI 分析助手、数据筛选、预测情景、报告与服务设置 |
 | 应用层 | `backend/src/gateway` | HTTP 协议、生命周期、事件范围、会话执行 |
 | Agent Runtime | `backend/src/agents`、`subagents` | LangGraph 图、上下文、检查点、有限专业评阅 |
 | 通用能力 | `backend/src/models`、`mcp`、`tools`、`skills`、`config` | 模型和工具适配、技能与配置 |
@@ -70,4 +70,4 @@ SupervisorAgent 与领域 Worker 同生命周期运行，接收每次阶段交�
 
 各阶段的执行流程见[完整工作流](modules/full-workflow.md)。
 
-启动页 `/` 进入 `/workspace` 的分析看板；事件工作台内设研究配置与执行、研究进程追踪、分析与报告、数据集概览四个子页。领域运行日志写入 JobStore，异常记录包含脱敏正文与调用栈；MediaCrawler 在独立 Python 环境运行并将结果归一化到 PostRecord。
+启动页 `/` 进入 `/workspace` 的分析看板，主导航连接事件研判、趋势与情景推演、研究报告和服务设置。事件工作台保留研究配置、进程追踪、数据集概览及报告快捷入口。OpenUI 助手跨页面共享事件上下文，通过 Gateway 流式调用既有 Agent 模型；组件从数据集、分析产物和模型状态解析真实数据。交互情景直接复用领域数值模型，详见 [OpenUI 接入](modules/intelligent-ui.md)。领域运行日志写入 JobStore，异常记录包含脱敏正文与调用栈；MediaCrawler 在独立 Python 环境运行并将结果归一化到 PostRecord。
